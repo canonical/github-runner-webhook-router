@@ -5,18 +5,31 @@
 
 import json
 import logging
+import os
 import sys
 from pathlib import Path
 from typing import Any
 
 from flask import Flask, request
 
-WEBHOOK_FILE_PATH = Path("/var/log/webhook.log")
+WEBHOOK_LOGS_DIR = Path("/var/log/whrouter")
 
 app = Flask(__name__)
 app.config.from_prefixed_env()
 
-app.config["WEBHOOK_FILE_PATH"] = WEBHOOK_FILE_PATH
+
+def _log_file_name() -> str:
+    """Create the log file name.
+
+    Returns:
+        The log file name.
+    """
+    # We use the process ID to avoid race conditions between multiple instances of the app.
+    pid = os.getpid()
+    return f"webhooks.{pid}.log"
+
+
+app.config["WEBHOOK_FILE_PATH"] = WEBHOOK_LOGS_DIR / _log_file_name()
 
 
 def _write_webhook_log(payload: Any) -> None:
