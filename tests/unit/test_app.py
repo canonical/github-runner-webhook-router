@@ -15,8 +15,8 @@ from src.app import app as flask_app
 
 
 @pytest.fixture(name="webhook_logs")
-def webhook_logs_fixture(tmp_path):
-    """Create a fixture for the webhook logs."""
+def webhook_logs_fixture(tmp_path: Path):
+    """Return a path for the webhook logs."""
     return tmp_path / "webhook.log"
 
 

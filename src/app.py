@@ -12,8 +12,6 @@ from typing import Any
 
 from flask import Flask, request
 
-WEBHOOK_LOGS_DIR = Path("/var/log/whrouter")
-
 app = Flask(__name__)
 app.config.from_prefixed_env()
 
@@ -29,7 +27,13 @@ def _log_file_name() -> str:
     return f"webhooks.{pid}.log"
 
 
-app.config["WEBHOOK_FILE_PATH"] = WEBHOOK_LOGS_DIR / _log_file_name()
+def setup_webhook_log_file() -> None:
+    """Set the log file path."""
+    webhook_logs_dir = Path(os.environ.get("WEBHOOK_LOGS_DIR", "/var/log/whrouter"))
+    app.config["WEBHOOK_FILE_PATH"] = webhook_logs_dir / _log_file_name()
+
+
+setup_webhook_log_file()
 
 
 def _write_webhook_log(payload: Any) -> None:
@@ -57,7 +61,7 @@ def handle_github_webhook() -> tuple[str, int]:
 
 
 if __name__ == "__main__":
-    # Used for dev mode
+    # Start development server
     app.logger.addHandler(logging.StreamHandler(sys.stdout))
     app.logger.setLevel(logging.DEBUG)
     app.run()
