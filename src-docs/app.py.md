@@ -13,9 +13,14 @@ Flask application which receives GitHub webhooks and logs those.
 ## <kbd>function</kbd> `handle_github_webhook`
 
 ```python
-handle_github_webhook()
+handle_github_webhook() → tuple[str, int]
 ```
 
 Receive a GitHub webhook and append the payload to a file. 
+
+
+
+**Returns:**
+  A tuple containing an empty string and 200 status code. 
 
 

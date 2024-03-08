@@ -44,8 +44,12 @@ def _write_webhook_log(payload: Any) -> None:
 
 
 @app.route("/webhook", methods=["POST"])
-def handle_github_webhook():
-    """Receive a GitHub webhook and append the payload to a file."""
+def handle_github_webhook() -> tuple[str, int]:
+    """Receive a GitHub webhook and append the payload to a file.
+
+    Returns:
+        A tuple containing an empty string and 200 status code.
+    """
     payload = request.get_json()
     app.logger.info("Received webhook: %s", payload)
     _write_webhook_log(payload)
