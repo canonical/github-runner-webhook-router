@@ -60,4 +60,4 @@ if __name__ == "__main__":
     # Used for dev mode
     app.logger.addHandler(logging.StreamHandler(sys.stdout))
     app.logger.setLevel(logging.DEBUG)
-    app.run(host="0.0.0.0", port=3000)
+    app.run()
