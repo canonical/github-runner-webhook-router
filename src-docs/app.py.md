@@ -3,7 +3,7 @@
 <a href="../src/app.py#L0"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 # <kbd>module</kbd> `app.py`
-Flask application which receives GitHub webhooks. 
+Flask application which receives GitHub webhooks and logs those. 
 
 
 ---
