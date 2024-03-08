@@ -51,12 +51,13 @@ def handle_github_webhook() -> tuple[str, int]:
         A tuple containing an empty string and 200 status code.
     """
     payload = request.get_json()
-    app.logger.info("Received webhook: %s", payload)
+    app.logger.debug("Received webhook: %s", payload)
     _write_webhook_log(payload)
     return "", 200
 
 
 if __name__ == "__main__":
+    # Used for dev mode
     app.logger.addHandler(logging.StreamHandler(sys.stdout))
-    app.logger.setLevel(logging.INFO)
-    app.run()
+    app.logger.setLevel(logging.DEBUG)
+    app.run(host="0.0.0.0", port=3000)

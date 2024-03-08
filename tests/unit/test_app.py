@@ -56,7 +56,7 @@ def test_webhook_logs_get_appended(client: FlaskClient, webhook_logs: Path):
     """
     arrange: A test client and a webhook log file with existing logs.
     act: Post a request to the webhook endpoint.
-    assert: 200 status code is returned and the log file contains the payload of the request.
+    assert: the log file contains the payload and the existing logs.
     """
     webhook_logs.write_text("existing data\n")
     data = {"test": "data"}
