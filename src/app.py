@@ -1,11 +1,15 @@
+# Copyright 2024 Canonical Ltd.
+# See LICENSE file for licensing details.
+
+"""Flask application which receives GitHub webhooks."""
+
 import json
+import logging
+import sys
 from pathlib import Path
 from typing import Any
 
 from flask import Flask, request
-
-import logging
-import sys
 
 WEBHOOK_FILE_PATH = Path("/var/log/webhook.log")
 
@@ -16,7 +20,7 @@ app.config["WEBHOOK_FILE_PATH"] = WEBHOOK_FILE_PATH
 
 
 def _write_webhook_log(payload: Any) -> None:
-    """Write the webhook payload to a file.
+    """Append the webhook payload to a file.
 
     Args:
         payload: The payload to write.
@@ -26,15 +30,16 @@ def _write_webhook_log(payload: Any) -> None:
         f.write("\n")
 
 
-@app.route('/webhook', methods=['POST'])
+@app.route("/webhook", methods=["POST"])
 def handle_github_webhook():
-   payload = request.get_json()
-   app.logger.info("Received webhook: %s", payload)
-   _write_webhook_log(payload)
-   return '', 200
+    """Receive a GitHub webhook and append the payload to a file."""
+    payload = request.get_json()
+    app.logger.info("Received webhook: %s", payload)
+    _write_webhook_log(payload)
+    return "", 200
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.logger.addHandler(logging.StreamHandler(sys.stdout))
     app.logger.setLevel(logging.INFO)
     app.run()

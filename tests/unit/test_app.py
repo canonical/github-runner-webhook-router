@@ -1,3 +1,8 @@
+# Copyright 2024 Canonical Ltd.
+# See LICENSE file for licensing details.
+
+"""The unit tests for the  flask app."""
+
 import json
 from pathlib import Path
 from typing import Iterator
@@ -6,7 +11,7 @@ import pytest
 from flask import Flask
 from flask.testing import FlaskClient
 
-from app import app
+from src.app import app as flask_app
 
 
 @pytest.fixture(name="webhook_logs")
@@ -18,13 +23,15 @@ def webhook_logs_fixture(tmp_path):
 @pytest.fixture(name="app")
 def app_fixture(webhook_logs: Path) -> Iterator[Flask]:
     """Setup the flask app."""
-    app.config.update({
-        "TESTING": True,
-    })
+    flask_app.config.update(
+        {
+            "TESTING": True,
+        }
+    )
 
-    app.config["WEBHOOK_FILE_PATH"] = webhook_logs
+    flask_app.config["WEBHOOK_FILE_PATH"] = webhook_logs
 
-    yield app
+    yield flask_app
 
 
 @pytest.fixture(name="client")
