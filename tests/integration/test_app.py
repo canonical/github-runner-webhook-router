@@ -6,11 +6,16 @@
 import os
 import threading
 from pathlib import Path
+from time import sleep
 
 import pytest
 import requests
 
 import src.app as flask_app
+
+BIND_HOST = "localhost"
+BIND_PORT = 5000
+BASE_URL = f"http://{BIND_HOST}:{BIND_PORT}"
 
 
 @pytest.fixture(name="webhook_logs_dir", scope="module")
@@ -25,8 +30,20 @@ def app_fixture(webhook_logs_dir: Path):
     """Setup and run the flask app."""
     os.environ["WEBHOOK_LOGS_DIR"] = str(webhook_logs_dir)
     flask_app.setup_webhook_log_file()
-    thread = threading.Thread(target=flask_app.app.run, args=("localhost", 5000), daemon=True)
+    thread = threading.Thread(target=flask_app.app.run, args=(BIND_HOST, BIND_PORT), daemon=True)
     thread.start()
+
+    # It might take some time for the server to start
+    for _ in range(10):
+        try:
+            requests.get(BASE_URL, timeout=1)
+        except requests.exceptions.ConnectionError:
+            print("Waiting for the app to start")
+            sleep(1)
+        else:
+            break
+    else:
+        assert False, "The app did not start"
 
 
 def test_receive_webhook(webhook_logs_dir: Path):
@@ -35,9 +52,9 @@ def test_receive_webhook(webhook_logs_dir: Path):
     act: call the webhook endpoint with a payload
     assert: the payload is written to a log file
     """
-    resp = requests.post("http://localhost:5000/webhook", json={"test": "data"}, timeout=5)
+    resp = requests.post(f"{BASE_URL}/webhook", json={"test": "data"}, timeout=1)
     assert resp.status_code == 200
-    resp = requests.post("http://localhost:5000/webhook", json={"test2": "data2"}, timeout=5)
+    resp = requests.post(f"{BASE_URL}/webhook", json={"test2": "data2"}, timeout=1)
     assert resp.status_code == 200
     assert webhook_logs_dir.exists()
     log_files = list(webhook_logs_dir.glob("webhooks.*.log"))
