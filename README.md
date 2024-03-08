@@ -8,18 +8,18 @@ Avoid using this README file for information that is maintained or published els
 Use links instead.
 -->
 
-# is-charms-template
+# github-runner-webhook-router
 
-Charmhub package name: operator-template
-More information: https://charmhub.io/is-charms-template
+> **Warning**
+Work in progress: This charm is not yet ready for use.
 
-Describe your charm in one or two sentences.
+The github-runner-webhook-router charm is a Juju charm that provides a webhook router for GitHub Actions self-hosted runners. 
+This charm is designed to be used in conjunction with the [github-runner-operator](https://github.com/canonical/github-runner-operator) charm.
+
 
 ## Other resources
 
 <!-- If your charm is documented somewhere else other than Charmhub, provide a link separately. -->
-
-- [Read more](https://example.com)
 
 - [Contributing](CONTRIBUTING.md) <!-- or link to other contribution documentation -->
 
