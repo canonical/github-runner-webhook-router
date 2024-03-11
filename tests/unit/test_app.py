@@ -10,7 +10,7 @@ from typing import Iterator
 import pytest
 from flask import Flask
 from flask.testing import FlaskClient
-from werkzeug.exceptions import UnsupportedMediaType, BadRequest
+from werkzeug.exceptions import BadRequest, UnsupportedMediaType
 
 from src.app import app as flask_app
 
