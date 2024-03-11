@@ -10,8 +10,11 @@ from typing import Iterator
 import pytest
 from flask import Flask
 from flask.testing import FlaskClient
+from werkzeug.exceptions import UnsupportedMediaType, BadRequest
 
 from src.app import app as flask_app
+
+TEST_PATH = "/webhook"
 
 
 @pytest.fixture(name="webhook_logs")
@@ -47,8 +50,9 @@ def test_webhook_logs(client: FlaskClient, webhook_logs: Path):
     assert: 200 status code is returned and the log file contains the payload of the request.
     """
     data = {"test": "data"}
-    response = client.post("/webhook", json=data)
+    response = client.post(TEST_PATH, json=data)
     assert response.status_code == 200
+    assert webhook_logs.exists()
     assert webhook_logs.read_text() == f"{json.dumps(data)}\n"
 
 
@@ -60,5 +64,25 @@ def test_webhook_logs_get_appended(client: FlaskClient, webhook_logs: Path):
     """
     webhook_logs.write_text("existing data\n")
     data = {"test": "data"}
-    client.post("/webhook", json=data)
+    client.post(TEST_PATH, json=data)
+    assert webhook_logs.exists()
     assert webhook_logs.read_text() == f"existing data\n{json.dumps(data)}\n"
+
+
+def test_non_json_request(client: FlaskClient, webhook_logs: Path):
+    """
+    arrange: A test client and a webhook log file.
+    act: Post a request to the webhook endpoint with
+        1. non-json content.
+        2. non-json content but with application/json content type.
+    assert: the webhook log file does not exist and
+        1. UnsupportedMediaType status code is returned.
+        2. BadRequest status code is returned.
+    """
+    response = client.post(TEST_PATH, data="bad data")
+    assert response.status_code == UnsupportedMediaType.code
+    assert not webhook_logs.exists()
+
+    response = client.post(TEST_PATH, data="bad data", content_type="application/json")
+    assert response.status_code == BadRequest.code
+    assert not webhook_logs.exists()
