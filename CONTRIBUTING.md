@@ -31,6 +31,17 @@ tox run -e integration   # integration tests
 tox                      # runs 'format', 'lint', and 'unit' environments
 ```
 
+
+## Development server
+
+Flask contains a development server that can be used to test the charm. To start the server, run:
+
+```shell
+  python -m src.app
+```
+in your virtual environment and project root.
+
+
 ## Build the charm
 
 Build the charm in this git repository using:
