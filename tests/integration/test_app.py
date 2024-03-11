@@ -2,16 +2,17 @@
 #  See LICENSE file for licensing details.
 
 """Integration tests for the flask app."""
-
 import os
-import threading
+import random
+
+# security considerations for subprocess are not relevant in this module
+import subprocess  # nosec
 from pathlib import Path
 from time import sleep
+from typing import Iterator
 
 import pytest
 import requests
-
-import src.app as flask_app
 
 BIND_HOST = "localhost"
 BIND_PORT = 5000
@@ -25,39 +26,52 @@ def webhook_logs_dir_fixture(tmp_path_factory: pytest.TempPathFactory) -> Path:
     return logs_dir
 
 
+@pytest.fixture(name="process_count", scope="module")
+def process_count_fixture() -> int:
+    """Return the number of processes."""
+    # We do not use randint for cryptographic purposes.
+    return random.randint(1, 5)  # nosec
+
+
 @pytest.fixture(name="app", scope="module", autouse=True)
-def app_fixture(webhook_logs_dir: Path):
+def app_fixture(webhook_logs_dir: Path, process_count: int) -> Iterator[None]:
     """Setup and run the flask app."""
     os.environ["WEBHOOK_LOGS_DIR"] = str(webhook_logs_dir)
-    flask_app.setup_webhook_log_file()
-    thread = threading.Thread(target=flask_app.app.run, args=(BIND_HOST, BIND_PORT), daemon=True)
-    thread.start()
 
-    # It might take some time for the server to start
-    for _ in range(10):
-        try:
-            requests.get(BASE_URL, timeout=1)
-        except requests.exceptions.ConnectionError:
-            print("Waiting for the app to start")
-            sleep(1)
+    # use subprocess to run the app using gunicorn with 2 workers
+    command = f"gunicorn -w {process_count} --bind {BIND_HOST}:{BIND_PORT} src.app:app"
+
+    with subprocess.Popen(command.split()) as p:  # nosec
+        # It might take some time for the server to start
+        for _ in range(10):
+            try:
+                requests.get(BASE_URL, timeout=1)
+            except requests.exceptions.ConnectionError:
+                print("Waiting for the app to start")
+                sleep(1)
+            else:
+                break
         else:
-            break
-    else:
-        assert False, "The app did not start"
+            p.terminate()
+            assert False, "The app did not start"
+
+        yield
+        p.terminate()
 
 
-def test_receive_webhook(webhook_logs_dir: Path):
+def test_receive_webhook(webhook_logs_dir: Path, process_count: int):
     """
-    arrange: given a running app and a webhook logs directory
-    act: call the webhook endpoint with a payload
-    assert: the payload is written to a log file
+    arrange: given a running app with a process count and a webhook logs directory
+    act: call the webhook endpoint with process_count payloads
+    assert: the payloads are written to log files
     """
-    resp = requests.post(f"{BASE_URL}/webhook", json={"test": "data"}, timeout=1)
-    assert resp.status_code == 200
-    resp = requests.post(f"{BASE_URL}/webhook", json={"test2": "data2"}, timeout=1)
-    assert resp.status_code == 200
+    for i in range(process_count):
+        resp = requests.post(f"{BASE_URL}/webhook", json={f"test{i}": f"data{i}"}, timeout=1)
+        assert resp.status_code == 200
     assert webhook_logs_dir.exists()
     log_files = list(webhook_logs_dir.glob("webhooks.*.log"))
-    assert len(log_files) == 1
-    log_file = log_files[0]
-    assert log_file.read_text() == '{"test": "data"}\n{"test2": "data2"}\n'
+    assert len(log_files) <= process_count
+    log_files_content: set[str] = set()
+    for log_file in log_files:
+        log_files_content.update(filter(lambda s: s, log_file.read_text().split("\n")))
+    assert log_files_content == {f'{{"test{i}": "data{i}"}}' for i in range(process_count)}
