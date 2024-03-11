@@ -27,13 +27,19 @@ def _log_file_name() -> str:
     return f"webhooks.{pid}.log"
 
 
-def setup_webhook_log_file() -> None:
+def _setup_webhook_log_file() -> None:
     """Set the log file path."""
     webhook_logs_dir = Path(os.environ.get("WEBHOOK_LOGS_DIR", "/var/log/whrouter"))
     app.config["WEBHOOK_FILE_PATH"] = webhook_logs_dir / _log_file_name()
 
 
-setup_webhook_log_file()
+def setup_config() -> None:
+    """Load and set the config."""
+    app.config.from_prefixed_env()
+    _setup_webhook_log_file()
+
+
+setup_config()
 
 
 def _write_webhook_log(payload: Any) -> None:

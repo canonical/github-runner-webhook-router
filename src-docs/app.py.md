@@ -8,20 +8,20 @@ Flask application which receives GitHub webhooks and logs those.
 
 ---
 
-<a href="../src/app.py#L30"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/app.py#L36"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
-## <kbd>function</kbd> `setup_webhook_log_file`
+## <kbd>function</kbd> `setup_config`
 
 ```python
-setup_webhook_log_file() → None
+setup_config() → None
 ```
 
-Set the log file path. 
+Load and set the config. 
 
 
 ---
 
-<a href="../src/app.py#L50"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/app.py#L56"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `handle_github_webhook`
 
