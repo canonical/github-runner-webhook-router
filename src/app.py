@@ -9,12 +9,27 @@ import os
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Any
 
 from flask import Flask, request
 
 app = Flask(__name__)
 app.config.from_prefixed_env()
+
+
+webhook_logger = logging.getLogger("webhook_logger")
+
+
+def setup_logger(log_file: Path) -> None:
+    """Set up the webhook logger to log to a file.
+
+    Args:
+        log_file: The log file.
+    """
+    webhook_logger.handlers.clear()
+    fhandler = logging.FileHandler(log_file, delay=True)
+    fhandler.setLevel(logging.INFO)
+    webhook_logger.addHandler(fhandler)
+    webhook_logger.setLevel(logging.INFO)
 
 
 def _log_filename() -> str:
@@ -28,30 +43,8 @@ def _log_filename() -> str:
     return datetime.now().strftime(f"webhooks.%Y-%m-%d-%H-%M-%S.{pid}.log")
 
 
-def _setup_webhook_log_file() -> None:
-    """Set the log file path."""
-    webhook_logs_dir = Path(os.environ.get("WEBHOOK_LOGS_DIR", "/var/log/whrouter"))
-    app.config["WEBHOOK_FILE_PATH"] = webhook_logs_dir / _log_filename()
-
-
-def setup_config() -> None:
-    """Load and set the config."""
-    app.config.from_prefixed_env()
-    _setup_webhook_log_file()
-
-
-setup_config()
-
-
-def _write_webhook_log(payload: Any) -> None:
-    """Append the webhook payload to a file.
-
-    Args:
-        payload: The payload to write.
-    """
-    with app.config["WEBHOOK_FILE_PATH"].open("a") as f:
-        json.dump(payload, f)
-        f.write("\n")
+webhook_logs_dir = Path(os.environ.get("WEBHOOK_LOGS_DIR", "/var/log/whrouter"))
+setup_logger(log_file=webhook_logs_dir / _log_filename())
 
 
 @app.route("/webhook", methods=["POST"])
@@ -63,7 +56,7 @@ def handle_github_webhook() -> tuple[str, int]:
     """
     payload = request.get_json()
     app.logger.debug("Received webhook: %s", payload)
-    _write_webhook_log(payload)
+    webhook_logger.log(logging.INFO, json.dumps(payload))
     return "", 200
 
 

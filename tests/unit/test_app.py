@@ -12,7 +12,7 @@ from flask import Flask
 from flask.testing import FlaskClient
 from werkzeug.exceptions import BadRequest, UnsupportedMediaType
 
-from src.app import app as flask_app
+import src.app as app_module
 
 TEST_PATH = "/webhook"
 
@@ -26,15 +26,15 @@ def webhook_logs_fixture(tmp_path: Path):
 @pytest.fixture(name="app")
 def app_fixture(webhook_logs: Path) -> Iterator[Flask]:
     """Setup the flask app."""
-    flask_app.config.update(
+    app_module.app.config.update(
         {
             "TESTING": True,
         }
     )
 
-    flask_app.config["WEBHOOK_FILE_PATH"] = webhook_logs
+    app_module.setup_logger(log_file=webhook_logs)
 
-    yield flask_app
+    yield app_module.app
 
 
 @pytest.fixture(name="client")
