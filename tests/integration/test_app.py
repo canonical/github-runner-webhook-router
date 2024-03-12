@@ -30,7 +30,7 @@ def webhook_logs_dir_fixture(tmp_path_factory: pytest.TempPathFactory) -> Path:
 def process_count_fixture() -> int:
     """Return the number of processes."""
     # We do not use randint for cryptographic purposes.
-    return random.randint(1, 5)  # nosec
+    return random.randint(2, 5)  # nosec
 
 
 @pytest.fixture(name="app", scope="module", autouse=True)
@@ -38,7 +38,7 @@ def app_fixture(webhook_logs_dir: Path, process_count: int) -> Iterator[None]:
     """Setup and run the flask app."""
     os.environ["WEBHOOK_LOGS_DIR"] = str(webhook_logs_dir)
 
-    # use subprocess to run the app using gunicorn with 2 workers
+    # use subprocess to run the app using gunicorn with multiple workers
     command = f"gunicorn -w {process_count} --bind {BIND_HOST}:{BIND_PORT} src.app:app"
 
     with subprocess.Popen(command.split()) as p:  # nosec
