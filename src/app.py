@@ -7,6 +7,7 @@ import json
 import logging
 import os
 import sys
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -16,21 +17,21 @@ app = Flask(__name__)
 app.config.from_prefixed_env()
 
 
-def _log_file_name() -> str:
+def _log_filename() -> str:
     """Create the log file name.
 
     Returns:
         The log file name.
     """
-    # We use the process ID to avoid race conditions between multiple instances of the app.
+    # We use a unique name to avoid race conditions between multiple instances of the app.
     pid = os.getpid()
-    return f"webhooks.{pid}.log"
+    return datetime.now().strftime(f"webhooks.%Y-%m-%d-%H-%M-%S.{pid}.log")
 
 
 def _setup_webhook_log_file() -> None:
     """Set the log file path."""
     webhook_logs_dir = Path(os.environ.get("WEBHOOK_LOGS_DIR", "/var/log/whrouter"))
-    app.config["WEBHOOK_FILE_PATH"] = webhook_logs_dir / _log_file_name()
+    app.config["WEBHOOK_FILE_PATH"] = webhook_logs_dir / _log_filename()
 
 
 def setup_config() -> None:
