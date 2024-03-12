@@ -9,6 +9,15 @@ tox devenv -e integration
 source venv/bin/activate
 ```
 
+## Generating src docs for every commit
+
+Run the following command:
+
+```bash
+echo -e "tox -e src-docs\ngit add src-docs\n" >> .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+```
+
 ## Testing
 
 This project uses `tox` for managing test environments. There are some pre-configured environments
@@ -21,6 +30,17 @@ tox run -e unit          # unit tests
 tox run -e integration   # integration tests
 tox                      # runs 'format', 'lint', and 'unit' environments
 ```
+
+
+## Development server
+
+Flask contains a development server that can be used to test the charm. To start the server, run:
+
+```shell
+  python -m src.app
+```
+in your virtual environment and project root.
+
 
 ## Build the charm
 
