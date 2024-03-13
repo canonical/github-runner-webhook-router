@@ -5,10 +5,14 @@
 # <kbd>module</kbd> `app.py`
 Flask application which receives GitHub webhooks and logs those. 
 
+**Global Variables**
+---------------
+- **WEBHOOK_SIGNATURE_HEADER**
+- **webhook_secret**
 
 ---
 
-<a href="../src/app.py#L22"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/app.py#L32"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `setup_logger`
 
@@ -27,7 +31,33 @@ Set up the webhook logger to log to a file.
 
 ---
 
-<a href="../src/app.py#L50"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/app.py#L60"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+
+## <kbd>function</kbd> `signature_validator`
+
+```python
+signature_validator(
+    func: Callable[[], tuple[str, int]]
+) → Callable[[], tuple[str, int]]
+```
+
+Validate the signature of the incoming request. 
+
+
+
+**Args:**
+ 
+ - <b>`func`</b>:  function to be decorated. 
+
+
+
+**Returns:**
+ Decorated function. 
+
+
+---
+
+<a href="../src/app.py#L93"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `handle_github_webhook`
 

@@ -86,3 +86,38 @@ def test_non_json_request(client: FlaskClient, webhook_logs: Path):
     response = client.post(TEST_PATH, data="bad data", content_type="application/json")
     assert response.status_code == BadRequest.code
     assert not webhook_logs.exists()
+
+
+@pytest.mark.parametrize(
+    "signature, expected_status, expected_reason",
+    [
+        pytest.param(
+            "sha256=a1fb8cefd91e8b058247e0c33f1b10412d28b058ad5e1d0e71be31c83e3426f6",
+            200,
+            "",
+            id="correct signature",
+        ),
+        pytest.param(
+            "sha256=757107ea0eb2509fc211221cce984b8a37570b6d7586c22c46f4379c8b043e18",
+            403,
+            "Signature validation failed!",
+            id="incorrect signature",
+        ),
+        pytest.param(None, 403, "X-Hub-signature-256 header is missing!", id="missing signature"),
+    ],
+)
+def test_webhook_validation(
+    client: FlaskClient, signature: str, expected_status: int, expected_reason: str
+):
+    """
+    arrange: A test client and webhook secrets enabled.
+    act: Post a request to the webhook endpoint.
+    assert: Expected status code and reason.
+    """
+    # Test secrets are not a security issue
+    app_module.app.config["WEBHOOK_SECRET"] = "secret"  # nosec
+    data = {"test": "data"}
+    headers = {app_module.WEBHOOK_SIGNATURE_HEADER: signature} if signature else {}
+    response = client.post(TEST_PATH, json=data, headers=headers)
+    assert response.status_code == expected_status
+    assert response.text == expected_reason
