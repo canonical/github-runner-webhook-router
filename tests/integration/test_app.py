@@ -2,41 +2,61 @@
 #  See LICENSE file for licensing details.
 
 """Integration tests for the flask app."""
+import hashlib
+import hmac
+import json
 import os
 import random
+import secrets
 
 # security considerations for subprocess are not relevant in this module
 import subprocess  # nosec
 from pathlib import Path
 from time import sleep
-from typing import Iterator
+from typing import Iterator, Optional
 
 import pytest
 import requests
+
+from src.app import WEBHOOK_SIGNATURE_HEADER
 
 BIND_HOST = "localhost"
 BIND_PORT = 5000
 BASE_URL = f"http://{BIND_HOST}:{BIND_PORT}"
 
 
-@pytest.fixture(name="webhook_logs_dir", scope="module")
-def webhook_logs_dir_fixture(tmp_path_factory: pytest.TempPathFactory) -> Path:
+@pytest.fixture(name="webhook_logs_dir")
+def webhook_logs_dir_fixture(tmp_path: Path) -> Path:
     """Create a dir for the webhook logs."""
-    logs_dir = tmp_path_factory.mktemp("webhook_logs")
+    logs_dir = tmp_path / "webhook_logs"
+    logs_dir.mkdir()
     return logs_dir
 
 
-@pytest.fixture(name="process_count", scope="module")
+@pytest.fixture(name="process_count")
 def process_count_fixture() -> int:
     """Return the number of processes."""
     # We do not use randint for cryptographic purposes.
     return random.randint(2, 5)  # nosec
 
 
-@pytest.fixture(name="app", scope="module", autouse=True)
-def app_fixture(webhook_logs_dir: Path, process_count: int) -> Iterator[None]:
+@pytest.fixture(
+    name="webhook_secret",
+    params=[pytest.param(True, id="with_secret"), pytest.param(False, id="without_secret")],
+)
+def webhook_secret_fixture(request) -> Optional[str]:
+    """Return a webhook secret."""
+    return secrets.token_hex(16) if request.param else None
+
+
+@pytest.fixture(name="app", autouse=True)
+def app_fixture(webhook_logs_dir: Path, process_count: int, webhook_secret: str) -> Iterator[None]:
     """Setup and run the flask app."""
     os.environ["WEBHOOK_LOGS_DIR"] = str(webhook_logs_dir)
+    if webhook_secret:
+        os.environ["WEBHOOK_SECRET"] = webhook_secret
+    else:
+        os.environ.pop("WEBHOOK_SECRET", None)
 
     # use subprocess to run the app using gunicorn with multiple workers
     command = f"gunicorn -w {process_count} --bind {BIND_HOST}:{BIND_PORT} src.app:app"
@@ -59,14 +79,42 @@ def app_fixture(webhook_logs_dir: Path, process_count: int) -> Iterator[None]:
         p.terminate()
 
 
-def test_receive_webhook(webhook_logs_dir: Path, process_count: int):
+def _request(payload: dict, webhook_secret: Optional[str]) -> requests.Response:
+    """Send a request to the webhook endpoint.
+
+    If webhook_secret is provided, the request is signed.
+
+    Args:
+        payload: The payload to send.
+        webhook_secret: The webhook secret.
+
+    Returns:
+        The response.
+    """
+    payload_bytes = json.dumps(payload).encode("utf-8")
+    headers = {"Content-Type": "application/json"}
+
+    if webhook_secret:
+        hash_object = hmac.new(
+            webhook_secret.encode("utf-8"), msg=payload_bytes, digestmod=hashlib.sha256
+        )
+        signature = "sha256=" + hash_object.hexdigest()
+        headers[WEBHOOK_SIGNATURE_HEADER] = signature
+        return requests.post(f"{BASE_URL}/webhook", data=payload_bytes, headers=headers, timeout=1)
+
+    return requests.post(f"{BASE_URL}/webhook", data=payload_bytes, headers=headers, timeout=1)
+
+
+def test_receive_webhook(
+    webhook_logs_dir: Path, process_count: int, webhook_secret: Optional[str]
+):
     """
     arrange: given a running app with a process count and a webhook logs directory
     act: call the webhook endpoint with process_count payloads
     assert: the payloads are written to log files
     """
     for i in range(process_count):
-        resp = requests.post(f"{BASE_URL}/webhook", json={f"test{i}": f"data{i}"}, timeout=1)
+        resp = _request(payload={f"test{i}": f"data{i}"}, webhook_secret=webhook_secret)
         assert resp.status_code == 200
     assert webhook_logs_dir.exists()
     log_files = list(webhook_logs_dir.glob("webhooks.*.log"))
