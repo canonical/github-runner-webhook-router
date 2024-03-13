@@ -45,12 +45,14 @@ def process_count_fixture() -> int:
     params=[pytest.param(True, id="with_secret"), pytest.param(False, id="without_secret")],
 )
 def webhook_secret_fixture(request) -> Optional[str]:
-    """Return a webhook secret."""
+    """Return a webhook secret or None."""
     return secrets.token_hex(16) if request.param else None
 
 
 @pytest.fixture(name="app", autouse=True)
-def app_fixture(webhook_logs_dir: Path, process_count: int, webhook_secret: str) -> Iterator[None]:
+def app_fixture(
+    webhook_logs_dir: Path, process_count: int, webhook_secret: Optional[str]
+) -> Iterator[None]:
     """Setup and run the flask app."""
     os.environ["WEBHOOK_LOGS_DIR"] = str(webhook_logs_dir)
     if webhook_secret:
@@ -100,7 +102,6 @@ def _request(payload: dict, webhook_secret: Optional[str]) -> requests.Response:
         )
         signature = "sha256=" + hash_object.hexdigest()
         headers[WEBHOOK_SIGNATURE_HEADER] = signature
-        return requests.post(f"{BASE_URL}/webhook", data=payload_bytes, headers=headers, timeout=1)
 
     return requests.post(f"{BASE_URL}/webhook", data=payload_bytes, headers=headers, timeout=1)
 

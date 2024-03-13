@@ -28,7 +28,7 @@ Raise error if the signature doesn't match.
 
 **Args:**
  
- - <b>`payload`</b>:  original request body to verify (request.body()) 
+ - <b>`payload`</b>:  original request body to verify 
  - <b>`secret_token`</b>:  GitHub app webhook token (WEBHOOK_SECRET) 
  - <b>`signature_header`</b>:  header received from GitHub (x-hub-signature-256) 
 

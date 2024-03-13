@@ -17,7 +17,7 @@ def verify_signature(payload: bytes, secret_token: str, signature_header: str) -
     Raise error if the signature doesn't match.
 
     Args:
-        payload: original request body to verify (request.body())
+        payload: original request body to verify
         secret_token: GitHub app webhook token (WEBHOOK_SECRET)
         signature_header: header received from GitHub (x-hub-signature-256)
 
