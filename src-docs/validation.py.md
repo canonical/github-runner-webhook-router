@@ -17,7 +17,7 @@ verify_signature(
     payload: bytes,
     secret_token: str,
     signature_header: str
-) → None
+) → bool
 ```
 
 Verify that the payload was sent from GitHub by validating SHA256. 
@@ -34,9 +34,8 @@ Raise error if the signature doesn't match.
 
 
 
-**Raises:**
- 
- - <b>`SignatureValidationError`</b>:  if the signature doesn't match 
+**Returns:**
+ True if the signature is valid, False otherwise. 
 
 
 ---
