@@ -31,7 +31,7 @@ def test_verify_signature(
 ):
     """
     arrange: A payload, a secret, and a signature.
-    act: verify the signature.
+    act: Verify the signature.
     assert: The expected return value is returned.
     """
     secret = secrets.token_hex(16)

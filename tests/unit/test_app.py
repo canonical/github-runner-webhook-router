@@ -120,7 +120,8 @@ def test_webhook_validation(
     assert: Expected status code and reason.
     """
     secret = secrets.token_hex(16)
-    payload = json.dumps({"test": "data"}).encode("utf-8")
+    payload_value = secrets.token_hex(16)
+    payload = json.dumps({"value": payload_value}).encode("utf-8")
 
     app_module.app.config["WEBHOOK_SECRET"] = secret
     headers = {"Content-Type": "application/json"}

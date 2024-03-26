@@ -7,10 +7,6 @@ import hashlib
 import hmac
 
 
-class SignatureValidationError(Exception):
-    """Raised when the signature validation fails."""
-
-
 def verify_signature(payload: bytes, secret_token: str, signature_header: str) -> bool:
     """Verify that the payload was sent from GitHub by validating SHA256.
 

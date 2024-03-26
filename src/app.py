@@ -60,7 +60,7 @@ def handle_github_webhook() -> tuple[str, int]:
         A tuple containing an empty string and 200 status code.
     """
     if secret := app.config.get("WEBHOOK_SECRET"):
-        if not (signature := request.headers.get("X-Hub-Signature-256")):
+        if not (signature := request.headers.get(WEBHOOK_SIGNATURE_HEADER)):
             return "X-Hub-signature-256 header is missing!", 403
 
         if not verify_signature(

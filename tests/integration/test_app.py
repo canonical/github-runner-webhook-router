@@ -5,7 +5,6 @@
 import hashlib
 import hmac
 import json
-import os
 import random
 import secrets
 
@@ -59,7 +58,6 @@ def app_fixture(
 ) -> Iterator[None]:
     """Setup and run the flask app."""
     monkeypatch.setenv("WEBHOOK_LOGS_DIR", str(webhook_logs_dir))
-    os.environ["WEBHOOK_LOGS_DIR"] = str(webhook_logs_dir)
     if webhook_secret:
         monkeypatch.setenv("WEBHOOK_SECRET", webhook_secret)
 

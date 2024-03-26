@@ -8,7 +8,7 @@ Module for validating the webhook request.
 
 ---
 
-<a href="../src/validation.py#L14"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../src/validation.py#L10"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `verify_signature`
 
@@ -36,14 +36,5 @@ Raise error if the signature doesn't match.
 
 **Returns:**
  True if the signature is valid, False otherwise. 
-
-
----
-
-## <kbd>class</kbd> `SignatureValidationError`
-Raised when the signature validation fails. 
-
-
-
 
 
