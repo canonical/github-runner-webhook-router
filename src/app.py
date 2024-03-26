@@ -24,8 +24,6 @@ app.config.from_prefixed_env()
 webhook_logger = logging.getLogger("webhook_logger")
 webhook_secret = os.environ.get("WEBHOOK_SECRET")
 if webhook_secret:
-    if not isinstance(webhook_secret, str):
-        raise ValueError("WEBHOOK_SECRET must be a string")
     app.config["WEBHOOK_SECRET"] = webhook_secret
 
 
