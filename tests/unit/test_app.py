@@ -4,8 +4,9 @@
 """The unit tests for the  flask app."""
 
 import json
+import secrets
 from pathlib import Path
-from typing import Iterator
+from typing import Callable, Iterator
 
 import pytest
 from flask import Flask
@@ -13,6 +14,7 @@ from flask.testing import FlaskClient
 from werkzeug.exceptions import BadRequest, UnsupportedMediaType
 
 import src.app as app_module
+from tests.unit.helpers import create_correct_signature, create_incorrect_signature
 
 TEST_PATH = "/webhook"
 
@@ -89,16 +91,16 @@ def test_non_json_request(client: FlaskClient, webhook_logs: Path):
 
 
 @pytest.mark.parametrize(
-    "signature, expected_status, expected_reason",
+    "create_signature_fct, expected_status, expected_reason",
     [
         pytest.param(
-            "sha256=a1fb8cefd91e8b058247e0c33f1b10412d28b058ad5e1d0e71be31c83e3426f6",
+            create_correct_signature,
             200,
             "",
             id="correct signature",
         ),
         pytest.param(
-            "sha256=757107ea0eb2509fc211221cce984b8a37570b6d7586c22c46f4379c8b043e18",
+            create_incorrect_signature,
             403,
             "Signature validation failed!",
             id="incorrect signature",
@@ -107,17 +109,23 @@ def test_non_json_request(client: FlaskClient, webhook_logs: Path):
     ],
 )
 def test_webhook_validation(
-    client: FlaskClient, signature: str, expected_status: int, expected_reason: str
+    client: FlaskClient,
+    create_signature_fct: Callable[[str, bytes], str],
+    expected_status: int,
+    expected_reason: str,
 ):
     """
     arrange: A test client and webhook secrets enabled.
     act: Post a request to the webhook endpoint.
     assert: Expected status code and reason.
     """
-    # Test secrets are not a security issue
-    app_module.app.config["WEBHOOK_SECRET"] = "secret"  # nosec
-    data = {"test": "data"}
-    headers = {app_module.WEBHOOK_SIGNATURE_HEADER: signature} if signature else {}
-    response = client.post(TEST_PATH, json=data, headers=headers)
+    secret = secrets.token_hex(16)
+    payload = json.dumps({"test": "data"}).encode("utf-8")
+
+    app_module.app.config["WEBHOOK_SECRET"] = secret
+    headers = {"Content-Type": "application/json"}
+    if create_signature_fct is not None:
+        headers[app_module.WEBHOOK_SIGNATURE_HEADER] = create_signature_fct(secret, payload)
+    response = client.post(TEST_PATH, data=payload, headers=headers)
     assert response.status_code == expected_status
     assert response.text == expected_reason
