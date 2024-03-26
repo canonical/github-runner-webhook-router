@@ -51,14 +51,13 @@ def webhook_secret_fixture(request) -> Optional[str]:
 
 @pytest.fixture(name="app", autouse=True)
 def app_fixture(
-    webhook_logs_dir: Path, process_count: int, webhook_secret: Optional[str]
+    webhook_logs_dir: Path, process_count: int, webhook_secret: Optional[str], monkeypatch: pytest.MonkeyPatch
 ) -> Iterator[None]:
     """Setup and run the flask app."""
+    monkeypatch.setenv("WEBHOOK_LOGS_DIR", str(webhook_logs_dir))
     os.environ["WEBHOOK_LOGS_DIR"] = str(webhook_logs_dir)
     if webhook_secret:
-        os.environ["WEBHOOK_SECRET"] = webhook_secret
-    else:
-        os.environ.pop("WEBHOOK_SECRET", None)
+        monkeypatch.setenv("WEBHOOK_SECRET", webhook_secret)
 
     # use subprocess to run the app using gunicorn with multiple workers
     command = f"gunicorn -w {process_count} --bind {BIND_HOST}:{BIND_PORT} src.app:app"
