@@ -17,6 +17,7 @@ from typing import Iterator, Optional
 
 import pytest
 import requests
+from flask import Flask
 
 from src.app import WEBHOOK_SIGNATURE_HEADER
 
@@ -49,9 +50,12 @@ def webhook_secret_fixture(request) -> Optional[str]:
     return secrets.token_hex(16) if request.param else None
 
 
-@pytest.fixture(name="app", autouse=True)
+@pytest.fixture(name="app")
 def app_fixture(
-    webhook_logs_dir: Path, process_count: int, webhook_secret: Optional[str], monkeypatch: pytest.MonkeyPatch
+    webhook_logs_dir: Path,
+    process_count: int,
+    webhook_secret: Optional[str],
+    monkeypatch: pytest.MonkeyPatch,
 ) -> Iterator[None]:
     """Setup and run the flask app."""
     monkeypatch.setenv("WEBHOOK_LOGS_DIR", str(webhook_logs_dir))
@@ -106,7 +110,11 @@ def _request(payload: dict, webhook_secret: Optional[str]) -> requests.Response:
 
 
 def test_receive_webhook(
-    webhook_logs_dir: Path, process_count: int, webhook_secret: Optional[str]
+    webhook_logs_dir: Path,
+    process_count: int,
+    webhook_secret: Optional[str],
+    # app argument is not used here but necessary for the fixture to run
+    app: Flask,  # pylint: disable = unused-argument
 ):
     """
     arrange: given a running app with a process count and a webhook logs directory

@@ -1,5 +1,8 @@
 #  Copyright 2024 Canonical Ltd.
 #  See LICENSE file for licensing details.
+
+"""Helper functions for the unit tests."""
+
 import hashlib
 import hmac
 
