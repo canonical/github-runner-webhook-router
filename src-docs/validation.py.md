@@ -22,8 +22,6 @@ verify_signature(
 
 Verify that the payload was sent from GitHub by validating SHA256. 
 
-Raise error if the signature doesn't match. 
-
 
 
 **Args:**

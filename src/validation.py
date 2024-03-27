@@ -10,8 +10,6 @@ import hmac
 def verify_signature(payload: bytes, secret_token: str, signature_header: str) -> bool:
     """Verify that the payload was sent from GitHub by validating SHA256.
 
-    Raise error if the signature doesn't match.
-
     Args:
         payload: original request body to verify
         secret_token: GitHub app webhook token (WEBHOOK_SECRET)
