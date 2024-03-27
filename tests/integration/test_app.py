@@ -24,14 +24,6 @@ BIND_PORT = 5000
 BASE_URL = f"http://{BIND_HOST}:{BIND_PORT}"
 
 
-@pytest.fixture(name="webhook_logs_dir")
-def webhook_logs_dir_fixture(tmp_path: Path) -> Path:
-    """Create a dir for the webhook logs."""
-    logs_dir = tmp_path / "webhook_logs"
-    logs_dir.mkdir()
-    return logs_dir
-
-
 @pytest.fixture(name="process_count")
 def process_count_fixture() -> int:
     """Return the number of processes."""
