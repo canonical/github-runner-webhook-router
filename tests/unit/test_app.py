@@ -4,8 +4,9 @@
 """The unit tests for the  flask app."""
 
 import json
+import secrets
 from pathlib import Path
-from typing import Iterator
+from typing import Callable, Iterator
 
 import pytest
 from flask import Flask
@@ -13,6 +14,7 @@ from flask.testing import FlaskClient
 from werkzeug.exceptions import BadRequest, UnsupportedMediaType
 
 import src.app as app_module
+from tests.unit.helpers import create_correct_signature, create_incorrect_signature
 
 TEST_PATH = "/webhook"
 
@@ -86,3 +88,45 @@ def test_non_json_request(client: FlaskClient, webhook_logs: Path):
     response = client.post(TEST_PATH, data="bad data", content_type="application/json")
     assert response.status_code == BadRequest.code
     assert not webhook_logs.exists()
+
+
+@pytest.mark.parametrize(
+    "create_signature_fct, expected_status, expected_reason",
+    [
+        pytest.param(
+            create_correct_signature,
+            200,
+            "",
+            id="correct signature",
+        ),
+        pytest.param(
+            create_incorrect_signature,
+            403,
+            "Signature validation failed!",
+            id="incorrect signature",
+        ),
+        pytest.param(None, 403, "X-Hub-signature-256 header is missing!", id="missing signature"),
+    ],
+)
+def test_webhook_validation(
+    client: FlaskClient,
+    create_signature_fct: Callable[[str, bytes], str],
+    expected_status: int,
+    expected_reason: str,
+):
+    """
+    arrange: A test client and webhook secrets enabled.
+    act: Post a request to the webhook endpoint.
+    assert: Expected status code and reason.
+    """
+    secret = secrets.token_hex(16)
+    payload_value = secrets.token_hex(16)
+    payload = json.dumps({"value": payload_value}).encode("utf-8")
+
+    app_module.app.config["WEBHOOK_SECRET"] = secret
+    headers = {"Content-Type": "application/json"}
+    if create_signature_fct is not None:
+        headers[app_module.WEBHOOK_SIGNATURE_HEADER] = create_signature_fct(secret, payload)
+    response = client.post(TEST_PATH, data=payload, headers=headers)
+    assert response.status_code == expected_status
+    assert response.text == expected_reason
