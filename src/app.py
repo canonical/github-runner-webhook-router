@@ -61,13 +61,16 @@ def handle_github_webhook() -> tuple[str, int]:
     """
     if secret := app.config.get("WEBHOOK_SECRET"):
         if not (signature := request.headers.get(WEBHOOK_SIGNATURE_HEADER)):
+            app.logger.debug(
+                "X-Hub-signature-256 header is missing in request from %s", request.origin
+            )
             return "X-Hub-signature-256 header is missing!", 403
 
         if not verify_signature(
             payload=request.data, secret_token=secret, signature_header=signature
         ):
+            app.logger.debug("Signature validation failed in request from %s", request.origin)
             return "Signature validation failed!", 403
-
     payload = request.get_json()
     app.logger.debug("Received webhook: %s", payload)
     webhook_logger.log(logging.INFO, json.dumps(payload))
