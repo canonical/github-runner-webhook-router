@@ -7,8 +7,8 @@ from typing import Callable
 
 import pytest
 
-from webhook_router.validation import verify_signature
 from tests.unit.helpers import create_correct_signature, create_incorrect_signature
+from webhook_router.validation import verify_signature
 
 
 @pytest.mark.parametrize(
