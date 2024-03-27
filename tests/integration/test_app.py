@@ -17,7 +17,7 @@ from typing import Iterator, Optional
 import pytest
 import requests
 
-from src.app import WEBHOOK_SIGNATURE_HEADER
+from webhook_router.app import WEBHOOK_SIGNATURE_HEADER
 
 BIND_HOST = "localhost"
 BIND_PORT = 5000
@@ -61,7 +61,7 @@ def app_fixture(
         monkeypatch.setenv("WEBHOOK_SECRET", webhook_secret)
 
     # use subprocess to run the app using gunicorn with multiple workers
-    command = f"gunicorn -w {process_count} --bind {BIND_HOST}:{BIND_PORT} src.app:app"
+    command = f"gunicorn -w {process_count} --bind {BIND_HOST}:{BIND_PORT} webhook_router.app:app"
 
     with subprocess.Popen(command.split()) as p:  # nosec
         # It might take some time for the server to start

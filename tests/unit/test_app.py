@@ -13,7 +13,7 @@ from flask import Flask
 from flask.testing import FlaskClient
 from werkzeug.exceptions import BadRequest, UnsupportedMediaType
 
-import src.app as app_module
+import webhook_router.app as app_module
 from tests.unit.helpers import create_correct_signature, create_incorrect_signature
 
 TEST_PATH = "/webhook"

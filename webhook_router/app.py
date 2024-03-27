@@ -1,5 +1,5 @@
-# Copyright 2024 Canonical Ltd.
-# See LICENSE file for licensing details.
+#  Copyright 2024 Canonical Ltd.
+#  See LICENSE file for licensing details.
 
 """Flask application which receives GitHub webhooks and logs those."""
 import json
@@ -11,7 +11,7 @@ from pathlib import Path
 
 from flask import Flask, request
 
-from src.validation import verify_signature
+from webhook_router.validation import verify_signature
 
 WEBHOOK_SIGNATURE_HEADER = "X-Hub-Signature-256"
 

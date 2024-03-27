@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# Copyright 2024 Ubuntu
-# See LICENSE file for licensing details.
+#  Copyright 2024 Canonical Ltd.
+#  See LICENSE file for licensing details.
 
 """Flask Charm entrypoint."""
 
