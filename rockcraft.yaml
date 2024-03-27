@@ -1,0 +1,37 @@
+# Copyright 2024 Canonical Ltd.
+# See LICENSE file for licensing details.
+
+name: github-runner-webhook-router
+base: ubuntu@22.04
+version: '0.1'
+summary: Forwards webhooks to a message queue to be consumed to spawn runners.  # 79 char long summary
+description: |
+    The github-runner-webhook-router is a simple Flask application that listens for incoming webhooks
+    from GitHub and places a translation of those in a message queue for a runner to pick up and process.
+    It is intended to be used together with the Github Runner operator in reactive mode.
+license: Apache-2.0
+platforms:
+    amd64:
+
+# To ensure the flask-framework extension works properly, your Flask application
+# should have an `app.py` file with an `app` object as the WSGI entrypoint.
+extensions:
+    - flask-framework
+
+
+# Uncomment the sections you need and adjust according to your requirements.
+parts:
+#    flask/dependencies:
+#     stage-packages:
+#       # list required packages or slices for your flask application below.
+#       - libpq-dev
+
+    flask-framework/install-app:
+     prime:
+       # By default, only the files in app/, templates/, static/, and app.py
+       # are copied into the image. You can modify the list below to override
+       # the default list and include or exclude specific files/directories
+       # in your project.
+       # Note: Prefix each entry with "flask/app/" followed by the local path.
+       - flask/app/app.py
+       - flask/app/webhook_router
