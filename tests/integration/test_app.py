@@ -16,7 +16,6 @@ from typing import Iterator, Optional
 
 import pytest
 import requests
-from flask import Flask
 
 from src.app import WEBHOOK_SIGNATURE_HEADER
 
@@ -107,12 +106,11 @@ def _request(payload: dict, webhook_secret: Optional[str]) -> requests.Response:
     return requests.post(f"{BASE_URL}/webhook", data=payload_bytes, headers=headers, timeout=1)
 
 
+@pytest.mark.usefixtures("app")
 def test_receive_webhook(
     webhook_logs_dir: Path,
     process_count: int,
     webhook_secret: Optional[str],
-    # app argument is not used here but necessary for the fixture to run
-    app: Flask,  # pylint: disable = unused-argument
 ):
     """
     arrange: given a running app with a process count and a webhook logs directory
