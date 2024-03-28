@@ -1,5 +1,6 @@
-# This file configures Charmcraft.
-# See https://juju.is/docs/sdk/charmcraft-config for guidance.
+# Copyright 2024 Canonical Ltd.
+# See LICENSE file for licensing details.
+
 name: github-runner-webhook-router
 
 type: charm
