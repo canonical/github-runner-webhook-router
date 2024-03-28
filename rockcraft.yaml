@@ -21,11 +21,11 @@ extensions:
 
 # Uncomment the sections you need and adjust according to your requirements.
 parts:
-#    flask/dependencies:
-#     stage-packages:
-#       # list required packages or slices for your flask application below.
-#       - libpq-dev
-
+    flask-framework/dependencies:
+        # Exclude pyproject.yaml so that the python plugin doesn't handle this project as a package
+      override-build: |
+          rm -f pyproject.toml
+          craftctl default
     flask-framework/install-app:
      prime:
        # By default, only the files in app/, templates/, static/, and app.py
