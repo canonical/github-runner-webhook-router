@@ -16,7 +16,7 @@ WEBHOOK_SIGNATURE_HEADER = "X-Hub-Signature-256"
 app = Flask(__name__)
 app.config.from_prefixed_env()
 
-webhook_secret = os.environ.get("WEBHOOK_SECRET")
+webhook_secret = os.environ.get("FLASK_WEBHOOK_SECRET")
 if webhook_secret:
     app.config["WEBHOOK_SECRET"] = webhook_secret
 

@@ -23,6 +23,7 @@ extensions:
   - flask-framework
 
 config:
-  secret:
-    type: string
-    description: "The secret used to validate the webhook"
+  options:
+    webhook-secret:
+      type: string
+      description: "The secret used to validate the webhook"
