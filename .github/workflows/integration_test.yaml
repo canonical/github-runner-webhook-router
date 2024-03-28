@@ -5,8 +5,10 @@ on:
 
 jobs:
   integration-tests:
-    uses: canonical/operator-workflows/.github/workflows/integration_test.yaml@main
+    uses: canonical/operator-workflows/.github/workflows/integration_test.yaml@craft-channel
     secrets: inherit
     with:
       self-hosted-runner: true
       self-hosted-runner-label: "edge"
+      rockcraft-channel: latest/edge
+      charmcraft-channel: latest/edge

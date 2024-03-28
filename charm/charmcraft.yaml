@@ -1,0 +1,30 @@
+# Copyright 2024 Canonical Ltd.
+# See LICENSE file for licensing details.
+
+name: github-runner-webhook-router
+
+type: charm
+
+bases:
+  - build-on:
+    - name: ubuntu
+      channel: "22.04"
+    run-on:
+    - name: ubuntu
+      channel: "22.04"
+
+summary: A webserver which forwards webhooks from Github to a mq.
+
+description: |
+    The github-runner-webhook-router is a simple Flask application that listens for incoming webhooks
+    from GitHub and places a translation of those in a message queue for a runner to pick up and process.
+    It is intended to be used together with the Github Runner operator in reactive mode.
+
+extensions:
+  - flask-framework
+
+config:
+  options:
+    webhook-secret:
+      type: string
+      description: "The secret used to validate the webhook"
