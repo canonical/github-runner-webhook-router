@@ -10,3 +10,7 @@ jobs:
     with:
       self-hosted-runner: true
       self-hosted-runner-label: "edge"
+      rockcraft-repository: canonical/rockcraft
+      rockcraft-ref: main
+      charmcraft-repository: canonical/charmcraft
+      charmcraft-ref: main
