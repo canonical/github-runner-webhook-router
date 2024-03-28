@@ -3,11 +3,17 @@
 
 """Fixtures for charm tests."""
 
+from pytest import Parser
 
-def pytest_addoption(parser):
+CHARM_FILE_PARAM = "--charm-file"
+FLASK_APP_IMAGE_PARAM = "--flask-app-image"
+
+
+def pytest_addoption(parser: Parser) -> None:
     """Parse additional pytest options.
 
     Args:
         parser: Pytest parser.
     """
-    parser.addoption("--charm-file", action="store")
+    parser.addoption(CHARM_FILE_PARAM, action="store", help="Charm file to be deployed")
+    parser.addoption(FLASK_APP_IMAGE_PARAM, action="store", help="Flask app image to be deployed")
