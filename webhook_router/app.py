@@ -16,10 +16,6 @@ WEBHOOK_SIGNATURE_HEADER = "X-Hub-Signature-256"
 app = Flask(__name__)
 app.config.from_prefixed_env()
 
-webhook_secret = os.environ.get("FLASK_WEBHOOK_SECRET")
-if webhook_secret:
-    app.config["WEBHOOK_SECRET"] = webhook_secret
-
 
 @app.route("/webhook", methods=["POST"])
 def handle_github_webhook() -> tuple[str, int]:
@@ -28,7 +24,7 @@ def handle_github_webhook() -> tuple[str, int]:
     Returns:
         A tuple containing an empty string and 200 status code.
     """
-    if secret := app.config.get("WEBHOOK_SECRET"):
+    if secret := os.environ.get("FLASK_WEBHOOK_SECRET"):
         if not (signature := request.headers.get(WEBHOOK_SIGNATURE_HEADER)):
             app.logger.debug(
                 "X-Hub-signature-256 header is missing in request from %s", request.origin
