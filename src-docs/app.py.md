@@ -8,11 +8,10 @@ Flask application which receives GitHub webhooks and logs those.
 **Global Variables**
 ---------------
 - **WEBHOOK_SIGNATURE_HEADER**
-- **webhook_secret**
 
 ---
 
-<a href="../webhook_router/app.py#L24"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../webhook_router/app.py#L20"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `handle_github_webhook`
 
