@@ -9,7 +9,7 @@ jobs:
     secrets: inherit
     with:
       trivy-image-config: "trivy.yaml"
-      self-hosted-runner: true
-      self-hosted-runner-label: "edge"
+#      self-hosted-runner: true
+#      self-hosted-runner-label: "edge"
       rockcraft-channel: latest/edge
       charmcraft-channel: latest/edge
