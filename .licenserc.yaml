@@ -1,0 +1,10 @@
+header:
+  license:
+    spdx-id: Apache-2.0
+    copyright-owner: Canonical Ltd.
+    content: |
+      Copyright [year] [owner]
+      See LICENSE file for licensing details.
+  paths-ignore:
+    - 'charm/lib/**'
+  comment: on-failure
