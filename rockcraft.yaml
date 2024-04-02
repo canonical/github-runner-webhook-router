@@ -19,7 +19,6 @@ extensions:
     - flask-framework
 
 
-# Uncomment the sections you need and adjust according to your requirements.
 parts:
     flask-framework/dependencies:
         # Exclude pyproject.yaml so that the python plugin doesn't handle this project as a package
