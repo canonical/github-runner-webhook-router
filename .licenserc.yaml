@@ -5,6 +5,21 @@ header:
     content: |
       Copyright [year] [owner]
       See LICENSE file for licensing details.
+  paths:
+    - '**'
   paths-ignore:
+    - '.github/**'
+    - '**/*.json'
+    - '**/*.md'
+    - '**/*.txt'
+    - '.jujuignore'
+    - '.gitignore'
+    - '.licenserc.yaml'
+    - 'CODEOWNERS'
+    - 'LICENSE'
+    - 'trivy.yaml'
+    - 'pyproject.toml'
+    - 'zap_rules.tsv'
+    - 'charm/.gitignore'
     - 'charm/lib/**'
   comment: on-failure
