@@ -6,7 +6,7 @@
 from pytest import Parser
 
 CHARM_FILE_PARAM = "--charm-file"
-FLASK_APP_IMAGE_PARAM = "--flask-app-image"
+FLASK_APP_IMAGE_PARAM = "--github-runner-webhook-router-image"
 
 
 def pytest_addoption(parser: Parser) -> None:
