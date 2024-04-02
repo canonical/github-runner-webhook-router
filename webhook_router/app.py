@@ -46,7 +46,8 @@ def handle_github_webhook() -> tuple[str, int]:
     return "", 200
 
 
-if __name__ == "__main__":
+# Exclude from coverage since unit tests should not run as __main__
+if __name__ == "__main__":  # pragma: no cover
     # Start development server
     app.logger.addHandler(logging.StreamHandler(sys.stdout))
     app.logger.setLevel(logging.DEBUG)
