@@ -11,7 +11,7 @@ Flask application which receives GitHub webhooks and logs those.
 
 ---
 
-<a href="../webhook_router/app.py#L19"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../webhook_router/app.py#L18"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `handle_github_webhook`
 

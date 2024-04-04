@@ -4,7 +4,6 @@
 """Flask application which receives GitHub webhooks and logs those."""
 import json
 import logging
-import sys
 
 from flask import Flask, request
 
@@ -44,6 +43,5 @@ def handle_github_webhook() -> tuple[str, int]:
 # Exclude from coverage since unit tests should not run as __main__
 if __name__ == "__main__":  # pragma: no cover
     # Start development server
-    app.logger.addHandler(logging.StreamHandler(sys.stdout))
     app.logger.setLevel(logging.DEBUG)
     app.run()
