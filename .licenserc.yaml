@@ -18,6 +18,7 @@ header:
     - 'CODEOWNERS'
     - 'LICENSE'
     - 'trivy.yaml'
+    - '.woke.yaml'
     - 'pyproject.toml'
     - 'zap_rules.tsv'
     - 'charm/.gitignore'
