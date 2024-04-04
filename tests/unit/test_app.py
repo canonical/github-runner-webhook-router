@@ -91,7 +91,7 @@ def test_webhook_validation(
     create_signature_fct: Callable[[str, bytes], str],
     expected_status: int,
     expected_reason: str,
-    monkeypatch: pytest.MonkeyPatch,
+    app: Flask,
 ):
     """
     arrange: A test client and webhook secrets enabled.
@@ -101,7 +101,7 @@ def test_webhook_validation(
     secret = secrets.token_hex(16)
     payload_value = secrets.token_hex(16)
     payload = json.dumps({"value": payload_value}).encode("utf-8")
-    monkeypatch.setenv("FLASK_WEBHOOK_SECRET", secret)
+    app.config["WEBHOOK_SECRET"] = secret
     headers = {"Content-Type": "application/json"}
     if create_signature_fct is not None:
         headers[app_module.WEBHOOK_SIGNATURE_HEADER] = create_signature_fct(secret, payload)

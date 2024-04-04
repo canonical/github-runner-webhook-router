@@ -4,7 +4,6 @@
 """Flask application which receives GitHub webhooks and logs those."""
 import json
 import logging
-import os
 import sys
 
 from flask import Flask, request
@@ -24,7 +23,7 @@ def handle_github_webhook() -> tuple[str, int]:
     Returns:
         A tuple containing an empty string and 200 status code.
     """
-    if secret := os.environ.get("FLASK_WEBHOOK_SECRET"):
+    if secret := app.config.get("WEBHOOK_SECRET"):
         if not (signature := request.headers.get(WEBHOOK_SIGNATURE_HEADER)):
             app.logger.debug(
                 "X-Hub-signature-256 header is missing in request from %s", request.origin
