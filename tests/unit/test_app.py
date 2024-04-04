@@ -4,9 +4,7 @@
 """The unit tests for the  flask app."""
 
 import json
-import logging
 import secrets
-import sys
 from typing import Callable, Iterator
 
 import pytest
@@ -31,9 +29,6 @@ def app_fixture() -> Iterator[Flask]:
             "TESTING": True,
         }
     )
-
-    app_module.app.logger.addHandler(logging.StreamHandler(sys.stdout))
-    app_module.app.logger.setLevel(logging.DEBUG)
 
     yield app_module.app
 
