@@ -1,0 +1,4 @@
+rules:
+  # Ignore "master" - While https://github.com/canonical/redis-k8s-operator/pull/78
+  # is not merged
+  - name: master
