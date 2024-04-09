@@ -1,6 +1,6 @@
 <!-- markdownlint-disable -->
 
-<a href="../src/validation.py#L0"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../webhook_router/validation.py#L0"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 # <kbd>module</kbd> `validation.py`
 Module for validating the webhook request. 
@@ -8,7 +8,7 @@ Module for validating the webhook request.
 
 ---
 
-<a href="../src/validation.py#L10"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../webhook_router/validation.py#L10"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `verify_signature`
 

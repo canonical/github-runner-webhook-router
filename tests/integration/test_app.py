@@ -1,87 +1,25 @@
 #  Copyright 2024 Canonical Ltd.
 #  See LICENSE file for licensing details.
 
-"""Integration tests for the flask app."""
+"""Integration tests for the charmed flask application."""
 import hashlib
 import hmac
 import json
-import random
 import secrets
-
-# security considerations for subprocess are not relevant in this module
-import subprocess  # nosec
-from pathlib import Path
-from time import sleep
-from typing import Iterator, Optional
+from typing import Optional, cast
 
 import pytest
 import requests
+from juju.application import Application
+from juju.model import Model
+from pytest_operator.plugin import OpsTest
 
-from src.app import WEBHOOK_SIGNATURE_HEADER
+from webhook_router.app import WEBHOOK_SIGNATURE_HEADER
 
-BIND_HOST = "localhost"
-BIND_PORT = 5000
-BASE_URL = f"http://{BIND_HOST}:{BIND_PORT}"
-
-
-@pytest.fixture(name="webhook_logs_dir")
-def webhook_logs_dir_fixture(tmp_path: Path) -> Path:
-    """Create a dir for the webhook logs."""
-    logs_dir = tmp_path / "webhook_logs"
-    logs_dir.mkdir()
-    return logs_dir
+PORT = 8000
 
 
-@pytest.fixture(name="process_count")
-def process_count_fixture() -> int:
-    """Return the number of processes."""
-    # We do not use randint for cryptographic purposes.
-    return random.randint(2, 5)  # nosec
-
-
-@pytest.fixture(
-    name="webhook_secret",
-    params=[pytest.param(True, id="with_secret"), pytest.param(False, id="without_secret")],
-)
-def webhook_secret_fixture(request) -> Optional[str]:
-    """Return a webhook secret or None."""
-    return secrets.token_hex(16) if request.param else None
-
-
-@pytest.fixture(name="app")
-def app_fixture(
-    webhook_logs_dir: Path,
-    process_count: int,
-    webhook_secret: Optional[str],
-    monkeypatch: pytest.MonkeyPatch,
-) -> Iterator[None]:
-    """Setup and run the flask app."""
-    monkeypatch.setenv("WEBHOOK_LOGS_DIR", str(webhook_logs_dir))
-    if webhook_secret:
-        monkeypatch.setenv("WEBHOOK_SECRET", webhook_secret)
-
-    # use subprocess to run the app using gunicorn with multiple workers
-    command = f"gunicorn -w {process_count} --bind {BIND_HOST}:{BIND_PORT} src.app:app"
-
-    with subprocess.Popen(command.split()) as p:  # nosec
-        # It might take some time for the server to start
-        for _ in range(10):
-            try:
-                requests.get(BASE_URL, timeout=1)
-            except requests.exceptions.ConnectionError:
-                print("Waiting for the app to start")
-                sleep(1)
-            else:
-                break
-        else:
-            p.terminate()
-            assert False, "The app did not start"
-
-        yield
-        p.terminate()
-
-
-def _request(payload: dict, webhook_secret: Optional[str]) -> requests.Response:
+def _request(payload: dict, webhook_secret: Optional[str], base_url: str) -> requests.Response:
     """Send a request to the webhook endpoint.
 
     If webhook_secret is provided, the request is signed.
@@ -89,6 +27,7 @@ def _request(payload: dict, webhook_secret: Optional[str]) -> requests.Response:
     Args:
         payload: The payload to send.
         webhook_secret: The webhook secret.
+        base_url: The base url of the webhook endpoint.
 
     Returns:
         The response.
@@ -103,27 +42,86 @@ def _request(payload: dict, webhook_secret: Optional[str]) -> requests.Response:
         signature = "sha256=" + hash_object.hexdigest()
         headers[WEBHOOK_SIGNATURE_HEADER] = signature
 
-    return requests.post(f"{BASE_URL}/webhook", data=payload_bytes, headers=headers, timeout=1)
+    return requests.post(f"{base_url}/webhook", data=payload_bytes, headers=headers, timeout=1)
 
 
-@pytest.mark.usefixtures("app")
-def test_receive_webhook(
-    webhook_logs_dir: Path,
-    process_count: int,
+async def _get_gunicorn_log(ops_test: OpsTest, unit_name: str) -> str:
+    """Get the gunicorn log from the charm unit.
+
+    Args:
+        ops_test: The ops_test plugin.
+        unit_name: The unit name.
+
+    Returns:
+        The gunicorn log.
+    """
+    ret, stdout, stderr = await ops_test.juju(
+        "ssh", "--container", "flask-app", unit_name, "cat", "/var/log/flask/error.log"
+    )
+
+    assert ret == 0, f"Failed to retrieve gunicorn log, {stderr}"
+    assert stdout is not None, "No output from gunicorn log"
+    return stdout
+
+
+async def _get_unit_ips(ops_test: OpsTest, application_name: str) -> tuple[str, ...]:
+    """Retrieve unit ip addresses of a certain application.
+
+    Args:
+        ops_test: ops_test plugin.
+        application_name: application name.
+
+    Returns:
+        a tuple containing unit ip addresses.
+    """
+    _, status, _ = await ops_test.juju("status", "--format", "json")
+    status = json.loads(status)
+    units = status["applications"][application_name]["units"]
+    return tuple(
+        cast(str, unit_status["address"])
+        for _, unit_status in sorted(units.items(), key=lambda kv: int(kv[0].split("/")[-1]))
+    )
+
+
+@pytest.mark.parametrize(
+    "webhook_secret",
+    [
+        pytest.param(
+            secrets.token_hex(16),
+            id="with secret",
+        ),
+        pytest.param(
+            "",
+            id="without secret",
+        ),
+    ],
+)
+async def test_receive_webhook(
+    worker_count: int,
+    ops_test: OpsTest,
+    model: Model,
+    app: Application,
     webhook_secret: Optional[str],
 ):
     """
-    arrange: given a running app with a process count and a webhook logs directory
-    act: call the webhook endpoint with process_count payloads
-    assert: the payloads are written to log files
+    arrange: given a running charm with an amount of workers running the flask app
+    act: call the webhook endpoint with worker_count payloads
+    assert: successful requests and that the payloads are written to the gunicorn log
     """
-    for i in range(process_count):
-        resp = _request(payload={f"test{i}": f"data{i}"}, webhook_secret=webhook_secret)
+    await app.set_config({"webhook-secret": webhook_secret})
+    await model.wait_for_idle(apps=[app.name], status="active")
+
+    payloads = [{f"test{i}": f"data{i}"} for i in range(worker_count)]
+
+    unit = app.units[0]
+    address = (await _get_unit_ips(ops_test=ops_test, application_name=app.name))[0]
+    for payload in payloads:
+        resp = _request(
+            payload=payload, webhook_secret=webhook_secret, base_url=f"http://{address}:{PORT}"
+        )
         assert resp.status_code == 200
-    assert webhook_logs_dir.exists()
-    log_files = list(webhook_logs_dir.glob("webhooks.*.log"))
-    assert len(log_files) <= process_count
-    log_files_content: set[str] = set()
-    for log_file in log_files:
-        log_files_content.update(filter(lambda s: s, log_file.read_text().split("\n")))
-    assert log_files_content == {f'{{"test{i}": "data{i}"}}' for i in range(process_count)}
+
+    logs = await _get_gunicorn_log(ops_test=ops_test, unit_name=unit.name)
+
+    for payload in payloads:
+        assert json.dumps(payload) in logs
