@@ -3,8 +3,6 @@ name: Publish to edge
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
 
 jobs:
   publish-to-edge:
@@ -12,3 +10,5 @@ jobs:
     secrets: inherit
     with:
       channel: latest/edge
+      charm-directory: charm
+      charmcraft-channel: "latest/edge"
