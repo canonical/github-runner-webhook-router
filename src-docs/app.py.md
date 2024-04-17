@@ -7,11 +7,13 @@ Flask application which receives GitHub webhooks and logs those.
 
 **Global Variables**
 ---------------
+- **SUPPORTED_GITHUB_EVENT**
+- **GITHUB_EVENT_HEADER**
 - **WEBHOOK_SIGNATURE_HEADER**
 
 ---
 
-<a href="../webhook_router/app.py#L18"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../webhook_router/app.py#L31"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `handle_github_webhook`
 
@@ -29,7 +31,7 @@ Receive a GitHub webhook and append the payload to a file.
 
 ---
 
-<a href="../webhook_router/app.py#L44"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../webhook_router/app.py#L78"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `health_check`
 

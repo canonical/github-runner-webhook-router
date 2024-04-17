@@ -23,12 +23,35 @@ description: |
 extensions:
   - flask-framework
 
+requires:
+  mongodb:
+    optional: false
+    interface: mongodb_client
+    limit: 1
+
+
 config:
   options:
     log-level:
         type: string
         description: "The log level to use for the application logs. Use any of: CRITICAL, ERROR, WARNING, INFO, DEBUG, NOTSET"
         default: "INFO"
+    github-default-labels:
+      type: string
+      description: >-
+        Comma separated list of labels to ignore while routing because they are always present.
+      default: "self-hosted,linux"
+    flavours:
+         type: string
+         description: |
+            YAML configuration of the assignment of labels to flavours to which the job is to be routed.
+            The format is comprised of a list of flavors with respective labels:
+            - flavour1: [label1, label2]
+            - flavour2: [label1, label3]
+            If a job matches multiple flavours, the first flavour matching defined in this configuration will be used.
+            If only the github provided default labels (self-hosted, linux) are used, the first flavour in the list will be used.
+            Note that labels are treated case-insensitive. You should also not use the char # due to technical limitations.
+         required: true
     webhook-secret:
       type: string
       description: "The secret used to validate the webhook"

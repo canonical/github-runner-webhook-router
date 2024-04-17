@@ -3,41 +3,42 @@
 
 """The main entry point for the charmed webhook router."""
 import logging
-
-from flask import Flask
-
-# The charm sets up gunicorn to use an app.py file with a flask app named app.
-from webhook_router.app import app
+import os
 
 
 class ConfigError(Exception):
     """Raised when a configuration error occurs."""
-
     pass
 
 
-def _set_up_logging(app: Flask) -> None:
-    """Set up logging for the application.
+class IntegrationMissingError(Exception):
+    """Raised when an integration is missing."""
+    pass
+
+
+def _set_up_logging() -> None:
+    """Set up logging.
 
     Raises:
         ConfigError: If the log level is invalid.
     """
-    _set_log_handlers(app)
-    _set_log_level(app)
+    root_logger = logging.getLogger()
+    _set_log_handlers(root_logger)
+    _set_log_level(root_logger)
 
 
-def _set_log_handlers(app: Flask) -> None:
-    """Set the log handlers of the application.
+def _set_log_handlers(logger: logging.Logger) -> None:
+    """Set the log handlers for the particular logging.
 
     Args:
         app: The Flask application.
     """
     # we use the gunicorn logger to ensure that logs are captured and transmitted to loki
     gunicorn_logger = logging.getLogger('gunicorn.error')
-    app.logger.handlers = gunicorn_logger.handlers
+    logger.handlers = gunicorn_logger.handlers
 
 
-def _set_log_level(app: Flask) -> None:
+def _set_log_level(logger: logging.Logger) -> None:
     """Set the log level of the application.
 
     Args:
@@ -56,12 +57,24 @@ def _set_log_level(app: Flask) -> None:
         'DEBUG': logging.DEBUG,
         'NOTSET': logging.NOTSET,
     }
+    level_name = os.environ.get("FLASK_LOG_LEVEL", "INFO")
     try:
-        level = level_name_mapping[app.config.get("LOG_LEVEL", "INFO")]
+        level = level_name_mapping[level_name]
     except KeyError:
-        raise ConfigError(f"Invalid log level: {app.config.get('LOG_LEVEL')}")
-    app.logger.setLevel(level)
+        raise ConfigError(f"Invalid log level: {level_name}")
+    logger.setLevel(level)
 
 
 # the charm will run this file with gunicorn, so we need to set up logging
-_set_up_logging(app)
+_set_up_logging()
+
+if os.environ.get("MONGODB_DB_CONNECT_STRING") is None:
+    raise IntegrationMissingError("mongodb integration is missing")
+
+# The charm sets up gunicorn to use an app.py file with a flask app named app.
+from webhook_router.app import app, config_app, ConfigError as AppConfigError
+
+try:
+    config_app(app)
+except AppConfigError as exc:
+    raise ConfigError(f"Invalid app config: {exc}") from exc
