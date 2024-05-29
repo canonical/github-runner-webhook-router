@@ -24,6 +24,24 @@ Receive a GitHub webhook and append the payload to a file.
 
 
 **Returns:**
+  A tuple containing an empty string and 200 status code on success or  a failure message and 403 status code. 
+
+
+---
+
+<a href="../webhook_router/app.py#L44"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+
+## <kbd>function</kbd> `health_check`
+
+```python
+health_check() → tuple[str, int]
+```
+
+Health check endpoint. 
+
+
+
+**Returns:**
   A tuple containing an empty string and 200 status code. 
 
 

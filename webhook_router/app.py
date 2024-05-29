@@ -20,7 +20,8 @@ def handle_github_webhook() -> tuple[str, int]:
     """Receive a GitHub webhook and append the payload to a file.
 
     Returns:
-        A tuple containing an empty string and 200 status code.
+        A tuple containing an empty string and 200 status code on success or
+        a failure message and 403 status code.
     """
     if secret := app.config.get("WEBHOOK_SECRET"):
         if not (signature := request.headers.get(WEBHOOK_SIGNATURE_HEADER)):
@@ -37,6 +38,16 @@ def handle_github_webhook() -> tuple[str, int]:
     payload = request.get_json()
     app.logger.debug("Received webhook: %s", payload)
     app.logger.info(json.dumps(payload))
+    return "", 200
+
+
+@app.route("/health", methods=["GET"])
+def health_check() -> tuple[str, int]:
+    """Health check endpoint.
+
+    Returns:
+        A tuple containing an empty string and 200 status code.
+    """
     return "", 200
 
 
