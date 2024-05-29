@@ -110,3 +110,14 @@ def test_webhook_validation(
 
     assert response.status_code == expected_status
     assert response.text == expected_reason
+
+
+def test_health_check(client: FlaskClient):
+    """
+    arrange: A test client.
+    act: Request the health check endpoint.
+    assert: 200 status code is returned.
+    """
+    response = client.get("/health")
+    assert response.status_code == 200
+    assert response.data == b""
