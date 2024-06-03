@@ -25,6 +25,10 @@ extensions:
 
 config:
   options:
+    log-level:
+        type: string
+        description: "The log level to use for the application logs"
+        default: "INFO"
     webhook-secret:
       type: string
       description: "The secret used to validate the webhook"
