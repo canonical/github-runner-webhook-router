@@ -23,7 +23,7 @@ SUPPORTED_GITHUB_EVENT = "workflow_job"
 GITHUB_EVENT_HEADER = "X-Github-Event"
 WEBHOOK_SIGNATURE_HEADER = "X-Hub-Signature-256"
 
-app = Flask(__name__.split('.')[0])
+app = Flask(__name__.split(".", maxsplit=1)[0])
 
 
 class ConfigError(Exception):
