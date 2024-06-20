@@ -13,25 +13,32 @@ Flask application which receives GitHub webhooks and logs those.
 
 ---
 
-<a href="../webhook_router/app.py#L31"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../webhook_router/app.py#L33"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
-## <kbd>function</kbd> `handle_github_webhook`
+## <kbd>function</kbd> `config_app`
 
 ```python
-handle_github_webhook() → tuple[str, int]
+config_app(flask_app: Flask) → None
 ```
 
-Receive a GitHub webhook and append the payload to a file. 
+Configure the application. 
 
 
 
-**Returns:**
-  A tuple containing an empty string and 200 status code on success or  a failure message and 403 status code. 
+**Args:**
+ 
+ - <b>`flask_app`</b>:  The Flask application to configure. 
+
+
+
+**Raises:**
+ 
+ - <b>`ConfigError`</b>:  If there is a validation error 
 
 
 ---
 
-<a href="../webhook_router/app.py#L78"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../webhook_router/app.py#L85"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `health_check`
 
@@ -45,5 +52,32 @@ Health check endpoint.
 
 **Returns:**
   A tuple containing an empty string and 200 status code. 
+
+
+---
+
+<a href="../webhook_router/app.py#L95"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+
+## <kbd>function</kbd> `handle_github_webhook`
+
+```python
+handle_github_webhook() → tuple[str, int]
+```
+
+Receive a GitHub webhook and append the payload to a file. 
+
+
+
+**Returns:**
+  A tuple containing an empty string and 200 status code on success or  a failure message and 4xx status code. 
+
+
+---
+
+## <kbd>class</kbd> `ConfigError`
+Raised when a configuration error occurs. 
+
+
+
 
 
