@@ -130,7 +130,9 @@ async def test_receive_webhook_not_forwarded(ops_test: OpsTest, model: Model, ap
     address = (await _get_unit_ips(ops_test=ops_test, application_name=app.name))[0]
     for payload in payloads:
         # bandit thinks webhook_secret is a hardcoded password, ignore for the test
-        resp = _request(payload=payload, webhook_secret="", base_url=f"http://{address}:{PORT}")  # nosec
+        resp = _request(
+            payload=payload, webhook_secret="", base_url=f"http://{address}:{PORT}"
+        )  # nosec
         assert resp.status_code == 200
 
     jobs_by_flavour = await _get_jobs_from_mq(
