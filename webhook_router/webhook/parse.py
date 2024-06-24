@@ -6,8 +6,6 @@
 from webhook_router.webhook import Job
 
 WORKFLOW_JOB = "workflow_job"
-Flavor = str
-Label = str
 
 
 class ParseError(Exception):

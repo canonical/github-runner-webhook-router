@@ -11,7 +11,7 @@ Module for parsing the webhook payload.
 
 ---
 
-<a href="../webhook_router/webhook/parse.py#L17"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../webhook_router/webhook/parse.py#L15"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `webhook_to_job`
 
@@ -41,7 +41,7 @@ Parse a raw json payload and extract the required information.
 
 ---
 
-<a href="../webhook_router/webhook/parse.py#L13"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../webhook_router/webhook/parse.py#L11"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>class</kbd> `ParseError`
 An error occurred during the parsing of the payload. 
