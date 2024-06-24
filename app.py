@@ -8,12 +8,10 @@ import os
 
 class ConfigError(Exception):
     """Raised when a configuration error occurs."""
-    pass
 
 
 class IntegrationMissingError(Exception):
     """Raised when an integration is missing."""
-    pass
 
 
 def _set_up_logging() -> None:
