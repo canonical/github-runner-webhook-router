@@ -17,8 +17,8 @@ class JobStatus(str, Enum):
         WAITING: The job is waiting.
     """
 
-    IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
+    IN_PROGRESS = "in_progress"
     QUEUED = "queued"
     WAITING = "waiting"
 
