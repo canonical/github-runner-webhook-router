@@ -5,7 +5,6 @@
 import logging
 
 import yaml
-from flask import Config as FlaskConfig
 from flask import Flask, request
 
 from webhook_router.mq import add_job_to_queue
@@ -35,17 +34,35 @@ def config_app(flask_app: Flask) -> None:
 
     Args:
         flask_app: The Flask application to configure.
-
-    Raises:
-        ConfigError: If there is a validation error
     """
     flask_app.config.from_prefixed_env()
-    is_valid, err_msg = _validate_configs_are_set(flask_app.config)
-    if not is_valid:
-        raise ConfigError(err_msg)
-    yaml_str = flask_app.config["FLAVOURS"]
+    flavor_labels_mapping = _parse_flavors_config(flask_app.config.get("FLAVOURS", ""))
+    github_default_labels = _parse_github_default_labels_config(
+        flask_app.config.get("GITHUB_DEFAULT_LABELS", "")
+    )
+    flask_app.config["LABEL_FLAVOR_MAPPING"] = to_labels_flavor_mapping(
+        flavor_labels_mapping,
+        ignore_labels=github_default_labels,
+    )
+
+
+def _parse_flavors_config(flavors_config: str) -> FlavorLabelsMapping:
+    """Get the flavor labels mapping.
+
+    Args:
+        flavors_config: The flavors to get the mapping for.
+
+    Returns:
+        The flavor labels mapping.
+
+    Raises:
+        ConfigError: If the FLAVOURS config is invalid.
+    """
+    if not flavors_config:
+        raise ConfigError("FLAVOURS config is not set!")
+
     try:
-        flavor_labels_mapping = yaml.safe_load(yaml_str)
+        flavor_labels_mapping = yaml.safe_load(flavors_config)
     except yaml.YAMLError as exc:
         raise ConfigError("Invalid 'FLAVOURS' config. Invalid yaml.") from exc
     if not isinstance(flavor_labels_mapping, list):
@@ -54,32 +71,26 @@ def config_app(flask_app: Flask) -> None:
         )
     flavor_labels_mapping = [tuple(item.items())[0] for item in flavor_labels_mapping]
     try:
-        flavor_labels_mapping = FlavorLabelsMapping(mapping=flavor_labels_mapping)
+        return FlavorLabelsMapping(mapping=flavor_labels_mapping)
     except ValueError as exc:
         raise ConfigError("Invalid 'FLAVOURS' config. Invalid format.") from exc
-    flask_app.config["LABEL_FLAVOR_MAPPING"] = to_labels_flavor_mapping(
-        flavor_labels_mapping,
-        ignore_labels=set(flask_app.config["GITHUB_DEFAULT_LABELS"].split(",")),
-    )
 
 
-def _validate_configs_are_set(config: FlaskConfig) -> tuple[bool, str]:
-    """Validate the application configuration.
+def _parse_github_default_labels_config(github_default_labels_config: str) -> set[str]:
+    """Get the default labels from the config.
 
     Args:
-        config: The application configuration.
+        github_default_labels_config: The default labels config.
 
     Returns:
-        A tuple containing a boolean indicating if the configuration is valid and a message
-        on failure.
+        The default labels.
+
+    Raises:
+        ConfigError: If the GITHUB_DEFAULT_LABELS config is invalid.
     """
-    if not config.get("FLAVOURS"):
-        return False, "FLAVOURS config is not set!"
-
-    if not config.get("GITHUB_DEFAULT_LABELS"):
-        return False, "GITHUB_DEFAULT_LABELS config is not set!"
-
-    return True, ""
+    if not (labels := github_default_labels_config):
+        raise ConfigError("GITHUB_DEFAULT_LABELS config is not set!")
+    return set(labels.split(","))
 
 
 @app.route("/health", methods=["GET"])
