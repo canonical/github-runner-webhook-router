@@ -35,8 +35,6 @@ def _add_to_queue(msg: str, queue_name: str) -> None:
         queue_name: The name of the queue to add the message to.
     """
     with Connection(MONGODB_DB_CONNECT_STR) as conn:
-        simple_queue = conn.SimpleQueue(queue_name)
-
-        simple_queue.put(msg, retry=True)
-        logger.debug("Sent: %s to queue %s", msg, queue_name)
-        simple_queue.close()
+        with conn.SimpleQueue(queue_name) as simple_queue:
+            simple_queue.put(msg, retry=True)
+            logger.debug("Sent: %s to queue %s", msg, queue_name)
