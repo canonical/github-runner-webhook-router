@@ -11,7 +11,7 @@ Module for parsing the webhook payload.
 
 ---
 
-<a href="../webhook_router/parse.py#L46"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../webhook_router/parse.py#L50"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `webhook_to_job`
 
@@ -100,6 +100,15 @@ The status of the job.
 
 ## <kbd>class</kbd> `ParseError`
 An error occurred during the parsing of the payload. 
+
+
+
+
+
+---
+
+## <kbd>class</kbd> `ValidationResult`
+ValidationResult(is_valid, msg) 
 
 
 
