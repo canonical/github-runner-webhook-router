@@ -13,10 +13,10 @@ Module for parsing the webhook payload.
 
 <a href="../webhook_router/parse.py#L46"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
-## <kbd>function</kbd> `to_job`
+## <kbd>function</kbd> `webhook_to_job`
 
 ```python
-to_job(webhook: dict) → Job
+webhook_to_job(webhook: dict) → Job
 ```
 
 Parse a raw json payload and extract the required information. 
@@ -30,13 +30,13 @@ Parse a raw json payload and extract the required information.
 
 
 **Returns:**
- The Webhook object. 
+ The parsed Job. 
 
 
 
 **Raises:**
  
- - <b>`ParseError`</b>:  An error occurred during the translation. 
+ - <b>`ParseError`</b>:  An error occurred during parsing. 
 
 
 ---

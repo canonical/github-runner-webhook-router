@@ -2,14 +2,45 @@
 #  See LICENSE file for licensing details.
 
 """Module for parsing the webhook payload."""
+from enum import Enum
 
-from webhook_router.webhook import Job
+from pydantic import BaseModel, HttpUrl
 
 WORKFLOW_JOB = "workflow_job"
 
 
 class ParseError(Exception):
     """An error occurred during the parsing of the payload."""
+
+
+class JobStatus(str, Enum):
+    """The status of the job.
+
+    Attributes:
+        COMPLETED: The job is completed.
+        IN_PROGRESS: The job is in progress.
+        QUEUED: The job is queued.
+        WAITING: The job is waiting.
+    """
+
+    COMPLETED = "completed"
+    IN_PROGRESS = "in_progress"
+    QUEUED = "queued"
+    WAITING = "waiting"
+
+
+class Job(BaseModel):
+    """A class to translate the payload.
+
+    Attributes:
+        labels: The labels of the job.
+        status: The status of the job.
+        run_url: The URL of the job.
+    """
+
+    labels: list[str]
+    status: JobStatus
+    run_url: HttpUrl
 
 
 def webhook_to_job(webhook: dict) -> Job:

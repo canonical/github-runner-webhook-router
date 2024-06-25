@@ -9,10 +9,9 @@ import yaml
 from flask import Flask, request
 
 from webhook_router import router
+from webhook_router.parse import Job, ParseError, webhook_to_job
 from webhook_router.router import FlavorLabelsMapping, RouterError, to_routing_table
 from webhook_router.validation import verify_signature
-from webhook_router.webhook import Job
-from webhook_router.webhook.parse import ParseError, webhook_to_job
 
 SUPPORTED_GITHUB_EVENT = "workflow_job"
 GITHUB_EVENT_HEADER = "X-Github-Event"

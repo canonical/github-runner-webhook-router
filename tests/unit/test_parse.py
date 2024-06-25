@@ -5,8 +5,7 @@
 
 import pytest
 
-from webhook_router.webhook import Job, JobStatus
-from webhook_router.webhook.parse import ParseError, webhook_to_job
+from webhook_router.parse import Job, JobStatus, ParseError, webhook_to_job
 
 FAKE_RUN_URL = "https://api.github.com/repos/fakeusergh-runner-test/actions/runs/8200803099"
 FAKE_LABELS = ["self-hosted", "linux", "arm64"]

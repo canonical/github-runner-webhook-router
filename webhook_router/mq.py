@@ -7,7 +7,7 @@ import os
 
 from kombu import Connection
 
-from webhook_router.webhook import Job
+from webhook_router.parse import Job
 
 MONGODB_DB_CONNECT_STR = os.getenv("MONGODB_DB_CONNECT_STRING")
 

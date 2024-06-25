@@ -7,7 +7,7 @@ import logging
 from pydantic import BaseModel, conlist
 
 from webhook_router.mq import add_job_to_queue
-from webhook_router.webhook import Job, JobStatus
+from webhook_router.parse import Job, JobStatus
 
 logger = logging.getLogger(__name__)
 

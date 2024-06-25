@@ -22,7 +22,7 @@ from webhook_router.app import (
     SUPPORTED_GITHUB_EVENT,
     WEBHOOK_SIGNATURE_HEADER,
 )
-from webhook_router.webhook import Job, JobStatus
+from webhook_router.parse import Job, JobStatus
 
 PORT = 8000
 

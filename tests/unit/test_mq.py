@@ -8,7 +8,7 @@ import pytest
 from kombu import Connection
 
 from webhook_router import mq
-from webhook_router.webhook import Job, JobStatus
+from webhook_router.parse import Job, JobStatus
 
 IN_MEMORY_URI = "memory://"
 

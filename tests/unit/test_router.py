@@ -8,6 +8,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from webhook_router.mq import add_job_to_queue
+from webhook_router.parse import Job, JobStatus
 from webhook_router.router import (
     LABEL_SEPARATOR,
     FlavorLabelsMapping,
@@ -18,7 +19,6 @@ from webhook_router.router import (
     forward,
     to_routing_table,
 )
-from webhook_router.webhook import Job, JobStatus
 
 
 @pytest.fixture(name="add_job_to_queue_mock")

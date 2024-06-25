@@ -16,9 +16,8 @@ from werkzeug.exceptions import BadRequest, UnsupportedMediaType
 import webhook_router.app as app_module
 import webhook_router.router
 from tests.unit.helpers import create_correct_signature, create_incorrect_signature
+from webhook_router.parse import Job, JobStatus, ParseError
 from webhook_router.router import LABEL_SEPARATOR, RouterError, RoutingTable
-from webhook_router.webhook import Job, JobStatus
-from webhook_router.webhook.parse import ParseError
 
 TEST_PATH = "/webhook"
 
