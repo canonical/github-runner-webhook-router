@@ -82,7 +82,7 @@ def app_fixture(
             "TESTING": True,
             "FLAVOURS": flavours_yaml,
             "DEFAULT_SELF_HOSTED_LABELS": "self-hosted,linux",
-            "DEFAULT_FLAVOR": "small",
+            "DEFAULT_FLAVOUR": "small",
         }
     )
     app_module.config_app(app_module.app)
@@ -325,7 +325,7 @@ def test_invalid_app_config_flavours(flavours_yaml: str, expected_err_msg: str):
     app = Flask(__name__)
     app.config["FLAVOURS"] = flavours_yaml
     app.config["DEFAULT_SELF_HOSTED_LABELS"] = "self-hosted,linux"
-    app.config["DEFAULT_FLAVOR"] = "small"
+    app.config["DEFAULT_FLAVOUR"] = "small"
 
     with pytest.raises(app_module.ConfigError) as exc_info:
         app_module.config_app(app)
@@ -340,7 +340,7 @@ def test_invalid_app_config_default_self_hosted_labels_missing(flavours_yaml: st
     """
     app = Flask(__name__)
     app.config["FLAVOURS"] = flavours_yaml
-    app.config["DEFAULT_FLAVOR"] = "small"
+    app.config["DEFAULT_FLAVOUR"] = "small"
 
     with pytest.raises(app_module.ConfigError) as exc_info:
         app_module.config_app(app)
@@ -349,7 +349,7 @@ def test_invalid_app_config_default_self_hosted_labels_missing(flavours_yaml: st
 
 def test_invalid_app_config_default_flavour_missing(flavours_yaml: str):
     """
-    arrange: A valid flavours yaml and missing DEFAULT_FLAVOR.
+    arrange: A valid flavours yaml and missing DEFAULT_FLAVOUR.
     act: Configure the app.
     assert: A ConfigError is raised with the expected error message.
     """
@@ -359,7 +359,7 @@ def test_invalid_app_config_default_flavour_missing(flavours_yaml: str):
 
     with pytest.raises(app_module.ConfigError) as exc_info:
         app_module.config_app(app)
-    assert str(exc_info.value) == "DEFAULT_FLAVOR config is not set!"
+    assert str(exc_info.value) == "DEFAULT_FLAVOUR config is not set!"
 
 
 def _create_valid_data(action: str) -> dict:

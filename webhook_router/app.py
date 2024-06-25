@@ -34,7 +34,7 @@ def config_app(flask_app: Flask) -> None:
     """
     flask_app.config.from_prefixed_env()
     flavor_labels_mapping = _parse_flavor_labels_mapping(flask_app.config.get("FLAVOURS", ""))
-    default_flavor = _parse_default_flavor_config(flask_app.config.get("DEFAULT_FLAVOR", ""))
+    default_flavor = _parse_default_flavor_config(flask_app.config.get("DEFAULT_FLAVOUR", ""))
     default_self_hosted_labels = _parse_default_self_hosted_labels_config(
         flask_app.config.get("DEFAULT_SELF_HOSTED_LABELS", "")
     )
@@ -97,7 +97,7 @@ def _parse_default_flavor_config(default_flavor: str) -> str:
         ConfigError: If the DEFAULT_FLAVOR config is invalid.
     """
     if not (flavor := default_flavor):
-        raise ConfigError("DEFAULT_FLAVOR config is not set!")
+        raise ConfigError("DEFAULT_FLAVOUR config is not set!")
     return flavor
 
 
