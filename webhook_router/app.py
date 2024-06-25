@@ -68,9 +68,18 @@ def _parse_flavor_labels_mapping(flavors_config: str) -> FlavorLabelsMapping:
         raise ConfigError(
             "Invalid 'FLAVOURS' config. Expected a YAML file with a list at the top level."
         )
-    flavor_labels_mapping = [tuple(item.items())[0] for item in flavor_labels_mapping]
+
+    flavors = set()
+    parsed_flavor_labels_mapping = []
+    for item in flavor_labels_mapping:
+        flavor, labels = tuple(item.items())[0]
+        if flavor in flavors:
+            raise ConfigError(f"Invalid 'FLAVOURS' config. Duplicate flavour '{flavor}' found.")
+        flavors.add(flavor)
+        parsed_flavor_labels_mapping.append((flavor, labels))
+
     try:
-        return FlavorLabelsMapping(mapping=flavor_labels_mapping)
+        return FlavorLabelsMapping(mapping=parsed_flavor_labels_mapping)
     except ValueError as exc:
         raise ConfigError("Invalid 'FLAVOURS' config. Invalid format.") from exc
 

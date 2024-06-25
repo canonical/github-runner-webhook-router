@@ -32,7 +32,7 @@ Configure the application.
 
 ---
 
-<a href="../webhook_router/app.py#L112"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../webhook_router/app.py#L121"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `health_check`
 
@@ -50,7 +50,7 @@ Health check endpoint.
 
 ---
 
-<a href="../webhook_router/app.py#L122"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../webhook_router/app.py#L131"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `handle_github_webhook`
 

@@ -284,7 +284,22 @@ small:
 - small:
 """,
             "Invalid 'FLAVOURS' config. Invalid format.",
-            id="invalid format - flavour with labels",
+            id="invalid format - flavour without labels",
+        ),
+        pytest.param(
+            """
+- small:
+  - x64
+  - small
+- large:
+    - arm64
+    - large
+- small:
+    - arm64
+    - small
+""",
+            "Invalid 'FLAVOURS' config. Duplicate flavour 'small' found.",
+            id="duplicate flavour",
         ),
         pytest.param(
             """
