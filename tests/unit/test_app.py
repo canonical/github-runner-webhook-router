@@ -73,7 +73,11 @@ def app_fixture(flavours_yaml: str) -> Iterator[Flask]:
     Setup testing mode and add a stream handler to the logger.
     """
     app_module.app.config.update(
-        {"TESTING": True, "FLAVOURS": flavours_yaml, "GITHUB_DEFAULT_LABELS": "self-hosted,linux"}
+        {
+            "TESTING": True,
+            "FLAVOURS": flavours_yaml,
+            "DEFAULT_SELF_HOSTED_LABELS": "self-hosted,linux",
+        }
     )
     app_module.config_app(app_module.app)
     yield app_module.app
@@ -391,4 +395,4 @@ def test_invalid_app_config_github_default_labels_missing(flavours_yaml: str):
 
     with pytest.raises(app_module.ConfigError) as exc_info:
         app_module.config_app(app)
-    assert str(exc_info.value) == "GITHUB_DEFAULT_LABELS config is not set!"
+    assert str(exc_info.value) == "DEFAULT_SELF_HOSTED_LABELS config is not set!"
