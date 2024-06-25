@@ -34,12 +34,14 @@ def config_app(flask_app: Flask) -> None:
     """
     flask_app.config.from_prefixed_env()
     flavor_labels_mapping = _parse_flavor_labels_mapping(flask_app.config.get("FLAVOURS", ""))
+    default_flavor = _parse_default_flavor_config(flask_app.config.get("DEFAULT_FLAVOR", ""))
     default_self_hosted_labels = _parse_default_self_hosted_labels_config(
         flask_app.config.get("DEFAULT_SELF_HOSTED_LABELS", "")
     )
     flask_app.config["ROUTING_TABLE"] = to_routing_table(
         flavor_labels_mapping,
         ignore_labels=default_self_hosted_labels,
+        default_flavor=default_flavor,
     )
 
 
@@ -71,6 +73,23 @@ def _parse_flavor_labels_mapping(flavors_config: str) -> FlavorLabelsMapping:
         return FlavorLabelsMapping(mapping=flavor_labels_mapping)
     except ValueError as exc:
         raise ConfigError("Invalid 'FLAVOURS' config. Invalid format.") from exc
+
+
+def _parse_default_flavor_config(default_flavor: str) -> str:
+    """Get the default flavor from the config.
+
+    Args:
+        default_flavor: The default flavor config.
+
+    Returns:
+        The default flavor.
+
+    Raises:
+        ConfigError: If the DEFAULT_FLAVOR config is invalid.
+    """
+    if not (flavor := default_flavor):
+        raise ConfigError("DEFAULT_FLAVOR config is not set!")
+    return flavor
 
 
 def _parse_default_self_hosted_labels_config(default_self_hosted_labels: str) -> set[str]:

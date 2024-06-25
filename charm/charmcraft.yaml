@@ -32,10 +32,10 @@ requires:
 
 config:
   options:
-    log-level:
+    default-flavour:
         type: string
-        description: "The log level to use for the application logs. Use any of: CRITICAL, ERROR, WARNING, INFO, DEBUG, NOTSET"
-        default: "INFO"
+        description: "The flavour to use when no labels except the default are provided."
+        required: true
     default-self-hosted-labels:
       type: string
       description: >-
@@ -50,9 +50,12 @@ config:
             - flavour1: [label1, label2]
             - flavour2: [label1, label3]
             If a job matches multiple flavours, the first flavour matching defined in this configuration will be used.
-            If only the github provided default labels (self-hosted, linux) are used, the first flavour in the list will be used.
             Note that labels are treated case-insensitive. You should also not use the char # due to technical limitations.
          required: true
+    log-level:
+      type: string
+      description: "The log level to use for the application logs. Use any of: CRITICAL, ERROR, WARNING, INFO, DEBUG, NOTSET"
+      default: "INFO"
     webhook-secret:
       type: string
       description: "The secret used to validate the webhook"

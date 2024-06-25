@@ -84,6 +84,7 @@ def deploy_config_fixture(
         "config": {
             "webserver-workers": worker_count,
             "flavours": '- small: ["small"]',
+            "default-flavour": "small",
         },
         "app-name": app_name,
         "use-existing-app": use_existing_app,

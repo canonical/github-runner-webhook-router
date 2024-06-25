@@ -19,7 +19,8 @@ Module for routing webhooks to the appropriate message queue.
 ```python
 to_routing_table(
     flavor_label_mapping: FlavorLabelsMapping,
-    ignore_labels: set[str]
+    ignore_labels: set[str],
+    default_flavor: str
 ) → RoutingTable
 ```
 
@@ -31,6 +32,7 @@ Convert the flavor label mapping to a route table.
  
  - <b>`flavor_label_mapping`</b>:  The flavor label mapping. 
  - <b>`ignore_labels`</b>:  The labels to ignore (e.g. "self-hosted" or "linux"). 
+ - <b>`default_flavor`</b>:  The default flavor to use if no labels are provided. 
 
 
 

@@ -48,20 +48,20 @@ class FlavorLabelsMapping(BaseModel):
 
 
 def to_routing_table(
-    flavor_label_mapping: FlavorLabelsMapping, ignore_labels: set[Label]
+    flavor_label_mapping: FlavorLabelsMapping, ignore_labels: set[Label], default_flavor: Flavor
 ) -> RoutingTable:
     """Convert the flavor label mapping to a route table.
 
     Args:
         flavor_label_mapping: The flavor label mapping.
         ignore_labels: The labels to ignore (e.g. "self-hosted" or "linux").
+        default_flavor: The default flavor to use if no labels are provided.
 
     Returns:
         The label flavor mapping.
     """
     flavor_mapping = flavor_label_mapping.mapping
     label_mapping = {}
-    default_flavor = flavor_mapping[0][0]
 
     for flavor, labels in flavor_mapping:
         sorted_labels = sorted(labels.lower() for labels in labels)

@@ -96,8 +96,9 @@ def test_to_routing_table():
         mapping=[("large", ["arm64", "large"]), ("x64-large", ["large", "x64", "jammy"])]
     )
     ignore_labels = {"self-hosted", "linux"}
-    labels_mapping = to_routing_table(flavor_mapping, ignore_labels)
-    assert labels_mapping == RoutingTable(
+    default_flavor = "x64-large"
+    routing_table = to_routing_table(flavor_mapping, ignore_labels, default_flavor)
+    assert routing_table == RoutingTable(
         mapping={
             "arm64": "large",
             "large": "large",
@@ -109,7 +110,7 @@ def test_to_routing_table():
             f"large{LABEL_SEPARATOR}x64": "x64-large",
             f"jammy{LABEL_SEPARATOR}large{LABEL_SEPARATOR}x64": "x64-large",
         },
-        default_flavor="large",
+        default_flavor="x64-large",
         ignore_labels=ignore_labels,
     )
 
@@ -122,8 +123,9 @@ def test_to_routing_table_case_insensitive():
     """
     flavor_mapping = FlavorLabelsMapping(mapping=[("large", ["arM64", "LaRgE"])])
     ignore_labels = {"self-HOSTED", "LINux"}
-    labels_mapping = to_routing_table(flavor_mapping, ignore_labels)
-    assert labels_mapping == RoutingTable(
+    default_flavor = "large"
+    routing_table = to_routing_table(flavor_mapping, ignore_labels, default_flavor)
+    assert routing_table == RoutingTable(
         mapping={
             "arm64": "large",
             "large": "large",
