@@ -3,6 +3,7 @@
 
 """Flask application which receives GitHub webhooks and logs those."""
 import logging
+from collections import namedtuple
 
 import yaml
 from flask import Flask, request
@@ -21,6 +22,8 @@ from webhook_router.webhook.parse import ParseError, webhook_to_job
 SUPPORTED_GITHUB_EVENT = "workflow_job"
 GITHUB_EVENT_HEADER = "X-Github-Event"
 WEBHOOK_SIGNATURE_HEADER = "X-Hub-Signature-256"
+
+ValidationResult = namedtuple("ValidationResult", ["is_valid", "msg"])
 
 app = Flask(__name__.split(".", maxsplit=1)[0])
 
@@ -112,13 +115,13 @@ def handle_github_webhook() -> tuple[str, int]:
         a failure message and 4xx status code.
     """
     if secret := app.config.get("WEBHOOK_SECRET"):
-        is_valid, error = _validate_signature(secret)
-        if not is_valid:
-            return error, 403
+        validation_result = _validate_signature(secret)
+        if not validation_result.is_valid:
+            return validation_result.msg, 403
 
-    is_valid, error = _validate_github_event_header()
-    if not is_valid:
-        return error, 400
+    validation_result = _validate_github_event_header()
+    if not validation_result.is_valid:
+        return validation_result.msg, 400
 
     try:
         job = _parse_job()
@@ -139,7 +142,7 @@ def handle_github_webhook() -> tuple[str, int]:
     return "", 200
 
 
-def _validate_signature(secret: str) -> tuple[bool, str]:
+def _validate_signature(secret: str) -> ValidationResult:
     """Validate the webhook signature.
 
     Args:
@@ -153,16 +156,16 @@ def _validate_signature(secret: str) -> tuple[bool, str]:
         app.logger.debug(
             "X-Hub-signature-256 header is missing in request from %s", request.origin
         )
-        return False, "X-Hub-signature-256 header is missing!"
+        return ValidationResult(is_valid=False, msg="X-Hub-signature-256 header is missing!")
 
     if not verify_signature(payload=request.data, secret_token=secret, signature_header=signature):
         app.logger.debug("Signature validation failed in request from %s", request.origin)
-        return False, "Signature validation failed!"
+        return ValidationResult(is_valid=False, msg="Signature validation failed!")
 
-    return True, ""
+    return ValidationResult(is_valid=True, msg="")
 
 
-def _validate_github_event_header() -> tuple[bool, str]:
+def _validate_github_event_header() -> ValidationResult:
     """Validate the GitHub event header.
 
     Returns:
@@ -178,9 +181,9 @@ def _validate_github_event_header() -> tuple[bool, str]:
         else:
             msg = "X-Github-Event header is missing!"
             app.logger.debug("X-Github-Event header is missing in request from %s", request.origin)
-        return False, msg
+        return ValidationResult(is_valid=False, msg=msg)
 
-    return True, ""
+    return ValidationResult(is_valid=True, msg="")
 
 
 def _parse_job() -> Job:

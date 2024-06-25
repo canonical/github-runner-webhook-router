@@ -13,7 +13,7 @@ Flask application which receives GitHub webhooks and logs those.
 
 ---
 
-<a href="../webhook_router/app.py#L32"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../webhook_router/app.py#L35"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `config_app`
 
@@ -32,7 +32,7 @@ Configure the application.
 
 ---
 
-<a href="../webhook_router/app.py#L96"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../webhook_router/app.py#L99"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `health_check`
 
@@ -50,7 +50,7 @@ Health check endpoint.
 
 ---
 
-<a href="../webhook_router/app.py#L106"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../webhook_router/app.py#L109"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `handle_github_webhook`
 
@@ -70,6 +70,15 @@ Receive a GitHub webhook and append the payload to a file.
 
 ## <kbd>class</kbd> `ConfigError`
 Raised when a configuration error occurs. 
+
+
+
+
+
+---
+
+## <kbd>class</kbd> `ValidationResult`
+ValidationResult(is_valid, msg) 
 
 
 
