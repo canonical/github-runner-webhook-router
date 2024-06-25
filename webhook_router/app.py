@@ -36,17 +36,17 @@ def config_app(flask_app: Flask) -> None:
         flask_app: The Flask application to configure.
     """
     flask_app.config.from_prefixed_env()
-    flavor_labels_mapping = _parse_flavors_config(flask_app.config.get("FLAVOURS", ""))
-    github_default_labels = _parse_github_default_labels_config(
+    flavor_labels_mapping = _parse_flavor_labels_mapping(flask_app.config.get("FLAVOURS", ""))
+    default_self_hosted_labels = _parse_default_self_hosted_labels_config(
         flask_app.config.get("DEFAULT_SELF_HOSTED_LABELS", "")
     )
     flask_app.config["LABEL_FLAVOR_MAPPING"] = to_labels_flavor_mapping(
         flavor_labels_mapping,
-        ignore_labels=github_default_labels,
+        ignore_labels=default_self_hosted_labels,
     )
 
 
-def _parse_flavors_config(flavors_config: str) -> FlavorLabelsMapping:
+def _parse_flavor_labels_mapping(flavors_config: str) -> FlavorLabelsMapping:
     """Get the flavor labels mapping.
 
     Args:
@@ -76,7 +76,7 @@ def _parse_flavors_config(flavors_config: str) -> FlavorLabelsMapping:
         raise ConfigError("Invalid 'FLAVOURS' config. Invalid format.") from exc
 
 
-def _parse_github_default_labels_config(github_default_labels_config: str) -> set[str]:
+def _parse_default_self_hosted_labels_config(github_default_labels_config: str) -> set[str]:
     """Get the default labels from the config.
 
     Args:
