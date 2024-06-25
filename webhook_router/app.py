@@ -115,11 +115,15 @@ def handle_github_webhook() -> tuple[str, int]:
         a failure message and 4xx status code.
     """
     if secret := app.config.get("WEBHOOK_SECRET"):
-        validation_result = _validate_signature(secret)
+        signature_header = request.headers.get(WEBHOOK_SIGNATURE_HEADER, "")
+        validation_result = _validate_signature_header(
+            signature_header=signature_header, secret=secret
+        )
         if not validation_result.is_valid:
             return validation_result.msg, 403
 
-    validation_result = _validate_github_event_header()
+    event_header = request.headers.get(GITHUB_EVENT_HEADER, "")
+    validation_result = _validate_github_event_header(github_event_header=event_header)
     if not validation_result.is_valid:
         return validation_result.msg, 400
 
@@ -142,41 +146,49 @@ def handle_github_webhook() -> tuple[str, int]:
     return "", 200
 
 
-def _validate_signature(secret: str) -> ValidationResult:
+def _validate_signature_header(signature_header: str, secret: str) -> ValidationResult:
     """Validate the webhook signature.
 
     Args:
+        signature_header: The signature header to validate.
         secret: The secret to validate the signature.
 
     Returns:
         A tuple containing a boolean indicating if the signature is valid and a message
         on failure.
     """
-    if not (signature := request.headers.get(WEBHOOK_SIGNATURE_HEADER)):
+    if not signature_header:
         app.logger.debug(
             "X-Hub-signature-256 header is missing in request from %s", request.origin
         )
         return ValidationResult(is_valid=False, msg="X-Hub-signature-256 header is missing!")
 
-    if not verify_signature(payload=request.data, secret_token=secret, signature_header=signature):
+    if not verify_signature(
+        payload=request.data, secret_token=secret, signature_header=signature_header
+    ):
         app.logger.debug("Signature validation failed in request from %s", request.origin)
         return ValidationResult(is_valid=False, msg="Signature validation failed!")
 
     return ValidationResult(is_valid=True, msg="")
 
 
-def _validate_github_event_header() -> ValidationResult:
+def _validate_github_event_header(github_event_header: str) -> ValidationResult:
     """Validate the GitHub event header.
+
+    Args:
+        github_event_header: The GitHub event header to validate.
 
     Returns:
         A tuple containing a boolean indicating if the event is valid and a message
         on failure.
     """
-    if (event := request.headers.get(GITHUB_EVENT_HEADER)) != SUPPORTED_GITHUB_EVENT:
-        if event:
-            msg = f"Webhook event {event} not supported!"
+    if github_event_header != SUPPORTED_GITHUB_EVENT:
+        if github_event_header:
+            msg = f"Webhook event {github_event_header} not supported!"
             app.logger.debug(
-                "Received not supported webhook event from %s: %s", event, request.origin
+                "Received not supported webhook event from %s: %s",
+                github_event_header,
+                request.origin,
             )
         else:
             msg = "X-Github-Event header is missing!"
