@@ -37,7 +37,7 @@ def config_app(flask_app: Flask) -> None:
     default_self_hosted_labels = _parse_default_self_hosted_labels_config(
         flask_app.config.get("DEFAULT_SELF_HOSTED_LABELS", "")
     )
-    flask_app.config["LABEL_FLAVOR_MAPPING"] = to_routing_table(
+    flask_app.config["ROUTING_TABLE"] = to_routing_table(
         flavor_labels_mapping,
         ignore_labels=default_self_hosted_labels,
     )
@@ -130,7 +130,7 @@ def handle_github_webhook() -> tuple[str, int]:
     app.logger.debug("Parsed job: %s", job)
 
     try:
-        router.forward(job, routing_table=app.config["LABEL_FLAVOR_MAPPING"])
+        router.forward(job, routing_table=app.config["ROUTING_TABLE"])
     except RouterError as exc:
         app.logger.error(str(exc))
         return str(exc), 400
