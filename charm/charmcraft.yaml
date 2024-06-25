@@ -41,6 +41,7 @@ config:
       description: >-
         Comma separated list of labels to ignore while routing because they are always present.
       default: "self-hosted,linux"
+    # The following config option is likely to be removed in the future and replaced by integration with the github-runner charm.
     flavours:
          type: string
          description: |
