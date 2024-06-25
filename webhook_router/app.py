@@ -79,11 +79,11 @@ def _parse_flavor_labels_mapping(flavors_config: str) -> FlavorLabelsMapping:
         raise ConfigError("Invalid 'FLAVOURS' config. Invalid format.") from exc
 
 
-def _parse_default_self_hosted_labels_config(github_default_labels_config: str) -> set[str]:
+def _parse_default_self_hosted_labels_config(default_self_hosted_labels: str) -> set[str]:
     """Get the default labels from the config.
 
     Args:
-        github_default_labels_config: The default labels config.
+        default_self_hosted_labels: The default labels config.
 
     Returns:
         The default labels.
@@ -91,7 +91,7 @@ def _parse_default_self_hosted_labels_config(github_default_labels_config: str) 
     Raises:
         ConfigError: If the DEFAULT_SELF_HOSTED_LABELS config is invalid.
     """
-    if not (labels := github_default_labels_config):
+    if not (labels := default_self_hosted_labels):
         raise ConfigError("DEFAULT_SELF_HOSTED_LABELS config is not set!")
     return set(labels.split(","))
 

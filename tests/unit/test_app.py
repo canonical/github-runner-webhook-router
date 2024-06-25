@@ -377,16 +377,16 @@ def test_invalid_app_config_flavours(flavours_yaml: str, expected_err_msg: str):
     """
     app = Flask(__name__)
     app.config["FLAVOURS"] = flavours_yaml
-    app.config["GITHUB_DEFAULT_LABELS"] = "self-hosted,linux"
+    app.config["DEFAULT_SELF_HOSTED_LABELS"] = "self-hosted,linux"
 
     with pytest.raises(app_module.ConfigError) as exc_info:
         app_module.config_app(app)
     assert str(exc_info.value) == expected_err_msg
 
 
-def test_invalid_app_config_github_default_labels_missing(flavours_yaml: str):
+def test_invalid_app_config_default_self_hosted_labels_missing(flavours_yaml: str):
     """
-    arrange: A valid flavours yaml and missing GITHUB_DEFAULT_LABELS.
+    arrange: A valid flavours yaml and missing DEFAULT_SELF_HOSTED_LABELS.
     act: Configure the app.
     assert: A ConfigError is raised with the expected error message.
     """
