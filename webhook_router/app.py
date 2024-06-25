@@ -8,15 +8,11 @@ from collections import namedtuple
 import yaml
 from flask import Flask, request
 
-from webhook_router.mq import add_job_to_queue
+from webhook_router import router
+from webhook_router.router import RouterError
 from webhook_router.validation import verify_signature
-from webhook_router.webhook import Job, JobStatus
-from webhook_router.webhook.label_translation import (
-    FlavorLabelsMapping,
-    InvalidLabelCombinationError,
-    labels_to_flavor,
-    to_labels_flavor_mapping,
-)
+from webhook_router.webhook import Job
+from webhook_router.webhook.label_translation import FlavorLabelsMapping, to_labels_flavor_mapping
 from webhook_router.webhook.parse import ParseError, webhook_to_job
 
 SUPPORTED_GITHUB_EVENT = "workflow_job"
@@ -135,14 +131,11 @@ def handle_github_webhook() -> tuple[str, int]:
 
     app.logger.debug("Parsed job: %s", job)
 
-    if job.status == JobStatus.QUEUED:
-        try:
-            _forward_to_mq(job)
-        except InvalidLabelCombinationError as exc:
-            app.logger.error(str(exc))
-            return str(exc), 400
-    else:
-        logging.debug("Received job with status %s. Ignoring.", job.status)
+    try:
+        router.forward(job, route_table=app.config["LABEL_FLAVOR_MAPPING"])
+    except RouterError as exc:
+        app.logger.error(str(exc))
+        return str(exc), 400
     return "", 200
 
 
@@ -207,20 +200,6 @@ def _parse_job() -> Job:
     payload = request.get_json()
     app.logger.debug("Received payload: %s", payload)
     return webhook_to_job(payload)
-
-
-def _forward_to_mq(job: Job) -> None:
-    """Forward the job to the appropriate message queue.
-
-    Args:
-        job: The job to forward.
-    """
-    flavor = labels_to_flavor(
-        labels=set(job.labels),
-        label_flavor_mapping=app.config["LABEL_FLAVOR_MAPPING"],
-    )
-    app.logger.info("Received job %s for flavor %s", job.json(), flavor)
-    add_job_to_queue(job, flavor)
 
 
 # Exclude from coverage since unit tests should not run as __main__

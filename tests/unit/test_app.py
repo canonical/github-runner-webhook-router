@@ -15,11 +15,9 @@ from werkzeug.exceptions import BadRequest, UnsupportedMediaType
 
 import webhook_router.app as app_module
 from tests.unit.helpers import create_correct_signature, create_incorrect_signature
+from webhook_router.router import RouterError
 from webhook_router.webhook import Job, JobStatus
-from webhook_router.webhook.label_translation import (
-    InvalidLabelCombinationError,
-    LabelsFlavorMapping,
-)
+from webhook_router.webhook.label_translation import LABEL_SEPARATOR, LabelsFlavorMapping
 from webhook_router.webhook.parse import ParseError
 
 TEST_PATH = "/webhook"
@@ -45,33 +43,41 @@ def client_fixture(app: Flask) -> FlaskClient:
     return app.test_client()
 
 
-@pytest.fixture(name="to_labels_flavor_mapping_mock")
-def to_labels_flavor_mapping_mock_fixture(monkeypatch) -> MagicMock:
-    """Mock the to_labels_flavor_mapping function."""
-    mapping = LabelsFlavorMapping(
+@pytest.fixture(name="route_table")
+def route_table_fixture() -> LabelsFlavorMapping:
+    """Create a route table."""
+    return LabelsFlavorMapping(
         mapping={
             "arm64": "large",
             "large": "large",
-            "arm64-large": "large",
+            f"arm64{LABEL_SEPARATOR}large": "large",
             "x64": "small",
             "small": "small",
-            "x64-small": "small",
+            f"small{LABEL_SEPARATOR}x64": "small",
         },
         default_flavor="small",
         ignore_labels={"self-hosted", "linux"},
     )
-    mock = MagicMock(spec=app_module.to_labels_flavor_mapping, return_value=mapping)
-    monkeypatch.setattr("webhook_router.app.to_labels_flavor_mapping", mock)
+
+
+@pytest.fixture(name="router_mock")
+def router_mock_fixture(monkeypatch: pytest.MonkeyPatch):
+    """Mock the router function."""
+    mock = MagicMock(spec=app_module.router)
+    monkeypatch.setattr("webhook_router.app.router", mock)
     return mock
 
 
-@pytest.mark.usefixtures("to_labels_flavor_mapping_mock")
 @pytest.fixture(name="app")
-def app_fixture(flavours_yaml: str) -> Iterator[Flask]:
+def app_fixture(
+    flavours_yaml: str, route_table: LabelsFlavorMapping, monkeypatch: pytest.MonkeyPatch
+) -> Iterator[Flask]:
     """Setup the flask app.
 
     Setup testing mode and add a stream handler to the logger.
     """
+    mock = MagicMock(spec=app_module.to_labels_flavor_mapping, return_value=route_table)
+    monkeypatch.setattr("webhook_router.app.to_labels_flavor_mapping", mock)
     app_module.app.config.update(
         {
             "TESTING": True,
@@ -83,67 +89,24 @@ def app_fixture(flavours_yaml: str) -> Iterator[Flask]:
     yield app_module.app
 
 
-@pytest.fixture(name="labels_to_flavor_mock")
-def labels_to_flavor_mock_fixture(monkeypatch) -> MagicMock:
-    """Mock the labels_to_flavor function."""
-    mock = MagicMock(spec=app_module.labels_to_flavor)
-    monkeypatch.setattr("webhook_router.app.labels_to_flavor", mock)
-    return mock
-
-
 @pytest.fixture(name="webhook_to_job_mock")
-def webhook_to_job_mock_fixture(monkeypatch) -> MagicMock:
+def webhook_to_job_mock_fixture(monkeypatch: pytest.MonkeyPatch) -> MagicMock:
     """Mock the webhook_to_job function."""
     mock = MagicMock(spec=app_module.webhook_to_job)
     monkeypatch.setattr("webhook_router.app.webhook_to_job", mock)
     return mock
 
 
-@pytest.fixture(name="add_job_to_queue_mock")
-def add_job_to_queue_mock_fixture(monkeypatch) -> MagicMock:
-    """Mock the add_job_to_queue function."""
-    mock = MagicMock(spec=app_module.add_job_to_queue)
-    monkeypatch.setattr("webhook_router.app.add_job_to_queue", mock)
-    return mock
-
-
-def _create_valid_data(action: str) -> dict:
-    """Create a valid payload for the supported event.
-
-    Args:
-        action: The action to include in the payload.
-
-    Returns:
-        A valid payload for the supported event.
-    """
-    return {
-        "event": app_module.SUPPORTED_GITHUB_EVENT,
-        "payload": {
-            "action": action,
-            "workflow_job": {
-                "id": 123456789,
-                "run_id": 987654321,
-                "status": "completed",
-                "conclusion": "success",
-                "labels": ["self-hosted", "linux", "arm64"],
-                "run_url": "https://api.github.com/repos/f/actions/runs/8200803099",
-            },
-        },
-    }
-
-
 def test_webhook_logs(
     client: FlaskClient,
-    labels_to_flavor_mock: MagicMock,
-    add_job_to_queue_mock: MagicMock,
+    router_mock: MagicMock,
+    route_table: LabelsFlavorMapping,
 ):
     """
-    arrange: A test client and a mocked labels_to_flavor function.
+    arrange: A test client and a mocked forward function.
     act: Post a request to the webhook endpoint with a valid payload for the supported event.
-    assert: 200 status code is returned and the expected job is added to the queue.
+    assert: 200 status code is returned and the expected job is forwarded.
     """
-    test_flavor = secrets.token_hex(16)
-    labels_to_flavor_mock.return_value = test_flavor
     data = _create_valid_data(JobStatus.QUEUED)
     expected_job = Job(
         labels=data["payload"]["workflow_job"]["labels"],
@@ -156,38 +119,7 @@ def test_webhook_logs(
         headers={app_module.GITHUB_EVENT_HEADER: app_module.SUPPORTED_GITHUB_EVENT},
     )
     assert response.status_code == 200
-    add_job_to_queue_mock.assert_called_with(expected_job, test_flavor)
-
-
-@pytest.mark.usefixtures("labels_to_flavor_mock")
-@pytest.mark.parametrize(
-    "action, is_forwarded",
-    [
-        pytest.param("completed", False, id="completed"),
-        pytest.param("in_progress", False, id="in_progress"),
-        pytest.param("waiting", False, id="waiting"),
-        pytest.param("queued", True, id="queued"),
-    ],
-)
-def test_job_is_forwarded(
-    action: str,
-    is_forwarded: bool,
-    client: FlaskClient,
-    add_job_to_queue_mock: MagicMock,
-):
-    """
-    arrange: A test client, a webhook log file and a mocked translation.
-    act: Post a request to the webhook endpoint with a translated action.
-    assert: 200 status code is returned and the job is forwarded only for queued status.
-    """
-    data = _create_valid_data(action)
-    response = client.post(
-        TEST_PATH,
-        json=data,
-        headers={app_module.GITHUB_EVENT_HEADER: app_module.SUPPORTED_GITHUB_EVENT},
-    )
-    assert response.status_code == 200
-    assert add_job_to_queue_mock.called == is_forwarded
+    router_mock.forward.assert_called_with(expected_job, route_table=route_table)
 
 
 def test_non_json_request(client: FlaskClient):
@@ -249,13 +181,13 @@ def test_invalid_payload(client: FlaskClient, webhook_to_job_mock: MagicMock):
     assert response.status_code == BadRequest.code
 
 
-def test_invalid_label_combination(client: FlaskClient, labels_to_flavor_mock: MagicMock):
+def test_router_error(client: FlaskClient, router_mock: MagicMock):
     """
     arrange: A test client and a mocked labels_to_flavor function.
     act: Post a request to the webhook endpoint with a valid payload for the supported event.
     assert: 200 status code is returned and the logs contain the expected job and flavors.
     """
-    labels_to_flavor_mock.side_effect = InvalidLabelCombinationError("Invalid label combination")
+    router_mock.forward.side_effect = RouterError("Invalid label combination")
     data = _create_valid_data(JobStatus.QUEUED)
     response = client.post(
         TEST_PATH,
@@ -266,7 +198,7 @@ def test_invalid_label_combination(client: FlaskClient, labels_to_flavor_mock: M
     assert "Invalid label combination" in response.data.decode("utf-8")
 
 
-@pytest.mark.usefixtures("add_job_to_queue_mock")
+@pytest.mark.usefixtures("router_mock")
 @pytest.mark.parametrize(
     "create_signature_fct, expected_status, expected_reason",
     [
@@ -396,3 +328,28 @@ def test_invalid_app_config_default_self_hosted_labels_missing(flavours_yaml: st
     with pytest.raises(app_module.ConfigError) as exc_info:
         app_module.config_app(app)
     assert str(exc_info.value) == "DEFAULT_SELF_HOSTED_LABELS config is not set!"
+
+
+def _create_valid_data(action: str) -> dict:
+    """Create a valid payload for the supported event.
+
+    Args:
+        action: The action to include in the payload.
+
+    Returns:
+        A valid payload for the supported event.
+    """
+    return {
+        "event": app_module.SUPPORTED_GITHUB_EVENT,
+        "payload": {
+            "action": action,
+            "workflow_job": {
+                "id": 123456789,
+                "run_id": 987654321,
+                "status": "completed",
+                "conclusion": "success",
+                "labels": ["self-hosted", "linux", "arm64"],
+                "run_url": "https://api.github.com/repos/f/actions/runs/8200803099",
+            },
+        },
+    }
