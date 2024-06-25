@@ -14,10 +14,10 @@ from flask.testing import FlaskClient
 from werkzeug.exceptions import BadRequest, UnsupportedMediaType
 
 import webhook_router.app as app_module
+import webhook_router.router
 from tests.unit.helpers import create_correct_signature, create_incorrect_signature
-from webhook_router.router import RouterError
+from webhook_router.router import LABEL_SEPARATOR, RouterError, RoutingTable
 from webhook_router.webhook import Job, JobStatus
-from webhook_router.webhook.label_translation import LABEL_SEPARATOR, LabelsFlavorMapping
 from webhook_router.webhook.parse import ParseError
 
 TEST_PATH = "/webhook"
@@ -44,9 +44,9 @@ def client_fixture(app: Flask) -> FlaskClient:
 
 
 @pytest.fixture(name="route_table")
-def route_table_fixture() -> LabelsFlavorMapping:
+def route_table_fixture() -> RoutingTable:
     """Create a route table."""
-    return LabelsFlavorMapping(
+    return RoutingTable(
         mapping={
             "arm64": "large",
             "large": "large",
@@ -70,14 +70,14 @@ def router_mock_fixture(monkeypatch: pytest.MonkeyPatch):
 
 @pytest.fixture(name="app")
 def app_fixture(
-    flavours_yaml: str, route_table: LabelsFlavorMapping, monkeypatch: pytest.MonkeyPatch
+    flavours_yaml: str, route_table: RoutingTable, monkeypatch: pytest.MonkeyPatch
 ) -> Iterator[Flask]:
     """Setup the flask app.
 
     Setup testing mode and add a stream handler to the logger.
     """
-    mock = MagicMock(spec=app_module.to_labels_flavor_mapping, return_value=route_table)
-    monkeypatch.setattr("webhook_router.app.to_labels_flavor_mapping", mock)
+    mock = MagicMock(spec=webhook_router.router.to_routing_table, return_value=route_table)
+    monkeypatch.setattr("webhook_router.app.to_routing_table", mock)
     app_module.app.config.update(
         {
             "TESTING": True,
@@ -100,7 +100,7 @@ def webhook_to_job_mock_fixture(monkeypatch: pytest.MonkeyPatch) -> MagicMock:
 def test_webhook_logs(
     client: FlaskClient,
     router_mock: MagicMock,
-    route_table: LabelsFlavorMapping,
+    route_table: RoutingTable,
 ):
     """
     arrange: A test client and a mocked forward function.
@@ -119,7 +119,7 @@ def test_webhook_logs(
         headers={app_module.GITHUB_EVENT_HEADER: app_module.SUPPORTED_GITHUB_EVENT},
     )
     assert response.status_code == 200
-    router_mock.forward.assert_called_with(expected_job, route_table=route_table)
+    router_mock.forward.assert_called_with(expected_job, routing_table=route_table)
 
 
 def test_non_json_request(client: FlaskClient):

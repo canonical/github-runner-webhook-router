@@ -9,10 +9,9 @@ import yaml
 from flask import Flask, request
 
 from webhook_router import router
-from webhook_router.router import RouterError
+from webhook_router.router import FlavorLabelsMapping, RouterError, to_routing_table
 from webhook_router.validation import verify_signature
 from webhook_router.webhook import Job
-from webhook_router.webhook.label_translation import FlavorLabelsMapping, to_labels_flavor_mapping
 from webhook_router.webhook.parse import ParseError, webhook_to_job
 
 SUPPORTED_GITHUB_EVENT = "workflow_job"
@@ -39,7 +38,7 @@ def config_app(flask_app: Flask) -> None:
     default_self_hosted_labels = _parse_default_self_hosted_labels_config(
         flask_app.config.get("DEFAULT_SELF_HOSTED_LABELS", "")
     )
-    flask_app.config["LABEL_FLAVOR_MAPPING"] = to_labels_flavor_mapping(
+    flask_app.config["LABEL_FLAVOR_MAPPING"] = to_routing_table(
         flavor_labels_mapping,
         ignore_labels=default_self_hosted_labels,
     )
@@ -132,7 +131,7 @@ def handle_github_webhook() -> tuple[str, int]:
     app.logger.debug("Parsed job: %s", job)
 
     try:
-        router.forward(job, route_table=app.config["LABEL_FLAVOR_MAPPING"])
+        router.forward(job, routing_table=app.config["LABEL_FLAVOR_MAPPING"])
     except RouterError as exc:
         app.logger.error(str(exc))
         return str(exc), 400
