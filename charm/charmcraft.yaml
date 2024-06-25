@@ -36,10 +36,10 @@ config:
         type: string
         description: "The log level to use for the application logs. Use any of: CRITICAL, ERROR, WARNING, INFO, DEBUG, NOTSET"
         default: "INFO"
-    github-default-labels:
+    default-self-hosted-labels:
       type: string
       description: >-
-        Comma separated list of labels to ignore while routing because they are always present.
+        Comma-separated list of labels to ignore during routing, as they apply to all self-hosted flavours.
       default: "self-hosted,linux"
     # The following config option is likely to be removed in the future and replaced by integration with the github-runner charm.
     flavours:

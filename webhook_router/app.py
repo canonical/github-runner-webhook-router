@@ -38,7 +38,7 @@ def config_app(flask_app: Flask) -> None:
     flask_app.config.from_prefixed_env()
     flavor_labels_mapping = _parse_flavors_config(flask_app.config.get("FLAVOURS", ""))
     github_default_labels = _parse_github_default_labels_config(
-        flask_app.config.get("GITHUB_DEFAULT_LABELS", "")
+        flask_app.config.get("DEFAULT_SELF_HOSTED_LABELS", "")
     )
     flask_app.config["LABEL_FLAVOR_MAPPING"] = to_labels_flavor_mapping(
         flavor_labels_mapping,
@@ -86,10 +86,10 @@ def _parse_github_default_labels_config(github_default_labels_config: str) -> se
         The default labels.
 
     Raises:
-        ConfigError: If the GITHUB_DEFAULT_LABELS config is invalid.
+        ConfigError: If the DEFAULT_SELF_HOSTED_LABELS config is invalid.
     """
     if not (labels := github_default_labels_config):
-        raise ConfigError("GITHUB_DEFAULT_LABELS config is not set!")
+        raise ConfigError("DEFAULT_SELF_HOSTED_LABELS config is not set!")
     return set(labels.split(","))
 
 
