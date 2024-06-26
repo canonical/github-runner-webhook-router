@@ -314,6 +314,14 @@ small:
             "Invalid 'FLAVOURS' config. Invalid format.",
             id="invalid format - label is a map",
         ),
+        pytest.param(
+            """
+- small: [small]
+  large: [large]
+""",
+            "Invalid 'FLAVOURS' config. Expected a single key-value pair: "
+            "{'small': ['small'], 'large': ['large']}",
+        ),
     ],
 )
 def test_invalid_app_config_flavours(flavours_yaml: str, expected_err_msg: str):

@@ -11,7 +11,6 @@ from webhook_router.mq import add_job_to_queue
 from webhook_router.parse import Job, JobStatus
 from webhook_router.router import (
     LABEL_SEPARATOR,
-    FlavorLabelsMapping,
     RouterError,
     RoutingTable,
     _InvalidLabelCombinationError,
@@ -92,9 +91,8 @@ def test_to_routing_table():
     act: Call to_routing_table with the mapping.
     assert: A LabelsFlavorMapping object is returned.
     """
-    flavor_mapping = FlavorLabelsMapping(
-        mapping=[("large", ["arm64", "large"]), ("x64-large", ["large", "x64", "jammy"])]
-    )
+    flavor_mapping = [("large", ["arm64", "large"]), ("x64-large", ["large", "x64", "jammy"])]
+
     ignore_labels = {"self-hosted", "linux"}
     default_flavor = "x64-large"
     routing_table = to_routing_table(flavor_mapping, ignore_labels, default_flavor)
@@ -121,7 +119,7 @@ def test_to_routing_table_case_insensitive():
     act: Call to_routing_table with the mapping.
     assert: A LabelsFlavorMapping object is returned which has all labels in lower case.
     """
-    flavor_mapping = FlavorLabelsMapping(mapping=[("large", ["arM64", "LaRgE"])])
+    flavor_mapping = [("large", ["arM64", "LaRgE"])]
     ignore_labels = {"self-HOSTED", "LINux"}
     default_flavor = "large"
     routing_table = to_routing_table(flavor_mapping, ignore_labels, default_flavor)

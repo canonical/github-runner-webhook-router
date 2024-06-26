@@ -7,10 +7,11 @@ from collections import namedtuple
 
 import yaml
 from flask import Flask, request
+from pydantic import BaseModel
 
 from webhook_router import router
 from webhook_router.parse import Job, ParseError, webhook_to_job
-from webhook_router.router import FlavorLabelsMapping, RouterError, to_routing_table
+from webhook_router.router import RouterError, to_routing_table
 from webhook_router.validation import verify_signature
 
 SUPPORTED_GITHUB_EVENT = "workflow_job"
@@ -26,6 +27,16 @@ class ConfigError(Exception):
     """Raised when a configuration error occurs."""
 
 
+class FlavorsConfig(BaseModel):
+    """A class to represent the flavors configuration.
+
+    Attributes:
+        flavor_list: The list of mapping of flavors to labels.
+    """
+
+    flavor_list: list[dict[str, list[str]]]
+
+
 def config_app(flask_app: Flask) -> None:
     """Configure the application.
 
@@ -33,23 +44,24 @@ def config_app(flask_app: Flask) -> None:
         flask_app: The Flask application to configure.
     """
     flask_app.config.from_prefixed_env()
-    flavor_labels_mapping = _parse_flavor_labels_mapping(flask_app.config.get("FLAVOURS", ""))
+    flavors_config = _parse_flavors_config(flask_app.config.get("FLAVOURS", ""))
     default_flavor = _parse_default_flavor_config(flask_app.config.get("DEFAULT_FLAVOUR", ""))
     default_self_hosted_labels = _parse_default_self_hosted_labels_config(
         flask_app.config.get("DEFAULT_SELF_HOSTED_LABELS", "")
     )
+    flavor_labels_mapping_list = [tuple(item.items())[0] for item in flavors_config.flavor_list]
     flask_app.config["ROUTING_TABLE"] = to_routing_table(
-        flavor_labels_mapping,
+        flavor_label_mapping_list=flavor_labels_mapping_list,
         ignore_labels=default_self_hosted_labels,
         default_flavor=default_flavor,
     )
 
 
-def _parse_flavor_labels_mapping(flavors_config: str) -> FlavorLabelsMapping:
+def _parse_flavors_config(flavors_config_str: str) -> FlavorsConfig:
     """Get the flavor labels mapping.
 
     Args:
-        flavors_config: The flavors to get the mapping for.
+        flavors_config_str: The flavors to get the mapping for.
 
     Returns:
         The flavor labels mapping.
@@ -57,31 +69,33 @@ def _parse_flavor_labels_mapping(flavors_config: str) -> FlavorLabelsMapping:
     Raises:
         ConfigError: If the FLAVOURS config is invalid.
     """
-    if not flavors_config:
+    if not flavors_config_str:
         raise ConfigError("FLAVOURS config is not set!")
 
     try:
-        flavor_labels_mapping = yaml.safe_load(flavors_config)
+        flavors_config_yaml = yaml.safe_load(flavors_config_str)
     except yaml.YAMLError as exc:
         raise ConfigError("Invalid 'FLAVOURS' config. Invalid yaml.") from exc
-    if not isinstance(flavor_labels_mapping, list):
+    if not isinstance(flavors_config_yaml, list):
         raise ConfigError(
             "Invalid 'FLAVOURS' config. Expected a YAML file with a list at the top level."
         )
 
     flavors = set()
-    parsed_flavor_labels_mapping = []
-    for item in flavor_labels_mapping:
-        flavor, labels = tuple(item.items())[0]
+    for item in flavors_config_yaml:
+        if len(item) != 1:
+            raise ConfigError(
+                f"Invalid 'FLAVOURS' config. Expected a single key-value pair: {item}"
+            )
+        flavor, _ = tuple(item.items())[0]
         if flavor in flavors:
             raise ConfigError(f"Invalid 'FLAVOURS' config. Duplicate flavour '{flavor}' found.")
         flavors.add(flavor)
-        parsed_flavor_labels_mapping.append((flavor, labels))
-
     try:
-        return FlavorLabelsMapping(mapping=parsed_flavor_labels_mapping)
+        flavors_config = FlavorsConfig(flavor_list=flavors_config_yaml)
     except ValueError as exc:
         raise ConfigError("Invalid 'FLAVOURS' config. Invalid format.") from exc
+    return flavors_config
 
 
 def _parse_default_flavor_config(default_flavor: str) -> str:

@@ -13,7 +13,7 @@ Flask application which receives GitHub webhooks and logs those.
 
 ---
 
-<a href="../webhook_router/app.py#L29"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../webhook_router/app.py#L40"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `config_app`
 
@@ -32,7 +32,7 @@ Configure the application.
 
 ---
 
-<a href="../webhook_router/app.py#L121"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../webhook_router/app.py#L135"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `health_check`
 
@@ -50,7 +50,7 @@ Health check endpoint.
 
 ---
 
-<a href="../webhook_router/app.py#L131"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../webhook_router/app.py#L145"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `handle_github_webhook`
 
@@ -71,6 +71,43 @@ Receive a GitHub webhook and append the payload to a file.
 ## <kbd>class</kbd> `ConfigError`
 Raised when a configuration error occurs. 
 
+
+
+
+
+---
+
+## <kbd>class</kbd> `FlavorsConfig`
+A class to represent the flavors configuration. 
+
+
+
+**Attributes:**
+ 
+ - <b>`flavor_list`</b>:  The list of mapping of flavors to labels. 
+
+
+---
+
+#### <kbd>property</kbd> model_extra
+
+Get extra fields set during validation. 
+
+
+
+**Returns:**
+  A dictionary of extra fields, or `None` if `config.extra` is not set to `"allow"`. 
+
+---
+
+#### <kbd>property</kbd> model_fields_set
+
+Returns the set of fields that have been explicitly set on this model instance. 
+
+
+
+**Returns:**
+  A set of strings representing the fields that have been set,  i.e. that were not filled from defaults. 
 
 
 

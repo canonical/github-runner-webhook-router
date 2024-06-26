@@ -4,7 +4,7 @@
 import itertools
 import logging
 
-from pydantic import BaseModel, conlist
+from pydantic import BaseModel
 
 from webhook_router.mq import add_job_to_queue
 from webhook_router.parse import Job, JobStatus
@@ -36,34 +36,27 @@ class RoutingTable(BaseModel):
     default_flavor: Flavor
 
 
-class FlavorLabelsMapping(BaseModel):
-    """A class to represent the mapping of flavors to labels.
-
-    Attributes:
-        mapping: The mapping of flavors to labels.
-    """
-
-    # mypy does not recognize the min_length parameter
-    mapping: conlist(item_type=tuple[Flavor, list[Label]], min_length=1)  # type: ignore
+FlavorLabelsMappingList = list[tuple[Flavor, list[Label]]]
 
 
 def to_routing_table(
-    flavor_label_mapping: FlavorLabelsMapping, ignore_labels: set[Label], default_flavor: Flavor
+    flavor_label_mapping_list: FlavorLabelsMappingList,
+    ignore_labels: set[Label],
+    default_flavor: Flavor,
 ) -> RoutingTable:
     """Convert the flavor label mapping to a route table.
 
     Args:
-        flavor_label_mapping: The flavor label mapping.
+        flavor_label_mapping_list: The list of mappings of flavors to labels.
         ignore_labels: The labels to ignore (e.g. "self-hosted" or "linux").
         default_flavor: The default flavor to use if no labels are provided.
 
     Returns:
         The label flavor mapping.
     """
-    flavor_mapping = flavor_label_mapping.mapping
     label_mapping = {}
 
-    for flavor, labels in flavor_mapping:
+    for flavor, labels in flavor_label_mapping_list:
         sorted_labels = sorted(labels.lower() for labels in labels)
         powerset = [
             x
