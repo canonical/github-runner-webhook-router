@@ -3,9 +3,11 @@
 
 """The unit tests for the mq module."""
 import secrets
+from unittest.mock import MagicMock
 
 import pytest
 from kombu import Connection
+from kombu.exceptions import OperationalError
 
 from webhook_router import mq
 from webhook_router.parse import Job, JobStatus
@@ -38,3 +40,23 @@ def test_add_job_to_queue():
         msg = simple_queue.get(block=True, timeout=1)
         assert msg.payload == job.json()
         simple_queue.close()
+
+
+@pytest.mark.usefixtures("in_memory_mq")
+def test_can_connect():
+    """
+    arrange: in memory MQ setup
+    act: call can_connect
+    assert: the result is True
+    """
+    assert mq.can_connect() is True
+
+
+def test_cannot_connect(monkeypatch: pytest.MonkeyPatch):
+    """
+    arrange: mock ensure_connection to raise an error
+    act: call can_connect
+    assert: the result is False
+    """
+    monkeypatch.setattr(Connection, "ensure_connection", MagicMock(side_effect=OperationalError))
+    assert mq.can_connect() is False

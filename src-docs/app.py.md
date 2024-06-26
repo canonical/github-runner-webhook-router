@@ -50,7 +50,7 @@ Health check endpoint.
 
 ---
 
-<a href="../webhook_router/app.py#L145"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../webhook_router/app.py#L147"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `handle_github_webhook`
 

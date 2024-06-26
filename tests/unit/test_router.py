@@ -15,6 +15,7 @@ from webhook_router.router import (
     RoutingTable,
     _InvalidLabelCombinationError,
     _labels_to_flavor,
+    can_forward,
     forward,
     to_routing_table,
 )
@@ -24,7 +25,7 @@ from webhook_router.router import (
 def add_job_to_queue_mock_fixture(monkeypatch: pytest.MonkeyPatch) -> MagicMock:
     """Mock the add_job_to_queue function."""
     mock = MagicMock(spec=add_job_to_queue)
-    monkeypatch.setattr("webhook_router.router.add_job_to_queue", mock)
+    monkeypatch.setattr("webhook_router.router.mq.add_job_to_queue", mock)
     return mock
 
 
@@ -134,7 +135,20 @@ def test_to_routing_table_case_insensitive():
     )
 
 
-def test_labels_to_flavor():
+def test_can_forward(monkeypatch: pytest.MonkeyPatch):
+    """
+    arrange: A mock for mq.can_connect setup with True and False.
+    act: Call can_forward.
+    assert: True is returned if the connection is successful otherwise False.
+    """
+    monkeypatch.setattr("webhook_router.router.mq.can_connect", MagicMock(return_value=True))
+    assert can_forward() is True
+
+    monkeypatch.setattr("webhook_router.router.mq.can_connect", MagicMock(return_value=False))
+    assert can_forward() is False
+
+
+def test__labels_to_flavor():
     """
     arrange: Two flavors and a labels to flavor mapping
     act: Call labels_to_flavor with all combination of labels.
@@ -179,7 +193,7 @@ def test_labels_to_flavor():
         ), f"Expected x64-large flavor for {label_combination}"
 
 
-def test_labels_to_flavor_case_insensitive():
+def test__labels_to_flavor_case_insensitive():
     """
     arrange: Two flavors and a labels to flavor mapping
     act: Call labels_to_flavor with all combination of labels in mixed case.
@@ -203,7 +217,7 @@ def test_labels_to_flavor_case_insensitive():
     assert _labels_to_flavor({"small", "SELF-hosted"}, mapping) == "small"
 
 
-def test_labels_to_flavor_default_label():
+def test__labels_to_flavor_default_label():
     """
     arrange: Two flavors and a labels to flavor mapping
     act: Call labels_to_flavor with empty labels.
@@ -223,7 +237,7 @@ def test_labels_to_flavor_default_label():
     assert _labels_to_flavor(set(), mapping) == "large"
 
 
-def test_labels_to_flavor_invalid_combination():
+def test__labels_to_flavor_invalid_combination():
     """
     arrange: Two flavors and a labels to flavor mapping
     act: Call labels_to_flavor with an invalid combination.
@@ -246,7 +260,7 @@ def test_labels_to_flavor_invalid_combination():
     assert "Invalid label combination:" in str(exc_info.value)
 
 
-def test_labels_to_flavor_unrecognised_label():
+def test__labels_to_flavor_unrecognised_label():
     """
     arrange: Two flavors and a labels to flavor mapping
     act: Call labels_to_flavor with an unrecognised label.
@@ -269,7 +283,7 @@ def test_labels_to_flavor_unrecognised_label():
     assert "Invalid label combination:" in str(exc_info.value)
 
 
-def test_labels_to_flavor_ignore_labels():
+def test__labels_to_flavor_ignore_labels():
     """
     arrange: Two flavors and a labels to flavor mapping
     act: Call labels_to_flavor with an ignored label.

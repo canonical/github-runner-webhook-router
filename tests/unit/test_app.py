@@ -246,15 +246,21 @@ def test_webhook_validation(
     assert response.text == expected_reason
 
 
-def test_health_check(client: FlaskClient):
+def test_health_check(client: FlaskClient, monkeypatch: pytest.MonkeyPatch):
     """
-    arrange: A test client.
+    arrange: A test client. Mock router.can_forward to return True and False.
     act: Request the health check endpoint.
-    assert: 200 status code is returned.
+    assert: 200 status code is returned in the first case and 503 in the second.
     """
+    monkeypatch.setattr(app_module.router, "can_forward", MagicMock(return_value=True))
     response = client.get("/health")
     assert response.status_code == 200
     assert response.data == b""
+
+    monkeypatch.setattr(app_module.router, "can_forward", MagicMock(return_value=False))
+    response = client.get("/health")
+    assert response.status_code == 503
+    assert response.data == b"Router is not ready to forward jobs."
 
 
 @pytest.mark.parametrize(

@@ -139,6 +139,8 @@ def health_check() -> tuple[str, int]:
     Returns:
         A tuple containing an empty string and 200 status code.
     """
+    if not router.can_forward():
+        return "Router is not ready to forward jobs.", 503
     return "", 200
 
 

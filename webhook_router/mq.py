@@ -6,6 +6,7 @@ import logging
 import os
 
 from kombu import Connection
+from kombu.exceptions import OperationalError
 
 from webhook_router.parse import Job
 
@@ -24,7 +25,21 @@ def add_job_to_queue(job: Job, flavor: str) -> None:
         job: The job to add to the queue.
         flavor: The flavor to add the job to.
     """
-    _add_to_queue(job.json(), flavor)
+    _add_to_queue(job.model_dump_json(), flavor)
+
+
+def can_connect() -> bool:
+    """Check if we can connect to the message queue.
+
+    Returns:
+        True if we can connect, False otherwise.
+    """
+    with Connection(MONGODB_DB_CONNECT_STR) as conn:
+        try:
+            conn.ensure_connection(max_retries=1, reraise_as_library_errors=True)
+        except OperationalError:
+            return False
+    return True
 
 
 def _add_to_queue(msg: str, queue_name: str) -> None:

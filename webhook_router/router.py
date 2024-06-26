@@ -6,7 +6,7 @@ import logging
 
 from pydantic import BaseModel
 
-from webhook_router.mq import add_job_to_queue
+from webhook_router import mq
 from webhook_router.parse import Job, JobStatus
 
 logger = logging.getLogger(__name__)
@@ -97,7 +97,16 @@ def forward(job: Job, routing_table: RoutingTable) -> None:
         raise RouterError(f"Not able to forward job: {e}") from e
 
     logger.info("Received job %s for flavor %s", job.json(), flavor)
-    add_job_to_queue(job, flavor)
+    mq.add_job_to_queue(job, flavor)
+
+
+def can_forward() -> bool:
+    """Check if the router can forward jobs.
+
+    Returns:
+        True if the router can forward jobs otherwise False.
+    """
+    return mq.can_connect()
 
 
 class _InvalidLabelCombinationError(Exception):
