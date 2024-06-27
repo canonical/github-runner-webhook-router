@@ -62,6 +62,19 @@ def webhook_to_job(webhook: dict) -> Job:
     validation_result = _validate_webhook(webhook)
     if not validation_result.is_valid:
         raise ParseError(f"Could not parse webhook: {validation_result.msg}")
+
+    assert "payload" in webhook, f"payload key not found in {webhook}"
+    assert "action" in webhook["payload"], f"action key not found in {webhook['payload']}"
+    assert (
+        "workflow_job" in webhook["payload"]
+    ), f"workflow_job key not found in {webhook['payload']}"
+    assert (
+        "labels" in webhook["payload"]["workflow_job"]
+    ), f"labels key not found in {webhook['payload']['workflow_job']}"
+    assert (
+        "run_url" in webhook["payload"]["workflow_job"]
+    ), f"run_url key not found in {webhook['payload']['workflow_job']}"
+
     payload = webhook["payload"]
     status = payload["action"]
     workflow_job = payload["workflow_job"]
@@ -131,14 +144,16 @@ def _validate_missing_keys(webhook: dict) -> ValidationResult:
     if "payload" not in webhook:
         return ValidationResult(False, f"payload key not found in {webhook}")
     payload = webhook["payload"]
-    for payload_key in ["action", "workflow_job"]:
-        if payload_key not in payload:
-            return ValidationResult(False, f"{payload_key} key not found in {webhook}")
+    for expected_payload_key in ("action", "workflow_job"):
+        if expected_payload_key not in payload:
+            return ValidationResult(False, f"{expected_payload_key} key not found in {webhook}")
 
     workflow_job = payload["workflow_job"]
     if not isinstance(workflow_job, dict):
         return ValidationResult(False, f"workflow_job is not a dict in {webhook}")
-    for workflow_job_key in ["labels", "run_url"]:
-        if workflow_job_key not in workflow_job:
-            return ValidationResult(False, f"{workflow_job_key} key not found in {webhook}")
+    for expected_workflow_job_key in ("labels", "run_url"):
+        if expected_workflow_job_key not in workflow_job:
+            return ValidationResult(
+                False, f"{expected_workflow_job_key} key not found in {webhook}"
+            )
     return ValidationResult(True, "")
