@@ -72,7 +72,7 @@ async def test_forward_webhook(  # pylint: disable=too-many-locals
         for flavour, labels_list in labels_by_flavour.items()
     }
 
-    address = (await _get_unit_ips(ops_test=ops_test, application_name=app.name))[0]
+    address = (await _get_unit_ips(app))[0]
     for payload in itertools.chain(*payloads_by_flavour.values()):
         resp = _request(
             payload=payload, webhook_secret=webhook_secret, base_url=f"http://{address}:{PORT}"
@@ -127,7 +127,7 @@ async def test_receive_webhook_not_forwarded(ops_test: OpsTest, model: Model, ap
         for status in non_logged_statuses
     ]
 
-    address = (await _get_unit_ips(ops_test=ops_test, application_name=app.name))[0]
+    address = (await _get_unit_ips(app))[0]
     for payload in payloads:
         # bandit thinks webhook_secret is a hardcoded password, ignore for the test
         resp = _request(
@@ -160,7 +160,7 @@ async def test_receive_webhook_client_error(ops_test: OpsTest, model: Model, app
 
     actual_payload = _create_valid_data("queued", labels=["linux", "self-hosted", "default"])
     payload_bytes = json.dumps(actual_payload).encode("utf-8")
-    address = (await _get_unit_ips(ops_test=ops_test, application_name=app.name))[0]
+    address = (await _get_unit_ips(app))[0]
     webhook_url = f"http://{address}:{PORT}/webhook"
     actual_signature = _create_signature(payload_bytes, webhook_secret)
     headers = {
@@ -257,23 +257,17 @@ def _create_signature(payload: bytes, secret: str) -> str:
     return "sha256=" + hash_object.hexdigest()
 
 
-async def _get_unit_ips(ops_test: OpsTest, application_name: str) -> tuple[str, ...]:
+async def _get_unit_ips(app: Application) -> tuple[str, ...]:
     """Retrieve unit ip addresses of a certain application.
 
     Args:
-        ops_test: ops_test plugin.
-        application_name: application name.
+        app: The application to retrieve the unit ip addresses from.
 
     Returns:
         a tuple containing unit ip addresses.
     """
-    _, status, _ = await ops_test.juju("status", "--format", "json")
-    status = json.loads(status)
-    units = status["applications"][application_name]["units"]
-    return tuple(
-        cast(str, unit_status["address"])
-        for _, unit_status in sorted(units.items(), key=lambda kv: int(kv[0].split("/")[-1]))
-    )
+    status = await app.model.get_status()
+    return tuple(unit.address for unit in status.applications[app.name].units.values())
 
 
 def _request(payload: dict, webhook_secret: Optional[str], base_url: str) -> requests.Response:
