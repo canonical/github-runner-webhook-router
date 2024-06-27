@@ -26,12 +26,12 @@ class RoutingTable(BaseModel):
     """A class to represent how to route jobs to the appropriate message queue.
 
     Attributes:
-        mapping: The mapping of labels to flavors.
+        value: The mapping of labels to flavors.
         ignore_labels: The labels to ignore (e.g. "self-hosted" or "linux").
         default_flavor: The default flavor.
     """
 
-    mapping: dict[LabelCombinationIdentifier, Label]
+    value: dict[LabelCombinationIdentifier, Label]
     ignore_labels: set[Label]
     default_flavor: Flavor
 
@@ -69,7 +69,7 @@ def to_routing_table(
                 label_mapping[label_key] = flavor
     return RoutingTable(
         default_flavor=default_flavor,
-        mapping=label_mapping,
+        value=label_mapping,
         ignore_labels={label.lower() for label in ignore_labels},
     )
 
@@ -91,7 +91,7 @@ def forward(job: Job, routing_table: RoutingTable) -> None:
     try:
         flavor = _labels_to_flavor(
             labels=set(job.labels),
-            label_flavor_mapping=routing_table,
+            routing_table=routing_table,
         )
     except _InvalidLabelCombinationError as e:
         raise RouterError(f"Not able to forward job: {e}") from e
@@ -113,12 +113,12 @@ class _InvalidLabelCombinationError(Exception):
     """The label combination is invalid."""
 
 
-def _labels_to_flavor(labels: set[str], label_flavor_mapping: RoutingTable) -> Flavor:
+def _labels_to_flavor(labels: set[str], routing_table: RoutingTable) -> Flavor:
     """Map the labels to a flavor.
 
     Args:
         labels: The labels to map.
-        label_flavor_mapping: The available flavors.
+        routing_table: The available flavors.
 
     Raises:
         _InvalidLabelCombinationError: If the label combination is invalid.
@@ -127,10 +127,10 @@ def _labels_to_flavor(labels: set[str], label_flavor_mapping: RoutingTable) -> F
         The flavor.
     """
     if not labels:
-        return label_flavor_mapping.default_flavor
+        return routing_table.default_flavor
     labels_lowered = {label.lower() for label in labels}
-    final_labels = labels_lowered - label_flavor_mapping.ignore_labels
+    final_labels = labels_lowered - routing_table.ignore_labels
     label_key = LABEL_SEPARATOR.join(sorted(final_labels))
-    if label_key not in label_flavor_mapping.mapping:
+    if label_key not in routing_table.value:
         raise _InvalidLabelCombinationError(f"Invalid label combination: {labels}")
-    return label_flavor_mapping.mapping[label_key]
+    return routing_table.value[label_key]

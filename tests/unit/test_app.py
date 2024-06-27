@@ -46,7 +46,7 @@ def client_fixture(app: Flask) -> FlaskClient:
 def route_table_fixture() -> RoutingTable:
     """Create a route table."""
     return RoutingTable(
-        mapping={
+        value={
             "arm64": "large",
             "large": "large",
             f"arm64{LABEL_SEPARATOR}large": "large",

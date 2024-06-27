@@ -58,7 +58,7 @@ def test_job_is_forwarded(
     forward(
         job,
         routing_table=RoutingTable(
-            mapping={"arm64": "arm64"}, default_flavor="arm64", ignore_labels=set()
+            value={"arm64": "arm64"}, default_flavor="arm64", ignore_labels=set()
         ),
     )
 
@@ -81,7 +81,7 @@ def test_invalid_label_combination():
     with pytest.raises(RouterError) as e:
         forward(
             job,
-            routing_table=RoutingTable(mapping={}, default_flavor="default", ignore_labels=set()),
+            routing_table=RoutingTable(value={}, default_flavor="default", ignore_labels=set()),
         )
     assert "Not able to forward job: Invalid label combination:" in str(e.value)
 
@@ -98,7 +98,7 @@ def test_to_routing_table():
     default_flavor = "x64-large"
     routing_table = to_routing_table(flavor_mapping, ignore_labels, default_flavor)
     assert routing_table == RoutingTable(
-        mapping={
+        value={
             "arm64": "large",
             "large": "large",
             f"arm64{LABEL_SEPARATOR}large": "large",
@@ -125,7 +125,7 @@ def test_to_routing_table_case_insensitive():
     default_flavor = "large"
     routing_table = to_routing_table(flavor_mapping, ignore_labels, default_flavor)
     assert routing_table == RoutingTable(
-        mapping={
+        value={
             "arm64": "large",
             "large": "large",
             f"arm64{LABEL_SEPARATOR}large": "large",
@@ -150,7 +150,7 @@ def test_can_forward(monkeypatch: pytest.MonkeyPatch):
 
 def test__labels_to_flavor():
     """
-    arrange: Two flavors and a labels to flavor mapping
+    arrange: Two flavors and a routing_table
     act: Call labels_to_flavor with all combination of labels.
     assert: The correct flavor is returned.
     """
@@ -167,8 +167,8 @@ def test__labels_to_flavor():
         for x in itertools.combinations(x64_flavor_labels, length)
     )
     x64_label_combination.remove(("large",))
-    mapping = RoutingTable(
-        mapping={
+    routing_table = RoutingTable(
+        value={
             **{
                 LABEL_SEPARATOR.join(label_combination): "large"
                 for label_combination in arm_label_combination
@@ -184,23 +184,23 @@ def test__labels_to_flavor():
 
     for label_combination in arm_label_combination:
         assert (
-            _labels_to_flavor(set(label_combination), mapping) == "large"
+            _labels_to_flavor(set(label_combination), routing_table) == "large"
         ), f"Expected large flavor for {label_combination}"
 
     for label_combination in x64_label_combination:
         assert (
-            _labels_to_flavor(set(label_combination), mapping) == "x64-large"
+            _labels_to_flavor(set(label_combination), routing_table) == "x64-large"
         ), f"Expected x64-large flavor for {label_combination}"
 
 
 def test__labels_to_flavor_case_insensitive():
     """
-    arrange: Two flavors and a labels to flavor mapping
+    arrange: Two flavors and a routing_table
     act: Call labels_to_flavor with all combination of labels in mixed case.
     assert: The correct flavor is returned.
     """
-    mapping = RoutingTable(
-        mapping={
+    routing_table = RoutingTable(
+        value={
             "small": "small",
             "arm64": "large",
             "large": "large",
@@ -210,21 +210,21 @@ def test__labels_to_flavor_case_insensitive():
         ignore_labels={"self-hosted", "linux"},
     )
 
-    assert _labels_to_flavor({"SMALl"}, mapping) == "small"
-    assert _labels_to_flavor({"ARM64"}, mapping) == "large"
-    assert _labels_to_flavor({"lARGE"}, mapping) == "large"
-    assert _labels_to_flavor({"arM64", "lArge"}, mapping) == "large"
-    assert _labels_to_flavor({"small", "SELF-hosted"}, mapping) == "small"
+    assert _labels_to_flavor({"SMALl"}, routing_table) == "small"
+    assert _labels_to_flavor({"ARM64"}, routing_table) == "large"
+    assert _labels_to_flavor({"lARGE"}, routing_table) == "large"
+    assert _labels_to_flavor({"arM64", "lArge"}, routing_table) == "large"
+    assert _labels_to_flavor({"small", "SELF-hosted"}, routing_table) == "small"
 
 
 def test__labels_to_flavor_default_label():
     """
-    arrange: Two flavors and a labels to flavor mapping
+    arrange: Two flavors and a labels to flavor routing_table
     act: Call labels_to_flavor with empty labels.
     assert: The default flavor is returned.
     """
-    mapping = RoutingTable(
-        mapping={
+    routing_table = RoutingTable(
+        value={
             "arm64": "large",
             "large": "large",
             f"arm64{LABEL_SEPARATOR}large": "large",
@@ -234,17 +234,17 @@ def test__labels_to_flavor_default_label():
         default_flavor="large",
         ignore_labels={"self-hosted", "linux"},
     )
-    assert _labels_to_flavor(set(), mapping) == "large"
+    assert _labels_to_flavor(set(), routing_table) == "large"
 
 
 def test__labels_to_flavor_invalid_combination():
     """
-    arrange: Two flavors and a labels to flavor mapping
+    arrange: Two flavors and a labels to flavor routing_table
     act: Call labels_to_flavor with an invalid combination.
     assert: An InvalidLabelCombinationError is raised.
     """
-    mapping = RoutingTable(
-        mapping={
+    routing_table = RoutingTable(
+        value={
             "arm64": "large",
             "large": "large",
             f"arm64{LABEL_SEPARATOR}large": "large",
@@ -256,18 +256,18 @@ def test__labels_to_flavor_invalid_combination():
     )
     labels = {"self-hosted", "linux", "arm64", "large", "x64"}
     with pytest.raises(_InvalidLabelCombinationError) as exc_info:
-        _labels_to_flavor(labels, mapping)
+        _labels_to_flavor(labels, routing_table)
     assert "Invalid label combination:" in str(exc_info.value)
 
 
 def test__labels_to_flavor_unrecognised_label():
     """
-    arrange: Two flavors and a labels to flavor mapping
+    arrange: Two flavors and a labels to flavor routing_table
     act: Call labels_to_flavor with an unrecognised label.
     assert: An InvalidLabelCombinationError is raised.
     """
-    mapping = RoutingTable(
-        mapping={
+    routing_table = RoutingTable(
+        value={
             "arm64": "large",
             "large": "large",
             f"arm64{LABEL_SEPARATOR}large": "large",
@@ -279,18 +279,18 @@ def test__labels_to_flavor_unrecognised_label():
     )
     labels = {"self-hosted", "linux", "arm64", "large", "noble"}
     with pytest.raises(_InvalidLabelCombinationError) as exc_info:
-        _labels_to_flavor(labels, mapping)
+        _labels_to_flavor(labels, routing_table)
     assert "Invalid label combination:" in str(exc_info.value)
 
 
 def test__labels_to_flavor_ignore_labels():
     """
-    arrange: Two flavors and a labels to flavor mapping
+    arrange: Two flavors and a labels to flavor routing_table
     act: Call labels_to_flavor with an ignored label.
     assert: The correct flavor is returned.
     """
-    mapping = RoutingTable(
-        mapping={
+    routing_table = RoutingTable(
+        value={
             "arm64": "large",
             "large": "large",
             f"arm64{LABEL_SEPARATOR}large": "large",
@@ -301,4 +301,4 @@ def test__labels_to_flavor_ignore_labels():
         ignore_labels={"self-hosted", "linux"},
     )
     labels = {"self-hosted", "linux", "arm64", "large"}
-    assert _labels_to_flavor(labels, mapping) == "large"
+    assert _labels_to_flavor(labels, routing_table) == "large"
