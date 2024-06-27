@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 WORKFLOW_JOB = "workflow_job"
 Flavor = str
 Label = str
-LabelCombinationIdentifier = tuple[str, ...]
+LabelCombinationIdentifier = tuple[Label, ...]
 
 
 class RouterError(Exception):
@@ -53,7 +53,7 @@ def to_routing_table(
     Returns:
         The label flavor mapping.
     """
-    label_mapping = {}
+    label_mapping: dict[tuple[Label, ...], Flavor] = {}
 
     for flavor, labels in flavor_label_mapping_list:
         sorted_labels = tuple(sorted(labels.lower() for labels in labels))
