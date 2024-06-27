@@ -213,7 +213,7 @@ def test__labels_to_flavor_case_insensitive():
 def test__labels_to_flavor_default_label():
     """
     arrange: Two flavors and a labels to flavor routing_table
-    act: Call labels_to_flavor with empty labels.
+    act: Call labels_to_flavor with empty labels or ignored labels.
     assert: The default flavor is returned.
     """
     routing_table = RoutingTable(
@@ -228,6 +228,9 @@ def test__labels_to_flavor_default_label():
         ignore_labels={"self-hosted", "linux"},
     )
     assert _labels_to_flavor(set(), routing_table) == "large"
+    assert _labels_to_flavor({"self-hosted"}, routing_table) == "large"
+    assert _labels_to_flavor({"linux"}, routing_table) == "large"
+    assert _labels_to_flavor({"self-hosted", "linux"}, routing_table) == "large"
 
 
 def test__labels_to_flavor_invalid_combination():

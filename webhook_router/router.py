@@ -124,10 +124,11 @@ def _labels_to_flavor(labels: set[str], routing_table: RoutingTable) -> Flavor:
     Returns:
         The flavor.
     """
-    if not labels:
-        return routing_table.default_flavor
     labels_lowered = {label.lower() for label in labels}
     final_labels = labels_lowered - routing_table.ignore_labels
+    if not final_labels:
+        return routing_table.default_flavor
+
     label_key = tuple(sorted(final_labels))
     if label_key not in routing_table.value:
         raise _InvalidLabelCombinationError(f"Invalid label combination: {labels}")
