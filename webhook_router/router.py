@@ -62,9 +62,12 @@ def to_routing_table(
             for length in range(1, len(sorted_labels) + 1)
             for x in itertools.combinations(sorted_labels, length)
         ]
-        for label_combination in powerset:
-            if label_combination not in label_mapping:
-                label_mapping[label_combination] = flavor
+        # Add the flavor for each label combination
+        # Merge the new label mapping with the existing one, preserving the existing values
+        label_mapping = {
+            **{label_combination: flavor for label_combination in powerset},
+            **label_mapping,
+        }
     return RoutingTable(
         default_flavor=default_flavor,
         value=label_mapping,

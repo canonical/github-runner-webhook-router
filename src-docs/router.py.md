@@ -41,7 +41,7 @@ Convert the flavor label mapping to a route table.
 
 ---
 
-<a href="../webhook_router/router.py#L75"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../webhook_router/router.py#L78"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `forward`
 
@@ -67,7 +67,7 @@ Forward the job to the appropriate message queue.
 
 ---
 
-<a href="../webhook_router/router.py#L101"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../webhook_router/router.py#L104"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `can_forward`
 
