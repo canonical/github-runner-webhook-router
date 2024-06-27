@@ -53,24 +53,43 @@ def to_routing_table(
     Returns:
         The label flavor mapping.
     """
-    label_mapping: dict[tuple[Label, ...], Flavor] = {}
+    routing_table: dict[tuple[Label, ...], Flavor] = {}
 
     for flavor, labels in flavor_label_mapping_list:
+        # Use the sorted labels as keys for the routing table.
+
         sorted_labels = tuple(sorted(labels.lower() for labels in labels))
-        powerset = [
+
+        # We have to consider every combination of labels provided for a flavor.
+        # E.g. if we have a flavor label mapping
+        #
+        # - "large": ["large", "x64", "jammy"]
+        # - "edge": ["edge", "x64"],
+        #
+        #  we have to route the label combinations
+        #
+        # ["large"], ["x64"], ["jammy"], ["large", "x64"] to "large" and
+        # ["edge"], ["edge", "x64"] to "edge"
+        #
+        # as we cannot rely on the user to provide all the labels in a workflow job.
+        label_combinations = [
             x
             for length in range(1, len(sorted_labels) + 1)
             for x in itertools.combinations(sorted_labels, length)
         ]
-        # Add the flavor for each label combination
-        # Merge the new label mapping with the existing one, preserving the existing values
-        label_mapping = {
-            **{label_combination: flavor for label_combination in powerset},
-            **label_mapping,
+        route_entries_for_flavor = {
+            label_combination: flavor for label_combination in label_combinations
+        }
+
+        # Merge these route entries with existing ones, preserving the existing mappings to
+        # avoid overwriting them and respecting the order of the entries given by the operator.
+        routing_table = {
+            **route_entries_for_flavor,
+            **routing_table,
         }
     return RoutingTable(
         default_flavor=default_flavor,
-        value=label_mapping,
+        value=routing_table,
         ignore_labels={label.lower() for label in ignore_labels},
     )
 
