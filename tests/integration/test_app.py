@@ -8,7 +8,7 @@ import itertools
 import json
 import random
 import secrets
-from typing import Optional, cast
+from typing import Optional
 
 import pytest
 import requests
@@ -142,7 +142,7 @@ async def test_receive_webhook_not_forwarded(ops_test: OpsTest, model: Model, ap
     assert not jobs_by_flavour.get("default")
 
 
-async def test_receive_webhook_client_error(ops_test: OpsTest, model: Model, app: Application):
+async def test_receive_webhook_client_error(model: Model, app: Application):
     """
     arrange: given a running charm with a particular flavour mapping
     act: call the webhook endpoint with an invalid payload or missing headers
