@@ -17,7 +17,7 @@ import webhook_router.app as app_module
 import webhook_router.router
 from tests.unit.helpers import create_correct_signature, create_incorrect_signature
 from webhook_router.parse import Job, JobStatus, ParseError
-from webhook_router.router import LABEL_SEPARATOR, RouterError, RoutingTable
+from webhook_router.router import RouterError, RoutingTable
 
 TEST_PATH = "/webhook"
 
@@ -47,12 +47,12 @@ def route_table_fixture() -> RoutingTable:
     """Create a route table."""
     return RoutingTable(
         value={
-            "arm64": "large",
-            "large": "large",
-            f"arm64{LABEL_SEPARATOR}large": "large",
-            "x64": "small",
-            "small": "small",
-            f"small{LABEL_SEPARATOR}x64": "small",
+            ("arm64",): "large",
+            ("large",): "large",
+            ("arm64", "large"): "large",
+            ("x64",): "small",
+            ("small",): "small",
+            ("small", "x64"): "small",
         },
         default_flavor="small",
         ignore_labels={"self-hosted", "linux"},

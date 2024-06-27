@@ -12,10 +12,9 @@ from webhook_router.parse import Job, JobStatus
 logger = logging.getLogger(__name__)
 
 WORKFLOW_JOB = "workflow_job"
-LABEL_SEPARATOR = "#"
 Flavor = str
 Label = str
-LabelCombinationIdentifier = str
+LabelCombinationIdentifier = tuple[str, ...]
 
 
 class RouterError(Exception):
@@ -57,16 +56,15 @@ def to_routing_table(
     label_mapping = {}
 
     for flavor, labels in flavor_label_mapping_list:
-        sorted_labels = sorted(labels.lower() for labels in labels)
+        sorted_labels = tuple(sorted(labels.lower() for labels in labels))
         powerset = [
             x
             for length in range(1, len(sorted_labels) + 1)
             for x in itertools.combinations(sorted_labels, length)
         ]
         for label_combination in powerset:
-            label_key = LABEL_SEPARATOR.join(label_combination)
-            if label_key not in label_mapping:
-                label_mapping[label_key] = flavor
+            if label_combination not in label_mapping:
+                label_mapping[label_combination] = flavor
     return RoutingTable(
         default_flavor=default_flavor,
         value=label_mapping,
@@ -130,7 +128,7 @@ def _labels_to_flavor(labels: set[str], routing_table: RoutingTable) -> Flavor:
         return routing_table.default_flavor
     labels_lowered = {label.lower() for label in labels}
     final_labels = labels_lowered - routing_table.ignore_labels
-    label_key = LABEL_SEPARATOR.join(sorted(final_labels))
+    label_key = tuple(sorted(final_labels))
     if label_key not in routing_table.value:
         raise _InvalidLabelCombinationError(f"Invalid label combination: {labels}")
     return routing_table.value[label_key]

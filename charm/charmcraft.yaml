@@ -50,7 +50,7 @@ config:
             - flavour1: [label1, label2]
             - flavour2: [label1, label3]
             If a job matches multiple flavours, the first flavour matching defined in this configuration will be used.
-            Note that labels are treated case-insensitive. You should also not use the char # due to technical limitations.
+            Note that labels are treated case-insensitive.
          required: true
     log-level:
       type: string

@@ -10,7 +10,6 @@ import pytest
 from webhook_router.mq import add_job_to_queue
 from webhook_router.parse import Job, JobStatus
 from webhook_router.router import (
-    LABEL_SEPARATOR,
     RouterError,
     RoutingTable,
     _InvalidLabelCombinationError,
@@ -58,7 +57,7 @@ def test_job_is_forwarded(
     forward(
         job,
         routing_table=RoutingTable(
-            value={"arm64": "arm64"}, default_flavor="arm64", ignore_labels=set()
+            value={("arm64",): "arm64"}, default_flavor="arm64", ignore_labels=set()
         ),
     )
 
@@ -99,15 +98,15 @@ def test_to_routing_table():
     routing_table = to_routing_table(flavor_mapping, ignore_labels, default_flavor)
     assert routing_table == RoutingTable(
         value={
-            "arm64": "large",
-            "large": "large",
-            f"arm64{LABEL_SEPARATOR}large": "large",
-            "x64": "x64-large",
-            "jammy": "x64-large",
-            f"jammy{LABEL_SEPARATOR}x64": "x64-large",
-            f"jammy{LABEL_SEPARATOR}large": "x64-large",
-            f"large{LABEL_SEPARATOR}x64": "x64-large",
-            f"jammy{LABEL_SEPARATOR}large{LABEL_SEPARATOR}x64": "x64-large",
+            ("arm64",): "large",
+            ("large",): "large",
+            ("arm64", "large"): "large",
+            ("x64",): "x64-large",
+            ("jammy",): "x64-large",
+            ("jammy", "x64"): "x64-large",
+            ("jammy", "large"): "x64-large",
+            ("large", "x64"): "x64-large",
+            ("jammy", "large", "x64"): "x64-large",
         },
         default_flavor="x64-large",
         ignore_labels=ignore_labels,
@@ -126,9 +125,9 @@ def test_to_routing_table_case_insensitive():
     routing_table = to_routing_table(flavor_mapping, ignore_labels, default_flavor)
     assert routing_table == RoutingTable(
         value={
-            "arm64": "large",
-            "large": "large",
-            f"arm64{LABEL_SEPARATOR}large": "large",
+            ("arm64",): "large",
+            ("large",): "large",
+            ("arm64", "large"): "large",
         },
         default_flavor="large",
         ignore_labels={"self-hosted", "linux"},
@@ -169,14 +168,8 @@ def test__labels_to_flavor():
     x64_label_combination.remove(("large",))
     routing_table = RoutingTable(
         value={
-            **{
-                LABEL_SEPARATOR.join(label_combination): "large"
-                for label_combination in arm_label_combination
-            },
-            **{
-                LABEL_SEPARATOR.join(label_combination): "x64-large"
-                for label_combination in x64_label_combination
-            },
+            **{label_combination: "large" for label_combination in arm_label_combination},
+            **{label_combination: "x64-large" for label_combination in x64_label_combination},
         },
         default_flavor="large",
         ignore_labels={"self-hosted", "linux"},
@@ -201,10 +194,10 @@ def test__labels_to_flavor_case_insensitive():
     """
     routing_table = RoutingTable(
         value={
-            "small": "small",
-            "arm64": "large",
-            "large": "large",
-            f"arm64{LABEL_SEPARATOR}large": "large",
+            ("small",): "small",
+            ("arm64",): "large",
+            ("large",): "large",
+            ("arm64", "large"): "large",
         },
         default_flavor="large",
         ignore_labels={"self-hosted", "linux"},
@@ -225,11 +218,11 @@ def test__labels_to_flavor_default_label():
     """
     routing_table = RoutingTable(
         value={
-            "arm64": "large",
-            "large": "large",
-            f"arm64{LABEL_SEPARATOR}large": "large",
-            "x64": "large-x64",
-            f"large{LABEL_SEPARATOR}x64": "x64-large",
+            ("arm64",): "large",
+            ("large",): "large",
+            ("arm64", "large"): "large",
+            ("x64",): "large-x64",
+            ("large", "x64"): "x64-large",
         },
         default_flavor="large",
         ignore_labels={"self-hosted", "linux"},
@@ -245,11 +238,11 @@ def test__labels_to_flavor_invalid_combination():
     """
     routing_table = RoutingTable(
         value={
-            "arm64": "large",
-            "large": "large",
-            f"arm64{LABEL_SEPARATOR}large": "large",
-            "x64": "large-x64",
-            f"large{LABEL_SEPARATOR}x64": "x64-large",
+            ("arm64",): "large",
+            ("large",): "large",
+            ("arm64", "large"): "large",
+            ("x64",): "large-x64",
+            ("large", "x64"): "x64-large",
         },
         default_flavor="large",
         ignore_labels={"self-hosted", "linux"},
@@ -268,11 +261,11 @@ def test__labels_to_flavor_unrecognised_label():
     """
     routing_table = RoutingTable(
         value={
-            "arm64": "large",
-            "large": "large",
-            f"arm64{LABEL_SEPARATOR}large": "large",
-            "x64": "large-x64",
-            f"large{LABEL_SEPARATOR}x64": "x64-large",
+            ("arm64",): "large",
+            ("large",): "large",
+            ("arm64", "large"): "large",
+            ("x64",): "large-x64",
+            ("large", "x64"): "x64-large",
         },
         default_flavor="large",
         ignore_labels={"self-hosted", "linux"},
@@ -291,11 +284,11 @@ def test__labels_to_flavor_ignore_labels():
     """
     routing_table = RoutingTable(
         value={
-            "arm64": "large",
-            "large": "large",
-            f"arm64{LABEL_SEPARATOR}large": "large",
-            "x64": "large-x64",
-            f"large{LABEL_SEPARATOR}x64": "x64-large",
+            ("arm64",): "large",
+            ("large",): "large",
+            ("arm64", "large"): "large",
+            ("x64",): "large-x64",
+            ("large", "x64"): "x64-large",
         },
         default_flavor="large",
         ignore_labels={"self-hosted", "linux"},
