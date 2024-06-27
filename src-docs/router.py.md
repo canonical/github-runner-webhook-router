@@ -102,7 +102,7 @@ A class to represent how to route jobs to the appropriate message queue.
 
 **Attributes:**
  
- - <b>`mapping`</b>:  The mapping of labels to flavors. 
+ - <b>`value`</b>:  The mapping of labels to flavors. 
  - <b>`ignore_labels`</b>:  The labels to ignore (e.g. "self-hosted" or "linux"). 
  - <b>`default_flavor`</b>:  The default flavor. 
 

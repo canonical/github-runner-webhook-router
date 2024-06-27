@@ -63,15 +63,17 @@ def webhook_to_job(webhook: dict) -> Job:
     if not validation_result.is_valid:
         raise ParseError(f"Could not parse webhook: {validation_result.msg}")
 
-    assert "payload" in webhook, f"payload key not found in {webhook}"
-    assert "action" in webhook["payload"], f"action key not found in {webhook['payload']}"
-    assert (
+    #  The enclosed code will be removed when compiling to optimised byte code.
+
+    assert "payload" in webhook, f"payload key not found in {webhook}"  # nosec
+    assert "action" in webhook["payload"], f"action key not found in {webhook['payload']}"  # nosec
+    assert (  # nosec
         "workflow_job" in webhook["payload"]
     ), f"workflow_job key not found in {webhook['payload']}"
-    assert (
+    assert (  # nosec
         "labels" in webhook["payload"]["workflow_job"]
     ), f"labels key not found in {webhook['payload']['workflow_job']}"
-    assert (
+    assert (  # nosec
         "run_url" in webhook["payload"]["workflow_job"]
     ), f"run_url key not found in {webhook['payload']['workflow_job']}"
 
