@@ -23,12 +23,39 @@ description: |
 extensions:
   - flask-framework
 
+requires:
+  mongodb:
+    optional: false
+    interface: mongodb_client
+    limit: 1
+
+
 config:
   options:
-    log-level:
+    default-flavour:
         type: string
-        description: "The log level to use for the application logs. Use any of: CRITICAL, ERROR, WARNING, INFO, DEBUG, NOTSET"
-        default: "INFO"
+        description: "The flavour to use when no labels except the default are provided."
+        required: true
+    default-self-hosted-labels:
+      type: string
+      description: >-
+        Comma-separated list of labels to ignore during routing, as they apply to all self-hosted flavours.
+      default: "self-hosted,linux"
+    # The following config option is likely to be removed in the future and replaced by integration with the github-runner charm.
+    flavours:
+         type: string
+         description: |
+            YAML configuration of the assignment of labels to flavours to which the job is to be routed.
+            The format is comprised of a list of flavors with respective labels:
+            - flavour1: [label1, label2]
+            - flavour2: [label1, label3]
+            If a job matches multiple flavours, the first flavour matching defined in this configuration will be used.
+            Note that labels are treated case-insensitive.
+         required: true
+    log-level:
+      type: string
+      description: "The log level to use for the application logs. Use any of: CRITICAL, ERROR, WARNING, INFO, DEBUG, NOTSET"
+      default: "INFO"
     webhook-secret:
       type: string
       description: "The secret used to validate the webhook"

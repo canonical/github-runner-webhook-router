@@ -11,7 +11,7 @@ Use links instead.
 # github-runner-webhook-router
 
 > **Warning**
-Work in progress: This charm is not yet ready for use.
+Work in progress: This charm is still in development and not yet ready for use in production.
 
 The github-runner-webhook-router charm is a Juju charm that provides a webhook router for GitHub Actions self-hosted runners. 
 This charm is designed to be used in conjunction with the [github-runner-operator](https://github.com/canonical/github-runner-operator) charm.

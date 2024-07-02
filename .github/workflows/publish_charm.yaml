@@ -14,3 +14,5 @@ jobs:
       channel: latest/edge
       charmcraft-channel: "latest/edge"
       resource-mapping: '{"github-runner-webhook-router": "flask-app-image"}'
+      charm-directory: "charm"
+      doc-automation-disabled: true
