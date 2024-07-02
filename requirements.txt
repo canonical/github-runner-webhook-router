@@ -1,5 +1,5 @@
 Flask==3.0.3
 pydantic==2.7.3
 kombu==5.3.7
-pymongo==4.7.3
+pymongo==4.8.0
 PyYAML==6.0.*
