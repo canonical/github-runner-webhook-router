@@ -23,4 +23,6 @@ jobs:
     with:
       origin-channel: ${{ github.event.inputs.origin-channel }}
       destination-channel: ${{ github.event.inputs.destination-channel }}
+      charm-directory: "charm"
+      doc-automation-disabled: true
     secrets: inherit
