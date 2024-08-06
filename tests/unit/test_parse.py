@@ -98,24 +98,6 @@ def test_webhook_invalid_values(labels: list[str], status: JobStatus, run_url: s
     assert "Failed to create Webhook object for payload " in str(exc_info.value)
 
 
-def test_webhook_wrong_event():
-    """
-    arrange: A payload dict with the wrong event.
-    act: Call webhook_to_job with the payload.
-    assert: A ParseError is raised.
-    """
-    payload = {
-        "event": "workflow_run",
-        "payload": {
-            "action": "queued",
-            "workflow_job": {"id": 22428484402, "run_url": FAKE_RUN_URL, "labels": FAKE_LABELS},
-        },
-    }
-    with pytest.raises(ParseError) as exc_info:
-        webhook_to_job(payload)
-    assert f"Event workflow_run not supported: {payload}" in str(exc_info.value)
-
-
 def test_webhook_workflow_job_not_dict():
     """
     arrange: A payload dict with workflow_job not a dict.
@@ -141,16 +123,6 @@ def test_webhook_missing_keys():
     assert: A ParseError is raised.
     """
     payload: dict
-    # event key missing
-    payload = {
-        "payload": {
-            "action": "queued",
-            "workflow_job": {"id": 22428484402, "run_url": FAKE_RUN_URL, "labels": FAKE_LABELS},
-        }
-    }
-    with pytest.raises(ParseError) as exc_info:
-        webhook_to_job(payload)
-    assert f"event key not found in {payload}" in str(exc_info.value)
 
     # payload key missing
     payload = {

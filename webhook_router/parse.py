@@ -103,31 +103,10 @@ def _validate_webhook(webhook: dict) -> ValidationResult:
     Returns:
         (True, "") if the payload is valid otherwise (False, error_msg)
     """
-    validation_result = _validate_event(webhook)
-    if not validation_result.is_valid:
-        return validation_result
-
     validation_result = _validate_missing_keys(webhook)
     if not validation_result.is_valid:
         return validation_result
 
-    return ValidationResult(True, "")
-
-
-def _validate_event(webhook: dict) -> ValidationResult:
-    """Validate the event key in the webhook payload.
-
-    Args:
-        webhook: The webhook payload to validate.
-
-    Returns:
-        (True, "") if the event key is valid otherwise (False,error_msg)
-    """
-    if "event" not in webhook:
-        return ValidationResult(False, f"event key not found in {webhook}")
-    event = webhook["event"]
-    if event != WORKFLOW_JOB:
-        return ValidationResult(False, f"Event {event} not supported: {webhook}")
     return ValidationResult(True, "")
 
 
