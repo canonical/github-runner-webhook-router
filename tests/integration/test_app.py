@@ -90,9 +90,9 @@ async def test_forward_webhook(  # pylint: disable=too-many-locals
     expected_jobs_by_flavour = {
         flavour: [
             Job(
-                status=payload["payload"]["action"],
-                run_url=payload["payload"]["workflow_job"]["run_url"],
-                labels=payload["payload"]["workflow_job"]["labels"],
+                status=payload["action"],
+                run_url=payload["workflow_job"]["run_url"],
+                labels=payload["workflow_job"]["labels"],
             )
             for payload in payloads_by_flavour[flavour]
         ]

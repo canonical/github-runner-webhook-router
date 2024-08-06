@@ -109,9 +109,9 @@ def test_webhook_logs(
     """
     data = _create_valid_data(JobStatus.QUEUED)
     expected_job = Job(
-        labels=data["payload"]["workflow_job"]["labels"],
+        labels=data["workflow_job"]["labels"],
         status=JobStatus.QUEUED,
-        run_url=data["payload"]["workflow_job"]["run_url"],
+        run_url=data["workflow_job"]["run_url"],
     )
     response = client.post(
         TEST_PATH,
@@ -386,16 +386,13 @@ def _create_valid_data(action: str) -> dict:
         A valid payload for the supported event.
     """
     return {
-        "event": app_module.SUPPORTED_GITHUB_EVENT,
-        "payload": {
-            "action": action,
-            "workflow_job": {
-                "id": 123456789,
-                "run_id": 987654321,
-                "status": "completed",
-                "conclusion": "success",
-                "labels": ["self-hosted", "linux", "arm64"],
-                "run_url": "https://api.github.com/repos/f/actions/runs/8200803099",
-            },
+        "action": action,
+        "workflow_job": {
+            "id": 123456789,
+            "run_id": 987654321,
+            "status": "completed",
+            "conclusion": "success",
+            "labels": ["self-hosted", "linux", "arm64"],
+            "run_url": "https://api.github.com/repos/f/actions/runs/8200803099",
         },
     }
