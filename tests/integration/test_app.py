@@ -203,7 +203,7 @@ async def test_receive_webhook_client_error(model: Model, app: Application):
     assert resp.status_code == 400
 
     # 5. invalid payload
-    actual_payload = {"event": "workflow_job", "payload": {"action": "queued"}}
+    actual_payload = {"payload": {"action": "queued"}}
     actual_payload_bytes = json.dumps(actual_payload).encode("utf-8")
     actual_signature = _create_signature(actual_payload_bytes, webhook_secret)
     actual_headers = {
@@ -228,7 +228,6 @@ def _create_valid_data(action: str, labels: list[str]) -> dict:
     # we are not using random.randint here for cryptographic purposes
     _id = random.randint(1, 10000)  # nosec
     return {
-        "event": SUPPORTED_GITHUB_EVENT,
         "payload": {
             "action": action,
             "workflow_job": {
