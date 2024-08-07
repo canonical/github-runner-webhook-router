@@ -228,16 +228,14 @@ def _create_valid_data(action: str, labels: list[str]) -> dict:
     # we are not using random.randint here for cryptographic purposes
     _id = random.randint(1, 10000)  # nosec
     return {
-        "payload": {
-            "action": action,
-            "workflow_job": {
-                "id": _id,
-                "run_id": 987654321,
-                "status": "completed",
-                "conclusion": "success",
-                "labels": labels,
-                "run_url": f"https://api.github.com/repos/f/actions/runs/{_id}",
-            },
+        "action": action,
+        "workflow_job": {
+            "id": _id,
+            "run_id": 987654321,
+            "status": "completed",
+            "conclusion": "success",
+            "labels": labels,
+            "run_url": f"https://api.github.com/repos/f/actions/runs/{_id}",
         },
     }
 
