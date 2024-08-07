@@ -90,9 +90,9 @@ async def test_forward_webhook(  # pylint: disable=too-many-locals
     expected_jobs_by_flavour = {
         flavour: [
             Job(
-                status=payload["payload"]["action"],
-                run_url=payload["payload"]["workflow_job"]["run_url"],
-                labels=payload["payload"]["workflow_job"]["labels"],
+                status=payload["action"],
+                run_url=payload["workflow_job"]["run_url"],
+                labels=payload["workflow_job"]["labels"],
             )
             for payload in payloads_by_flavour[flavour]
         ]
@@ -228,16 +228,14 @@ def _create_valid_data(action: str, labels: list[str]) -> dict:
     # we are not using random.randint here for cryptographic purposes
     _id = random.randint(1, 10000)  # nosec
     return {
-        "payload": {
-            "action": action,
-            "workflow_job": {
-                "id": _id,
-                "run_id": 987654321,
-                "status": "completed",
-                "conclusion": "success",
-                "labels": labels,
-                "run_url": f"https://api.github.com/repos/f/actions/runs/{_id}",
-            },
+        "action": action,
+        "workflow_job": {
+            "id": _id,
+            "run_id": 987654321,
+            "status": "completed",
+            "conclusion": "success",
+            "labels": labels,
+            "run_url": f"https://api.github.com/repos/f/actions/runs/{_id}",
         },
     }
 

@@ -65,21 +65,17 @@ def webhook_to_job(webhook: dict) -> Job:
 
     #  The enclosed code will be removed when compiling to optimised byte code.
 
-    assert "payload" in webhook, f"payload key not found in {webhook}"  # nosec
-    assert "action" in webhook["payload"], f"action key not found in {webhook['payload']}"  # nosec
+    assert "action" in webhook, f"action key not found in {webhook}"  # nosec
+    assert "workflow_job" in webhook, f"workflow_job key not found in {webhook}"  # nosec
     assert (  # nosec
-        "workflow_job" in webhook["payload"]
-    ), f"workflow_job key not found in {webhook['payload']}"
+        "labels" in webhook["workflow_job"]
+    ), f"labels key not found in {webhook['workflow_job']}"
     assert (  # nosec
-        "labels" in webhook["payload"]["workflow_job"]
-    ), f"labels key not found in {webhook['payload']['workflow_job']}"
-    assert (  # nosec
-        "run_url" in webhook["payload"]["workflow_job"]
-    ), f"run_url key not found in {webhook['payload']['workflow_job']}"
+        "run_url" in webhook["workflow_job"]
+    ), f"run_url key not found in {webhook['workflow_job']}"
 
-    payload = webhook["payload"]
-    status = payload["action"]
-    workflow_job = payload["workflow_job"]
+    status = webhook["action"]
+    workflow_job = webhook["workflow_job"]
 
     labels = workflow_job["labels"]
     run_url = workflow_job["run_url"]
@@ -91,7 +87,7 @@ def webhook_to_job(webhook: dict) -> Job:
             run_url=run_url,
         )
     except ValueError as exc:
-        raise ParseError(f"Failed to create Webhook object for payload {payload}: {exc}") from exc
+        raise ParseError(f"Failed to create Webhook object for webhook {webhook}: {exc}") from exc
 
 
 def _validate_webhook(webhook: dict) -> ValidationResult:
@@ -122,14 +118,11 @@ def _validate_missing_keys(webhook: dict) -> ValidationResult:
         (True, "") if all keys are there otherwise (False,error_msg)
          if the payload is missing keys.
     """
-    if "payload" not in webhook:
-        return ValidationResult(False, f"payload key not found in {webhook}")
-    payload = webhook["payload"]
-    for expected_payload_key in ("action", "workflow_job"):
-        if expected_payload_key not in payload:
-            return ValidationResult(False, f"{expected_payload_key} key not found in {webhook}")
+    for expected_webhook_key in ("action", "workflow_job"):
+        if expected_webhook_key not in webhook:
+            return ValidationResult(False, f"{expected_webhook_key} key not found in {webhook}")
 
-    workflow_job = payload["workflow_job"]
+    workflow_job = webhook["workflow_job"]
     if not isinstance(workflow_job, dict):
         return ValidationResult(False, f"workflow_job is not a dict in {webhook}")
     for expected_workflow_job_key in ("labels", "run_url"):

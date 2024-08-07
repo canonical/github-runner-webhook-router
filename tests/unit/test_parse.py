@@ -28,34 +28,31 @@ def test_webhook_to_job(labels: list[str], status: JobStatus):
     assert: The payload is translated.
     """
     payload = {
-        "event": "workflow_job",
-        "payload": {
-            "action": status,
-            "workflow_job": {
-                "id": 22428484402,
-                "run_id": 8200803099,
-                "workflow_name": "Push Event Tests",
-                "head_branch": "github-hosted",
-                "run_url": FAKE_RUN_URL,
-                "run_attempt": 5,
-                "node_id": "CR_kwDOKQMbDc8AAAAFONeDMg",
-                "head_sha": "fc670c970f0c5e156a94d1935776d7ed43728067",
-                "url": "https://api.github.com/repos/f/actions/jobs/22428484402",
-                "html_url": "https://github.com/f/actions/runs/8200803099/job/22428484402",
-                "status": "queued",
-                "conclusion": None,
-                "created_at": "2024-03-08T08:46:26Z",
-                "started_at": "2024-03-08T08:46:26Z",
-                "completed_at": None,
-                "name": "push-event-tests",
-                "steps": [],
-                "check_run_url": "https://api.github.com/repos/f/check-runs/22428484402",
-                "labels": labels,
-                "runner_id": None,
-                "runner_name": None,
-                "runner_group_id": None,
-                "runner_group_name": None,
-            },
+        "action": status,
+        "workflow_job": {
+            "id": 22428484402,
+            "run_id": 8200803099,
+            "workflow_name": "Push Event Tests",
+            "head_branch": "github-hosted",
+            "run_url": FAKE_RUN_URL,
+            "run_attempt": 5,
+            "node_id": "CR_kwDOKQMbDc8AAAAFONeDMg",
+            "head_sha": "fc670c970f0c5e156a94d1935776d7ed43728067",
+            "url": "https://api.github.com/repos/f/actions/jobs/22428484402",
+            "html_url": "https://github.com/f/actions/runs/8200803099/job/22428484402",
+            "status": "queued",
+            "conclusion": None,
+            "created_at": "2024-03-08T08:46:26Z",
+            "started_at": "2024-03-08T08:46:26Z",
+            "completed_at": None,
+            "name": "push-event-tests",
+            "steps": [],
+            "check_run_url": "https://api.github.com/repos/f/check-runs/22428484402",
+            "labels": labels,
+            "runner_id": None,
+            "runner_name": None,
+            "runner_group_id": None,
+            "runner_group_name": None,
         },
     }
 
@@ -87,15 +84,12 @@ def test_webhook_invalid_values(labels: list[str], status: JobStatus, run_url: s
     assert: A ParseError is raised.
     """
     payload = {
-        "event": "workflow_job",
-        "payload": {
-            "action": status,
-            "workflow_job": {"id": 22428484402, "run_url": run_url, "labels": labels},
-        },
+        "action": status,
+        "workflow_job": {"id": 22428484402, "run_url": run_url, "labels": labels},
     }
     with pytest.raises(ParseError) as exc_info:
         webhook_to_job(payload)
-    assert "Failed to create Webhook object for payload " in str(exc_info.value)
+    assert "Failed to create Webhook object for webhook " in str(exc_info.value)
 
 
 def test_webhook_workflow_job_not_dict():
@@ -105,11 +99,8 @@ def test_webhook_workflow_job_not_dict():
     assert: A ParseError is raised.
     """
     payload = {
-        "event": "workflow_job",
-        "payload": {
-            "action": "queued",
-            "workflow_job": "not a dict",
-        },
+        "action": "queued",
+        "workflow_job": "not a dict",
     }
     with pytest.raises(ParseError) as exc_info:
         webhook_to_job(payload)
@@ -124,19 +115,8 @@ def test_webhook_missing_keys():
     """
     payload: dict
 
-    # payload key missing
-    payload = {
-        "event": "workflow_job",
-        "action": "queued",
-        "workflow_job": {"id": 22428484402, "run_url": FAKE_RUN_URL, "labels": FAKE_LABELS},
-    }
-    with pytest.raises(ParseError) as exc_info:
-        webhook_to_job(payload)
-    assert f"payload key not found in {payload}" in str(exc_info.value)
-
     # action key is missing
     payload = {
-        "event": "workflow_job",
         "payload": {
             "workflow_job": {"id": 22428484402, "run_url": FAKE_RUN_URL, "labels": FAKE_LABELS},
         },
@@ -146,13 +126,10 @@ def test_webhook_missing_keys():
     assert f"action key not found in {payload}" in str(exc_info.value)
     # workflow_job key missing
     payload = {
-        "event": "workflow_job",
-        "payload": {
-            "action": "queued",
-            "id": 22428484402,
-            "run_url": FAKE_RUN_URL,
-            "labels": FAKE_LABELS,
-        },
+        "action": "queued",
+        "id": 22428484402,
+        "run_url": FAKE_RUN_URL,
+        "labels": FAKE_LABELS,
     }
     with pytest.raises(ParseError) as exc_info:
         webhook_to_job(payload)
@@ -160,11 +137,8 @@ def test_webhook_missing_keys():
 
     # labels key missing
     payload = {
-        "event": "workflow_job",
-        "payload": {
-            "action": "queued",
-            "workflow_job": {"id": 22428484402, "run_url": FAKE_RUN_URL},
-        },
+        "action": "queued",
+        "workflow_job": {"id": 22428484402, "run_url": FAKE_RUN_URL},
     }
     with pytest.raises(ParseError) as exc_info:
         webhook_to_job(payload)
@@ -172,11 +146,8 @@ def test_webhook_missing_keys():
 
     # run_url key missing
     payload = {
-        "event": "workflow_job",
-        "payload": {
-            "action": "queued",
-            "workflow_job": {"id": 22428484402, "labels": FAKE_LABELS},
-        },
+        "action": "queued",
+        "workflow_job": {"id": 22428484402, "labels": FAKE_LABELS},
     }
     with pytest.raises(ParseError) as exc_info:
         webhook_to_job(payload)
