@@ -50,7 +50,7 @@ A class to translate the payload.
  
  - <b>`labels`</b>:  The labels of the job. 
  - <b>`status`</b>:  The status of the job. 
- - <b>`run_url`</b>:  The URL of the job. 
+ - <b>`url`</b>:  The URL of the job to be able to check its status. 
 
 
 ---

@@ -39,12 +39,12 @@ class Job(BaseModel):
     Attributes:
         labels: The labels of the job.
         status: The status of the job.
-        run_url: The URL of the job.
+        url: The URL of the job to be able to check its status.
     """
 
     labels: list[str]
     status: JobStatus
-    run_url: HttpUrl
+    url: HttpUrl
 
 
 def webhook_to_job(webhook: dict) -> Job:
@@ -71,20 +71,20 @@ def webhook_to_job(webhook: dict) -> Job:
         "labels" in webhook["workflow_job"]
     ), f"labels key not found in {webhook['workflow_job']}"
     assert (  # nosec
-        "run_url" in webhook["workflow_job"]
-    ), f"run_url key not found in {webhook['workflow_job']}"
+        "url" in webhook["workflow_job"]
+    ), f"url key not found in {webhook['workflow_job']}"
 
     status = webhook["action"]
     workflow_job = webhook["workflow_job"]
 
     labels = workflow_job["labels"]
-    run_url = workflow_job["run_url"]
+    job_url = workflow_job["url"]
 
     try:
         return Job(
             labels=labels,
             status=status,
-            run_url=run_url,
+            url=job_url,
         )
     except ValueError as exc:
         raise ParseError(f"Failed to create Webhook object for webhook {webhook}: {exc}") from exc
@@ -125,7 +125,7 @@ def _validate_missing_keys(webhook: dict) -> ValidationResult:
     workflow_job = webhook["workflow_job"]
     if not isinstance(workflow_job, dict):
         return ValidationResult(False, f"workflow_job is not a dict in {webhook}")
-    for expected_workflow_job_key in ("labels", "run_url"):
+    for expected_workflow_job_key in ("labels", "url"):
         if expected_workflow_job_key not in workflow_job:
             return ValidationResult(
                 False, f"{expected_workflow_job_key} key not found in {webhook}"

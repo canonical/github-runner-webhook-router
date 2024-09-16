@@ -52,7 +52,7 @@ def test_job_is_forwarded(
     job = Job(
         labels=["arm64"],
         status=job_status,
-        run_url="https://api.github.com/repos/f/actions/runs/8200803099",  # type: ignore
+        url="https://api.github.com/repos/f/actions/jobs/8200803099",  # type: ignore
     )
     forward(
         job,
@@ -75,7 +75,7 @@ def test_invalid_label_combination():
     job = Job(
         labels=["self-hosted", "linux", "arm64", "x64"],
         status=JobStatus.QUEUED,
-        run_url="https://api.github.com/repos/f/actions/runs/8200803099",  # type: ignore
+        url="https://api.github.com/repos/f/actions/jobs/8200803099",  # type: ignore
     )
     with pytest.raises(RouterError) as e:
         forward(
