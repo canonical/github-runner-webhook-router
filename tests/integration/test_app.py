@@ -91,7 +91,7 @@ async def test_forward_webhook(  # pylint: disable=too-many-locals
         flavour: [
             Job(
                 status=payload["action"],
-                run_url=payload["workflow_job"]["run_url"],
+                url=payload["workflow_job"]["url"],
                 labels=payload["workflow_job"]["labels"],
             )
             for payload in payloads_by_flavour[flavour]
@@ -235,7 +235,7 @@ def _create_valid_data(action: str, labels: list[str]) -> dict:
             "status": "completed",
             "conclusion": "success",
             "labels": labels,
-            "run_url": f"https://api.github.com/repos/f/actions/runs/{_id}",
+            "url": f"10262527884/job/28406633456https://api.github.com/repos/f/actions/jobs/{_id}",
         },
     }
 

@@ -30,8 +30,8 @@ def test_add_job_to_queue():
     """
     flavor = secrets.token_hex(16)
     labels = [secrets.token_hex(16), secrets.token_hex(16)]
-    # mypy: does not recognize that run_url can be passed as a string
-    job = Job(labels=labels, status=JobStatus.QUEUED, run_url="http://example.com")  # type: ignore
+    # mypy: does not recognize that url can be passed as a string
+    job = Job(labels=labels, status=JobStatus.QUEUED, url="http://example.com")  # type: ignore
     mq.add_job_to_queue(job, flavor)
 
     with Connection(IN_MEMORY_URI) as conn:

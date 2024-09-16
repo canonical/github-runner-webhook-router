@@ -111,7 +111,7 @@ def test_webhook_logs(
     expected_job = Job(
         labels=data["workflow_job"]["labels"],
         status=JobStatus.QUEUED,
-        run_url=data["workflow_job"]["run_url"],
+        url=data["workflow_job"]["url"],
     )
     response = client.post(
         TEST_PATH,
@@ -393,6 +393,6 @@ def _create_valid_data(action: str) -> dict:
             "status": "completed",
             "conclusion": "success",
             "labels": ["self-hosted", "linux", "arm64"],
-            "run_url": "https://api.github.com/repos/f/actions/runs/8200803099",
+            "url": "https://api.github.com/repos/f/actions/jobs/8200803099",
         },
     }
