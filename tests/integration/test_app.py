@@ -235,7 +235,7 @@ def _create_valid_data(action: str, labels: list[str]) -> dict:
             "status": "completed",
             "conclusion": "success",
             "labels": labels,
-            "url": f"10262527884/job/28406633456https://api.github.com/repos/f/actions/jobs/{_id}",
+            "url": f"https://api.github.com/repos/f/actions/jobs/{_id}",
         },
     }
 
