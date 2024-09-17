@@ -5,10 +5,13 @@
 
 import pytest
 
-from webhook_router.parse import Job, JobStatus, ParseError, webhook_to_job
+from webhook_router.parse import GitHubRepo, Job, JobStatus, ParseError, webhook_to_job
 
 FAKE_JOB_URL = "https://api.github.com/repos/fakeusergh-runner-test/actions/jobs/8200803099"
 FAKE_LABELS = ["self-hosted", "linux", "arm64"]
+FAKE_JOB_ID = 22428484402
+FAKE_OWNER = "fake"
+FAKE_REPO_NAME = "gh-runner-test"
 
 
 @pytest.mark.parametrize(
@@ -30,7 +33,7 @@ def test_webhook_to_job(labels: list[str], status: JobStatus):
     payload = {
         "action": status,
         "workflow_job": {
-            "id": 22428484402,
+            "id": FAKE_JOB_ID,
             "run_id": 8200803099,
             "workflow_name": "Push Event Tests",
             "head_branch": "github-hosted",
@@ -54,30 +57,37 @@ def test_webhook_to_job(labels: list[str], status: JobStatus):
             "runner_group_id": None,
             "runner_group_name": None,
         },
+        "repository": {
+            "id": 688069339,
+            "name": "gh-runner-test",
+            "full_name": f"{FAKE_OWNER}/{FAKE_REPO_NAME}",
+            "private": False,
+            "owner": {
+                "login": FAKE_OWNER,
+                "id": 4183921,
+            },
+        },
     }
 
     result = webhook_to_job(payload)
 
-    # mypy does not understand that we can pass strings instead of HttpUrl objects
-    # because of the underlying pydantic magic
-    assert result == Job(labels=labels, status=status, url=FAKE_JOB_URL)  # type: ignore
+    assert result == Job(
+        labels=labels,
+        status=status,
+        id=FAKE_JOB_ID,
+        repository=GitHubRepo(owner=FAKE_OWNER, name=FAKE_REPO_NAME),
+    )
 
 
 @pytest.mark.parametrize(
-    "labels, status, url",
+    "labels, status",
     [
-        pytest.param(
-            ["self-hosted", "linux", "arm64"], "invalid", FAKE_JOB_URL, id="invalid status"
-        ),
-        pytest.param(["ubuntu-latest"], JobStatus.IN_PROGRESS, "invalid", id="invalid run url"),
-        pytest.param(None, JobStatus.IN_PROGRESS, FAKE_JOB_URL, id="missing labels"),
-        pytest.param(["self-hosted", "linux", "amd"], None, FAKE_JOB_URL, id="missing status"),
-        pytest.param(
-            ["self-hosted", "linux", "amd"], JobStatus.COMPLETED, None, id="missing run url"
-        ),
+        pytest.param(["self-hosted", "linux", "arm64"], "invalid", id="invalid status"),
+        pytest.param(None, JobStatus.IN_PROGRESS, id="missing labels"),
+        pytest.param(["self-hosted", "linux", "amd"], None, id="missing status"),
     ],
 )
-def test_webhook_invalid_values(labels: list[str], status: JobStatus, url: str):
+def test_webhook_invalid_values(labels: list[str], status: JobStatus):
     """
     arrange: A payload dict with invalid values.
     act: Call webhook_to_job with the payload.
@@ -85,7 +95,8 @@ def test_webhook_invalid_values(labels: list[str], status: JobStatus, url: str):
     """
     payload = {
         "action": status,
-        "workflow_job": {"id": 22428484402, "url": url, "labels": labels},
+        "workflow_job": {"id": 22428484402, "labels": labels},
+        "repository": {"name": "gh-runner-test", "owner": {"login": "fakeuser"}},
     }
     with pytest.raises(ParseError) as exc_info:
         webhook_to_job(payload)
@@ -100,11 +111,44 @@ def test_webhook_workflow_job_not_dict():
     """
     payload = {
         "action": "queued",
-        "workflow_job": "not a dict",
+        "workflow_job": "labels id",
+        "repository": {"name": FAKE_REPO_NAME, "owner": {"login": FAKE_REPO_NAME}},
     }
     with pytest.raises(ParseError) as exc_info:
         webhook_to_job(payload)
     assert f"workflow_job is not a dict in {payload}" in str(exc_info.value)
+
+
+def test_webhook_repository_not_dict():
+    """
+    arrange: A payload dict with repository not a dict.
+    act: Call webhook_to_job with the payload.
+    assert: A ParseError is raised.
+    """
+    payload = {
+        "action": "queued",
+        "workflow_job": {"id": 22428484402, "labels": FAKE_LABELS},
+        "repository": "name owner login",
+    }
+    with pytest.raises(ParseError) as exc_info:
+        webhook_to_job(payload)
+    assert f"repository is not a dict in {payload}" in str(exc_info.value)
+
+
+def test_webhook_repository_owner_not_dict():
+    """
+    arrange: A payload dict with repository owner not a dict.
+    act: Call webhook_to_job with the payload.
+    assert: A ParseError is raised.
+    """
+    payload = {
+        "action": "queued",
+        "workflow_job": {"id": 22428484402, "labels": FAKE_LABELS},
+        "repository": {"name": "gh-runner-test", "owner": "not a dict"},
+    }
+    with pytest.raises(ParseError) as exc_info:
+        webhook_to_job(payload)
+    assert f"owner is not a dict in {payload['repository']}" in str(exc_info.value)
 
 
 def test_webhook_missing_keys():
@@ -119,6 +163,7 @@ def test_webhook_missing_keys():
     payload = {
         "payload": {
             "workflow_job": {"id": 22428484402, "url": FAKE_JOB_URL, "labels": FAKE_LABELS},
+            "repository": {"name": FAKE_REPO_NAME, "owner": {"login": FAKE_OWNER}},
         },
     }
     with pytest.raises(ParseError) as exc_info:
@@ -138,17 +183,59 @@ def test_webhook_missing_keys():
     # labels key missing
     payload = {
         "action": "queued",
-        "workflow_job": {"id": 22428484402, "url": FAKE_JOB_URL},
+        "workflow_job": {"id": 22428484402},
+        "repository": {"name": FAKE_REPO_NAME, "owner": {"login": FAKE_OWNER}},
     }
     with pytest.raises(ParseError) as exc_info:
         webhook_to_job(payload)
-    assert f"labels key not found in {payload}" in str(exc_info.value)
+    assert f"labels key not found in {payload['workflow_job']}" in str(exc_info.value)
 
-    # url key missing
+    # id key missing
+    payload = {
+        "action": "queued",
+        "workflow_job": {"labels": FAKE_LABELS},
+        "repository": {"name": FAKE_REPO_NAME, "owner": {"login": FAKE_OWNER}},
+    }
+    with pytest.raises(ParseError) as exc_info:
+        webhook_to_job(payload)
+    assert f"id key not found in {payload['workflow_job']}" in str(exc_info.value)
+
+    # repository key missing
     payload = {
         "action": "queued",
         "workflow_job": {"id": 22428484402, "labels": FAKE_LABELS},
     }
     with pytest.raises(ParseError) as exc_info:
         webhook_to_job(payload)
-    assert f"url key not found in {payload}" in str(exc_info.value)
+    assert f"repository key not found in {payload}" in str(exc_info.value)
+
+    # owner key missing
+    payload = {
+        "action": "queued",
+        "workflow_job": {"id": 22428484402, "labels": FAKE_LABELS},
+        "repository": {"name": FAKE_REPO_NAME},
+    }
+
+    with pytest.raises(ParseError) as exc_info:
+        webhook_to_job(payload)
+    assert f"owner key not found in {payload['repository']}" in str(exc_info.value)
+
+    # name key missing
+    payload = {
+        "action": "queued",
+        "workflow_job": {"id": 22428484402, "labels": FAKE_LABELS},
+        "repository": {"owner": {"login": FAKE_OWNER}},
+    }
+    with pytest.raises(ParseError) as exc_info:
+        webhook_to_job(payload)
+    assert f"name key not found in {payload['repository']}" in str(exc_info.value)
+
+    # login key missing
+    payload = {
+        "action": "queued",
+        "workflow_job": {"id": 22428484402, "labels": FAKE_LABELS},
+        "repository": {"name": FAKE_REPO_NAME, "owner": {}},
+    }
+    with pytest.raises(ParseError) as exc_info:
+        webhook_to_job(payload)
+    assert f"login key not found in {payload['repository']['owner']}" in str(exc_info.value)

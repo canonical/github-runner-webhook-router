@@ -22,7 +22,7 @@ from webhook_router.app import (
     SUPPORTED_GITHUB_EVENT,
     WEBHOOK_SIGNATURE_HEADER,
 )
-from webhook_router.parse import Job, JobStatus
+from webhook_router.parse import GitHubRepo, Job, JobStatus
 
 PORT = 8000
 
@@ -91,8 +91,12 @@ async def test_forward_webhook(  # pylint: disable=too-many-locals
         flavour: [
             Job(
                 status=payload["action"],
-                url=payload["workflow_job"]["url"],
+                id=payload["workflow_job"]["id"],
                 labels=payload["workflow_job"]["labels"],
+                repository=GitHubRepo(
+                    name=payload["repository"]["name"],
+                    owner=payload["repository"]["owner"]["login"],
+                ),
             )
             for payload in payloads_by_flavour[flavour]
         ]
@@ -236,6 +240,13 @@ def _create_valid_data(action: str, labels: list[str]) -> dict:
             "conclusion": "success",
             "labels": labels,
             "url": f"https://api.github.com/repos/f/actions/jobs/{_id}",
+        },
+        "repository": {
+            "id": 123456789,
+            "name": "gh-runner-test",
+            "full_name": "f/gh-runner-test",
+            "private": False,
+            "owner": {"login": "f", "id": 123456},
         },
     }
 

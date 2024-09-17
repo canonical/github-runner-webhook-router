@@ -5,7 +5,7 @@
 from collections import namedtuple
 from enum import Enum
 
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel
 
 WORKFLOW_JOB = "workflow_job"
 
@@ -33,18 +33,32 @@ class JobStatus(str, Enum):
     WAITING = "waiting"
 
 
+class GitHubRepo(BaseModel):
+    """A class to represent the GitHub repository.
+
+    Attributes:
+        owner: The owner of the repository.
+        name: The name of the repository.
+    """
+
+    owner: str
+    name: str
+
+
 class Job(BaseModel):
     """A class to translate the payload.
 
     Attributes:
         labels: The labels of the job.
         status: The status of the job.
-        url: The URL of the job to be able to check its status.
+        repository: The repository of the job.
+        id: The id of the job.
     """
 
     labels: list[str]
     status: JobStatus
-    url: HttpUrl
+    repository: GitHubRepo
+    id: int
 
 
 def webhook_to_job(webhook: dict) -> Job:
@@ -70,21 +84,35 @@ def webhook_to_job(webhook: dict) -> Job:
     assert (  # nosec
         "labels" in webhook["workflow_job"]
     ), f"labels key not found in {webhook['workflow_job']}"
-    assert (  # nosec
-        "url" in webhook["workflow_job"]
-    ), f"url key not found in {webhook['workflow_job']}"
+    assert (
+        "id" in webhook["workflow_job"]
+    ), f"id key not found in {webhook['workflow_job']}"  # nosec
+    assert "repository" in webhook, f"repository key not found in {webhook}"  # nosec
+    assert (
+        "name" in webhook["repository"]
+    ), f"name key not found in {webhook['repository']}"  # nosec
+    assert (
+        "owner" in webhook["repository"]
+    ), f"owner key not found in {webhook['repository']}"  # nosec
+    assert (
+        "login" in webhook["repository"]["owner"]
+    ), f"login key not found in {webhook['repository']['owner']}"  # nosec
 
     status = webhook["action"]
     workflow_job = webhook["workflow_job"]
 
     labels = workflow_job["labels"]
-    job_url = workflow_job["url"]
+    repository = GitHubRepo(
+        owner=webhook["repository"]["owner"]["login"], name=webhook["repository"]["name"]
+    )
+    job_id = workflow_job["id"]
 
     try:
         return Job(
             labels=labels,
             status=status,
-            url=job_url,
+            repository=repository,
+            id=job_id,
         )
     except ValueError as exc:
         raise ParseError(f"Failed to create Webhook object for webhook {webhook}: {exc}") from exc
@@ -99,35 +127,44 @@ def _validate_webhook(webhook: dict) -> ValidationResult:
     Returns:
         (True, "") if the payload is valid otherwise (False, error_msg)
     """
-    validation_result = _validate_missing_keys(webhook)
-    if not validation_result.is_valid:
-        return validation_result
+    key_hierachy = {
+        "action": {},
+        "workflow_job": {
+            "labels": {},
+            "id": {},
+        },
+        "repository": {
+            "name": {},
+            "owner": {
+                "login": {},
+            },
+        },
+    }
+    return _validate_missing_keys(webhook, key_hierachy)
 
-    return ValidationResult(True, "")
 
+def _validate_missing_keys(root: dict, key_hierarchy: dict) -> ValidationResult:
+    """Validate the payload for missing keys.
 
-def _validate_missing_keys(webhook: dict) -> ValidationResult:
-    """Validate the webhook payload for missing keys.
-
-    Uses short-circuit evaluation to check for missing keys.
+    This is a recursive function that will validate the payload for missing keys.
 
     Args:
-        webhook: The webhook payload to validate.
+        root: The root inside the webhook from which to start the validation.
+        key_hierarchy: The key hierarchy to validate.
 
     Returns:
         (True, "") if all keys are there otherwise (False,error_msg)
          if the payload is missing keys.
     """
-    for expected_webhook_key in ("action", "workflow_job"):
-        if expected_webhook_key not in webhook:
-            return ValidationResult(False, f"{expected_webhook_key} key not found in {webhook}")
+    for key, sub_keys in key_hierarchy.items():
+        if key not in root:
+            return ValidationResult(False, f"{key} key not found in {root}")
 
-    workflow_job = webhook["workflow_job"]
-    if not isinstance(workflow_job, dict):
-        return ValidationResult(False, f"workflow_job is not a dict in {webhook}")
-    for expected_workflow_job_key in ("labels", "url"):
-        if expected_workflow_job_key not in workflow_job:
-            return ValidationResult(
-                False, f"{expected_workflow_job_key} key not found in {webhook}"
-            )
+        if sub_keys:
+            if not isinstance(root[key], dict):
+                return ValidationResult(False, f"{key} is not a dict in {root}")
+            validation_result = _validate_missing_keys(root[key], sub_keys)
+            if not validation_result.is_valid:
+                return validation_result
+
     return ValidationResult(True, "")

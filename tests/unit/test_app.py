@@ -16,7 +16,7 @@ from werkzeug.exceptions import BadRequest, UnsupportedMediaType
 import webhook_router.app as app_module
 import webhook_router.router
 from tests.unit.helpers import create_correct_signature, create_incorrect_signature
-from webhook_router.parse import Job, JobStatus, ParseError
+from webhook_router.parse import GitHubRepo, Job, JobStatus, ParseError
 from webhook_router.router import RouterError, RoutingTable
 
 TEST_PATH = "/webhook"
@@ -111,7 +111,10 @@ def test_webhook_logs(
     expected_job = Job(
         labels=data["workflow_job"]["labels"],
         status=JobStatus.QUEUED,
-        url=data["workflow_job"]["url"],
+        id=data["workflow_job"]["id"],
+        repository=GitHubRepo(
+            owner=data["repository"]["owner"]["login"], name=data["repository"]["name"]
+        ),
     )
     response = client.post(
         TEST_PATH,
@@ -394,5 +397,9 @@ def _create_valid_data(action: str) -> dict:
             "conclusion": "success",
             "labels": ["self-hosted", "linux", "arm64"],
             "url": "https://api.github.com/repos/f/actions/jobs/8200803099",
+        },
+        "repository": {
+            "name": "actions",
+            "owner": {"login": "f"},
         },
     }

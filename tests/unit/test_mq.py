@@ -10,7 +10,7 @@ from kombu import Connection
 from kombu.exceptions import OperationalError
 
 from webhook_router import mq
-from webhook_router.parse import Job, JobStatus
+from webhook_router.parse import GitHubRepo, Job, JobStatus
 
 IN_MEMORY_URI = "memory://"
 
@@ -30,8 +30,12 @@ def test_add_job_to_queue():
     """
     flavor = secrets.token_hex(16)
     labels = [secrets.token_hex(16), secrets.token_hex(16)]
-    # mypy: does not recognize that url can be passed as a string
-    job = Job(labels=labels, status=JobStatus.QUEUED, url="http://example.com")  # type: ignore
+    job = Job(
+        labels=labels,
+        status=JobStatus.QUEUED,
+        repository=GitHubRepo(owner="fake", name="gh-runner"),
+        id=1234,
+    )
     mq.add_job_to_queue(job, flavor)
 
     with Connection(IN_MEMORY_URI) as conn:

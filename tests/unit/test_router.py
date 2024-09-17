@@ -8,7 +8,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from webhook_router.mq import add_job_to_queue
-from webhook_router.parse import Job, JobStatus
+from webhook_router.parse import GitHubRepo, Job, JobStatus
 from webhook_router.router import (
     RouterError,
     RoutingTable,
@@ -47,12 +47,11 @@ def test_job_is_forwarded(
     act: Forward the job to the message queue.
     assert: The job is added to the queue if the status is "QUEUED".
     """
-    # mypy does not understand that we can pass strings instead of HttpUrl objects
-    # because of the underlying pydantic magic
     job = Job(
         labels=["arm64"],
         status=job_status,
-        url="https://api.github.com/repos/f/actions/jobs/8200803099",  # type: ignore
+        id=22428484402,
+        repository=GitHubRepo(**{"owner": "fake", "name": "gh-runner-test"}),
     )
     forward(
         job,
@@ -70,12 +69,11 @@ def test_invalid_label_combination():
     act: Forward the job to the message queue.
     assert: A RouterError is raised.
     """
-    # mypy does not understand that we can pass strings instead of HttpUrl objects
-    # because of the underlying pydantic magic
     job = Job(
         labels=["self-hosted", "linux", "arm64", "x64"],
         status=JobStatus.QUEUED,
-        url="https://api.github.com/repos/f/actions/jobs/8200803099",  # type: ignore
+        id=22428484402,
+        repository=GitHubRepo(**{"owner": "fake", "name": "gh-runner-test"}),
     )
     with pytest.raises(RouterError) as e:
         forward(
