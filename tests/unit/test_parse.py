@@ -5,10 +5,11 @@
 
 import pytest
 
-from webhook_router.parse import Job, JobStatus, ParseError, webhook_to_job
+from webhook_router.parse import Job, JobStatus, Labels, ParseError, webhook_to_job
 
 FAKE_JOB_URL = "https://api.github.com/repos/fakeusergh-runner-test/actions/jobs/8200803099"
 FAKE_LABELS = ["self-hosted", "linux", "arm64"]
+DEFAULT_SELF_HOSTED_LABELS = {"self-hosted", "linux"}
 
 
 @pytest.mark.parametrize(
@@ -56,11 +57,69 @@ def test_webhook_to_job(labels: list[str], status: JobStatus):
         },
     }
 
-    result = webhook_to_job(payload)
+    result = webhook_to_job(payload, DEFAULT_SELF_HOSTED_LABELS)
 
     # mypy does not understand that we can pass strings instead of HttpUrl objects
     # because of the underlying pydantic magic
-    assert result == Job(labels=labels, status=status, url=FAKE_JOB_URL)  # type: ignore
+    assert result == Job(
+        labels=set(labels) - DEFAULT_SELF_HOSTED_LABELS,
+        status=status,
+        url=FAKE_JOB_URL,  # type: ignore
+    )
+
+
+@pytest.mark.parametrize(
+    "labels, ignore_labels",
+    [
+        pytest.param(["self-hosted", "linux", "arm64"], set(), id="empty"),
+        pytest.param(["ubuntu-latest"], {"self-hosted"}, id="non overlapping"),
+        pytest.param(["self-hosted", "linux", "amd"], {"self-hosted", "linux"}, id="overlapping"),
+        pytest.param(["self-hosted", "linux"], {"self-hosted", "linux"}, id="equal"),
+        pytest.param(["self-hosted", "linux"], {"self-hosted", "linux", "arm64"}, id="superset"),
+    ],
+)
+def test_ignore_labels(labels: list[str], ignore_labels: Labels):
+    """
+    arrange: A valid payload dict with different combinations of ignore labels.
+    act: Call webhook_to_job with the payload.
+    assert: The ignore labels are removed from the labels.
+    """
+    payload = {
+        "action": JobStatus.QUEUED,
+        "workflow_job": {"id": 22428484402, "url": FAKE_JOB_URL, "labels": labels},
+    }
+    result = webhook_to_job(payload, ignore_labels)
+
+    # mypy does not understand that we can pass strings instead of HttpUrl objects
+    # because of the underlying pydantic magic
+    assert result == Job(
+        labels=set(labels) - ignore_labels,
+        status=JobStatus.QUEUED,
+        url=FAKE_JOB_URL,  # type: ignore
+    )
+
+
+def test_labels_are_parsed_in_lowercase():
+    """
+    arrange: A valid payload dict with labels in mixed_case.
+    act: Call webhook_to_job with the payload.
+    assert: The labels are parsed and compared with the ignore labels in lowercase.
+    """
+    labels = ["Self-Hosted", "Linux", "ARM64"]
+    ignore_labels = {"self-Hosted", "linUX"}
+    payload = {
+        "action": JobStatus.QUEUED,
+        "workflow_job": {"id": 22428484402, "url": FAKE_JOB_URL, "labels": labels},
+    }
+    result = webhook_to_job(payload, ignore_labels)
+
+    # mypy does not understand that we can pass strings instead of HttpUrl objects
+    # because of the underlying pydantic magic
+    assert result == Job(
+        labels={"arm64"},
+        status=JobStatus.QUEUED,
+        url=FAKE_JOB_URL,  # type: ignore
+    )
 
 
 @pytest.mark.parametrize(
@@ -88,7 +147,7 @@ def test_webhook_invalid_values(labels: list[str], status: JobStatus, url: str):
         "workflow_job": {"id": 22428484402, "url": url, "labels": labels},
     }
     with pytest.raises(ParseError) as exc_info:
-        webhook_to_job(payload)
+        webhook_to_job(payload, DEFAULT_SELF_HOSTED_LABELS)
     assert "Failed to create Webhook object for webhook " in str(exc_info.value)
 
 
@@ -103,7 +162,7 @@ def test_webhook_workflow_job_not_dict():
         "workflow_job": "not a dict",
     }
     with pytest.raises(ParseError) as exc_info:
-        webhook_to_job(payload)
+        webhook_to_job(payload, DEFAULT_SELF_HOSTED_LABELS)
     assert f"workflow_job is not a dict in {payload}" in str(exc_info.value)
 
 
@@ -122,7 +181,7 @@ def test_webhook_missing_keys():
         },
     }
     with pytest.raises(ParseError) as exc_info:
-        webhook_to_job(payload)
+        webhook_to_job(payload, DEFAULT_SELF_HOSTED_LABELS)
     assert f"action key not found in {payload}" in str(exc_info.value)
     # workflow_job key missing
     payload = {
@@ -132,7 +191,7 @@ def test_webhook_missing_keys():
         "labels": FAKE_LABELS,
     }
     with pytest.raises(ParseError) as exc_info:
-        webhook_to_job(payload)
+        webhook_to_job(payload, DEFAULT_SELF_HOSTED_LABELS)
     assert f"workflow_job key not found in {payload}" in str(exc_info.value)
 
     # labels key missing
@@ -141,7 +200,7 @@ def test_webhook_missing_keys():
         "workflow_job": {"id": 22428484402, "url": FAKE_JOB_URL},
     }
     with pytest.raises(ParseError) as exc_info:
-        webhook_to_job(payload)
+        webhook_to_job(payload, DEFAULT_SELF_HOSTED_LABELS)
     assert f"labels key not found in {payload}" in str(exc_info.value)
 
     # url key missing
@@ -150,5 +209,5 @@ def test_webhook_missing_keys():
         "workflow_job": {"id": 22428484402, "labels": FAKE_LABELS},
     }
     with pytest.raises(ParseError) as exc_info:
-        webhook_to_job(payload)
+        webhook_to_job(payload, DEFAULT_SELF_HOSTED_LABELS)
     assert f"url key not found in {payload}" in str(exc_info.value)

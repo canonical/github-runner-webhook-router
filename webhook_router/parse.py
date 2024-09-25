@@ -4,6 +4,7 @@
 """Module for parsing the webhook payload."""
 from collections import namedtuple
 from enum import Enum
+from typing import Collection
 
 from pydantic import BaseModel, HttpUrl
 
@@ -11,6 +12,7 @@ WORKFLOW_JOB = "workflow_job"
 
 
 ValidationResult = namedtuple("ValidationResult", ["is_valid", "msg"])
+Labels = set[str]
 
 
 class ParseError(Exception):
@@ -42,16 +44,17 @@ class Job(BaseModel):
         url: The URL of the job to be able to check its status.
     """
 
-    labels: list[str]
+    labels: Labels
     status: JobStatus
     url: HttpUrl
 
 
-def webhook_to_job(webhook: dict) -> Job:
+def webhook_to_job(webhook: dict, ignore_labels: Collection[str]) -> Job:
     """Parse a raw json payload and extract the required information.
 
     Args:
         webhook: The webhook in json to parse.
+        ignore_labels: The labels to ignore when parsing. For example, "self-hosted" or "linux".
 
     Returns:
         The parsed Job.
@@ -78,11 +81,17 @@ def webhook_to_job(webhook: dict) -> Job:
     workflow_job = webhook["workflow_job"]
 
     labels = workflow_job["labels"]
+
+    if labels is None:
+        raise ParseError(
+            f"Failed to create Webhook object for webhook {webhook}: Labels are missing"
+        )
+
     job_url = workflow_job["url"]
 
     try:
         return Job(
-            labels=labels,
+            labels=_parse_labels(labels=labels, ignore_labels=ignore_labels),
             status=status,
             url=job_url,
         )
@@ -131,3 +140,18 @@ def _validate_missing_keys(webhook: dict) -> ValidationResult:
                 False, f"{expected_workflow_job_key} key not found in {webhook}"
             )
     return ValidationResult(True, "")
+
+
+def _parse_labels(labels: Collection[str], ignore_labels: Collection[str]) -> Labels:
+    """Parse the raw labels and remove the ignore labels.
+
+    Args:
+        labels: The labels to parse from the payload.
+        ignore_labels: The labels to ignore.
+
+    Returns:
+        The parsed labels in lowercase.
+    """
+    return {label.lower() for label in labels} - {
+        ignore_label.lower() for ignore_label in ignore_labels
+    }

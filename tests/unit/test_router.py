@@ -50,7 +50,7 @@ def test_job_is_forwarded(
     # mypy does not understand that we can pass strings instead of HttpUrl objects
     # because of the underlying pydantic magic
     job = Job(
-        labels=["arm64"],
+        labels={"arm64"},
         status=job_status,
         url="https://api.github.com/repos/f/actions/jobs/8200803099",  # type: ignore
     )
@@ -73,7 +73,7 @@ def test_invalid_label_combination():
     # mypy does not understand that we can pass strings instead of HttpUrl objects
     # because of the underlying pydantic magic
     job = Job(
-        labels=["self-hosted", "linux", "arm64", "x64"],
+        labels={"self-hosted", "linux", "arm64", "x64"},
         status=JobStatus.QUEUED,
         url="https://api.github.com/repos/f/actions/jobs/8200803099",  # type: ignore
     )

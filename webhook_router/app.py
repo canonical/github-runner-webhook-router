@@ -49,6 +49,7 @@ def config_app(flask_app: Flask) -> None:
     default_self_hosted_labels = _parse_default_self_hosted_labels_config(
         flask_app.config.get("DEFAULT_SELF_HOSTED_LABELS", "")
     )
+    flask_app.config["DEFAULT_SELF_HOSTED_LABELS"] = default_self_hosted_labels
     flavor_labels_mapping_list = [tuple(item.items())[0] for item in flavors_config.flavor_list]
     flask_app.config["ROUTING_TABLE"] = to_routing_table(
         flavor_label_mapping_list=flavor_labels_mapping_list,
@@ -241,7 +242,7 @@ def _parse_job() -> Job:
     """
     payload = request.get_json()
     app.logger.debug("Received payload: %s", payload)
-    return webhook_to_job(payload)
+    return webhook_to_job(webhook=payload, ignore_labels=app.config["DEFAULT_SELF_HOSTED_LABELS"])
 
 
 # Exclude from coverage since unit tests should not run as __main__

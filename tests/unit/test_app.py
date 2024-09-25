@@ -20,6 +20,8 @@ from webhook_router.parse import Job, JobStatus, ParseError
 from webhook_router.router import RouterError, RoutingTable
 
 TEST_PATH = "/webhook"
+TEST_LABELS = ["self-hosted", "linux", "arm64"]
+DEFAULT_SELF_HOSTED_LABELS = {"self-hosted", "linux"}
 
 
 @pytest.fixture(name="flavours_yaml")
@@ -109,7 +111,7 @@ def test_webhook_logs(
     """
     data = _create_valid_data(JobStatus.QUEUED)
     expected_job = Job(
-        labels=data["workflow_job"]["labels"],
+        labels=set(TEST_LABELS) - DEFAULT_SELF_HOSTED_LABELS,
         status=JobStatus.QUEUED,
         url=data["workflow_job"]["url"],
     )
@@ -392,7 +394,7 @@ def _create_valid_data(action: str) -> dict:
             "run_id": 987654321,
             "status": "completed",
             "conclusion": "success",
-            "labels": ["self-hosted", "linux", "arm64"],
+            "labels": TEST_LABELS,
             "url": "https://api.github.com/repos/f/actions/jobs/8200803099",
         },
     }
