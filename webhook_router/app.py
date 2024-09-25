@@ -52,9 +52,7 @@ def config_app(flask_app: Flask) -> None:
     flask_app.config["DEFAULT_SELF_HOSTED_LABELS"] = default_self_hosted_labels
     flavor_labels_mapping_list = [tuple(item.items())[0] for item in flavors_config.flavor_list]
     flask_app.config["ROUTING_TABLE"] = to_routing_table(
-        flavor_label_mapping_list=flavor_labels_mapping_list,
-        ignore_labels=default_self_hosted_labels,
-        default_flavor=default_flavor,
+        flavor_label_mapping_list=flavor_labels_mapping_list, default_flavor=default_flavor
     )
 
 

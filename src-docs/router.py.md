@@ -11,14 +11,13 @@ Module for routing webhooks to the appropriate message queue.
 
 ---
 
-<a href="../webhook_router/router.py#L41"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../webhook_router/router.py#L39"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `to_routing_table`
 
 ```python
 to_routing_table(
     flavor_label_mapping_list: list[tuple[str, list[str]]],
-    ignore_labels: set[str],
     default_flavor: str
 ) → RoutingTable
 ```
@@ -30,7 +29,6 @@ Convert the flavor label mapping to a route table.
 **Args:**
  
  - <b>`flavor_label_mapping_list`</b>:  The list of mappings of flavors to labels. 
- - <b>`ignore_labels`</b>:  The labels to ignore (e.g. "self-hosted" or "linux"). 
  - <b>`default_flavor`</b>:  The default flavor to use if no labels are provided. 
 
 
@@ -41,7 +39,7 @@ Convert the flavor label mapping to a route table.
 
 ---
 
-<a href="../webhook_router/router.py#L97"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../webhook_router/router.py#L91"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `forward`
 
@@ -67,7 +65,7 @@ Forward the job to the appropriate message queue.
 
 ---
 
-<a href="../webhook_router/router.py#L123"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../webhook_router/router.py#L117"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `can_forward`
 
@@ -102,7 +100,6 @@ A class to represent how to route jobs to the appropriate message queue.
 **Attributes:**
  
  - <b>`value`</b>:  The mapping of labels to flavors. 
- - <b>`ignore_labels`</b>:  The labels to ignore (e.g. "self-hosted" or "linux"). 
  - <b>`default_flavor`</b>:  The default flavor. 
 
 

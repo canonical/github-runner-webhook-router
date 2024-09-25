@@ -57,7 +57,6 @@ def route_table_fixture() -> RoutingTable:
             ("small", "x64"): "small",
         },
         default_flavor="small",
-        ignore_labels={"self-hosted", "linux"},
     )
 
 
