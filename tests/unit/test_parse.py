@@ -69,60 +69,6 @@ def test_webhook_to_job(labels: list[str], status: JobStatus):
 
 
 @pytest.mark.parametrize(
-    "labels, ignore_labels",
-    [
-        pytest.param(["self-hosted", "linux", "arm64"], set(), id="empty"),
-        pytest.param(["ubuntu-latest"], {"self-hosted"}, id="non overlapping"),
-        pytest.param(["self-hosted", "linux", "amd"], {"self-hosted", "linux"}, id="overlapping"),
-        pytest.param(["self-hosted", "linux"], {"self-hosted", "linux"}, id="equal"),
-        pytest.param(["self-hosted", "linux"], {"self-hosted", "linux", "arm64"}, id="superset"),
-    ],
-)
-def test_ignore_labels(labels: list[str], ignore_labels: Labels):
-    """
-    arrange: A valid payload dict with different combinations of ignore labels.
-    act: Call webhook_to_job with the payload.
-    assert: The ignore labels are removed from the labels.
-    """
-    payload = {
-        "action": JobStatus.QUEUED,
-        "workflow_job": {"id": 22428484402, "url": FAKE_JOB_URL, "labels": labels},
-    }
-    result = webhook_to_job(payload, ignore_labels)
-
-    # mypy does not understand that we can pass strings instead of HttpUrl objects
-    # because of the underlying pydantic magic
-    assert result == Job(
-        labels=set(labels) - ignore_labels,
-        status=JobStatus.QUEUED,
-        url=FAKE_JOB_URL,  # type: ignore
-    )
-
-
-def test_labels_are_parsed_in_lowercase():
-    """
-    arrange: A valid payload dict with labels in mixed_case.
-    act: Call webhook_to_job with the payload.
-    assert: The labels are parsed and compared with the ignore labels in lowercase.
-    """
-    labels = ["Self-Hosted", "Linux", "ARM64"]
-    ignore_labels = {"self-Hosted", "linUX"}
-    payload = {
-        "action": JobStatus.QUEUED,
-        "workflow_job": {"id": 22428484402, "url": FAKE_JOB_URL, "labels": labels},
-    }
-    result = webhook_to_job(payload, ignore_labels)
-
-    # mypy does not understand that we can pass strings instead of HttpUrl objects
-    # because of the underlying pydantic magic
-    assert result == Job(
-        labels={"arm64"},
-        status=JobStatus.QUEUED,
-        url=FAKE_JOB_URL,  # type: ignore
-    )
-
-
-@pytest.mark.parametrize(
     "labels, status, url",
     [
         pytest.param(
@@ -211,3 +157,57 @@ def test_webhook_missing_keys():
     with pytest.raises(ParseError) as exc_info:
         webhook_to_job(payload, DEFAULT_SELF_HOSTED_LABELS)
     assert f"url key not found in {payload}" in str(exc_info.value)
+
+
+@pytest.mark.parametrize(
+    "labels, ignore_labels",
+    [
+        pytest.param(["self-hosted", "linux", "arm64"], set(), id="empty"),
+        pytest.param(["ubuntu-latest"], {"self-hosted"}, id="non overlapping"),
+        pytest.param(["self-hosted", "linux", "amd"], {"self-hosted", "linux"}, id="overlapping"),
+        pytest.param(["self-hosted", "linux"], {"self-hosted", "linux"}, id="equal"),
+        pytest.param(["self-hosted", "linux"], {"self-hosted", "linux", "arm64"}, id="superset"),
+    ],
+)
+def test_ignore_labels(labels: list[str], ignore_labels: Labels):
+    """
+    arrange: A valid payload dict with different combinations of ignore labels.
+    act: Call webhook_to_job with the payload.
+    assert: The ignore labels are removed from the labels.
+    """
+    payload = {
+        "action": JobStatus.QUEUED,
+        "workflow_job": {"id": 22428484402, "url": FAKE_JOB_URL, "labels": labels},
+    }
+    result = webhook_to_job(payload, ignore_labels)
+
+    # mypy does not understand that we can pass strings instead of HttpUrl objects
+    # because of the underlying pydantic magic
+    assert result == Job(
+        labels=set(labels) - ignore_labels,
+        status=JobStatus.QUEUED,
+        url=FAKE_JOB_URL,  # type: ignore
+    )
+
+
+def test_labels_are_parsed_in_lowercase():
+    """
+    arrange: A valid payload dict with labels in mixed_case.
+    act: Call webhook_to_job with the payload.
+    assert: The labels are parsed and compared with the ignore labels in lowercase.
+    """
+    labels = ["Self-Hosted", "Linux", "ARM64"]
+    ignore_labels = {"self-Hosted", "linUX"}
+    payload = {
+        "action": JobStatus.QUEUED,
+        "workflow_job": {"id": 22428484402, "url": FAKE_JOB_URL, "labels": labels},
+    }
+    result = webhook_to_job(payload, ignore_labels)
+
+    # mypy does not understand that we can pass strings instead of HttpUrl objects
+    # because of the underlying pydantic magic
+    assert result == Job(
+        labels={"arm64"},
+        status=JobStatus.QUEUED,
+        url=FAKE_JOB_URL,  # type: ignore
+    )

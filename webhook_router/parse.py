@@ -143,7 +143,7 @@ def _validate_missing_keys(webhook: dict) -> ValidationResult:
 
 
 def _parse_labels(labels: Collection[str], ignore_labels: Collection[str]) -> Labels:
-    """Parse the raw labels and remove the ignore labels.
+    """Parse the labels coming from the payload and remove the ignore labels.
 
     Args:
         labels: The labels to parse from the payload.
