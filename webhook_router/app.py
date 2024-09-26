@@ -240,7 +240,7 @@ def _parse_job() -> Job:
     """
     payload = request.get_json()
     app.logger.debug("Received payload: %s", payload)
-    return webhook_to_job(webhook=payload, ignore_labels=app.config["DEFAULT_SELF_HOSTED_LABELS"])
+    return webhook_to_job(payload=payload, ignore_labels=app.config["DEFAULT_SELF_HOSTED_LABELS"])
 
 
 # Exclude from coverage since unit tests should not run as __main__

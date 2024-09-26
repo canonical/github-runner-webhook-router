@@ -49,11 +49,11 @@ class Job(BaseModel):
     url: HttpUrl
 
 
-def webhook_to_job(webhook: dict, ignore_labels: Collection[str]) -> Job:
+def webhook_to_job(payload: dict, ignore_labels: Collection[str]) -> Job:
     """Parse a raw json payload and extract the required information.
 
     Args:
-        webhook: The webhook in json to parse.
+        payload: The webhook's payload in json to parse.
         ignore_labels: The labels to ignore when parsing. For example, "self-hosted" or "linux".
 
     Returns:
@@ -62,29 +62,29 @@ def webhook_to_job(webhook: dict, ignore_labels: Collection[str]) -> Job:
     Raises:
         ParseError: An error occurred during parsing.
     """
-    validation_result = _validate_webhook(webhook)
+    validation_result = _validate_webhook(payload)
     if not validation_result.is_valid:
         raise ParseError(f"Could not parse webhook: {validation_result.msg}")
 
     #  The enclosed code will be removed when compiling to optimised byte code.
 
-    assert "action" in webhook, f"action key not found in {webhook}"  # nosec
-    assert "workflow_job" in webhook, f"workflow_job key not found in {webhook}"  # nosec
+    assert "action" in payload, f"action key not found in {payload}"  # nosec
+    assert "workflow_job" in payload, f"workflow_job key not found in {payload}"  # nosec
     assert (  # nosec
-        "labels" in webhook["workflow_job"]
-    ), f"labels key not found in {webhook['workflow_job']}"
+        "labels" in payload["workflow_job"]
+    ), f"labels key not found in {payload['workflow_job']}"
     assert (  # nosec
-        "url" in webhook["workflow_job"]
-    ), f"url key not found in {webhook['workflow_job']}"
+        "url" in payload["workflow_job"]
+    ), f"url key not found in {payload['workflow_job']}"
 
-    status = webhook["action"]
-    workflow_job = webhook["workflow_job"]
+    status = payload["action"]
+    workflow_job = payload["workflow_job"]
 
     labels = workflow_job["labels"]
 
     if labels is None:
         raise ParseError(
-            f"Failed to create Webhook object for webhook {webhook}: Labels are missing"
+            f"Failed to create Webhook object for webhook {payload}: Labels are missing"
         )
 
     job_url = workflow_job["url"]
@@ -96,7 +96,7 @@ def webhook_to_job(webhook: dict, ignore_labels: Collection[str]) -> Job:
             url=job_url,
         )
     except ValueError as exc:
-        raise ParseError(f"Failed to create Webhook object for webhook {webhook}: {exc}") from exc
+        raise ParseError(f"Failed to create Webhook object for webhook {payload}: {exc}") from exc
 
 
 def _validate_webhook(webhook: dict) -> ValidationResult:
