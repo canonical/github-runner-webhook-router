@@ -100,14 +100,14 @@ async def test_forward_webhook(  # pylint: disable=too-many-locals
     }
 
     for flavour in flavours:
-        actual_jobs = jobs_by_flavour.get(flavour, set())
+        actual_jobs = jobs_by_flavour.get(flavour, [])
         expected_jobs_for_flavour = expected_jobs_by_flavour[flavour]
         assert len(actual_jobs) == len(
             expected_jobs_for_flavour
         ), f"Expected: {expected_jobs_for_flavour}, Actual: {actual_jobs}"
         for job in expected_jobs_for_flavour:
             assert (
-                job.json() in actual_jobs
+                job in actual_jobs
             ), f"Expected: {expected_jobs_for_flavour}, Actual: {actual_jobs}"
 
 
@@ -293,7 +293,9 @@ def _request(payload: dict, webhook_secret: Optional[str], base_url: str) -> req
     return requests.post(f"{base_url}/webhook", data=payload_bytes, headers=headers, timeout=1)
 
 
-async def _get_jobs_from_mq(ops_test: OpsTest, unit: Unit, flavors: list[str]) -> dict[str, set]:
+async def _get_jobs_from_mq(
+    ops_test: OpsTest, unit: Unit, flavors: list[str]
+) -> dict[str, list[Job]]:
     """Get the gunicorn log from the charm unit.
 
     Args:
@@ -349,7 +351,11 @@ print(json.dumps(jobs_by_flavour))
         "ssh", "--container", "flask-app", unit.name, "python3", "/kombu_script.py"
     )
     assert code == 0, f"Failed to execute kombu script: {stderr}"
-    return json.loads(stdout)
+    jobs_raw_by_flavor = json.loads(stdout)
+    jobs_by_flavor = {}
+    for flavor, jobs_raw in jobs_raw_by_flavor.items():
+        jobs_by_flavor[flavor] = [Job.model_validate_json(job_raw) for job_raw in jobs_raw]
+    return jobs_by_flavor
 
 
 async def _get_mongodb_uri_from_integration_data(ops_test: OpsTest, unit: Unit) -> str | None:

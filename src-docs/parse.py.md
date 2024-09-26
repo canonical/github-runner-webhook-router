@@ -16,7 +16,7 @@ Module for parsing the webhook payload.
 ## <kbd>function</kbd> `webhook_to_job`
 
 ```python
-webhook_to_job(webhook: dict, ignore_labels: Collection[str]) → Job
+webhook_to_job(payload: dict, ignore_labels: Collection[str]) → Job
 ```
 
 Parse a raw json payload and extract the required information. 
@@ -25,7 +25,7 @@ Parse a raw json payload and extract the required information.
 
 **Args:**
  
- - <b>`webhook`</b>:  The webhook in json to parse. 
+ - <b>`payload`</b>:  The webhook's payload in json to parse. 
  - <b>`ignore_labels`</b>:  The labels to ignore when parsing. For example, "self-hosted" or "linux". 
 
 
