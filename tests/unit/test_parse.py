@@ -2,6 +2,7 @@
 #  See LICENSE file for licensing details.
 
 """Unit tests for the parse module."""
+from itertools import permutations
 
 import pytest
 
@@ -160,34 +161,37 @@ def test_webhook_missing_keys():
 
 
 @pytest.mark.parametrize(
-    "labels, ignore_labels",
+    "labels, ignore_labels,expected_labels",
     [
-        pytest.param(["self-hosted", "linux", "arm64"], set(), id="empty"),
-        pytest.param(["ubuntu-latest"], {"self-hosted"}, id="non overlapping"),
-        pytest.param(["self-hosted", "linux", "amd"], {"self-hosted", "linux"}, id="overlapping"),
-        pytest.param(["self-hosted", "linux"], {"self-hosted", "linux"}, id="equal"),
-        pytest.param(["self-hosted", "linux"], {"self-hosted", "linux", "arm64"}, id="superset"),
+        pytest.param(
+            ["self-hosted", "linux", "arm64"], set(), {"self-hosted", "linux", "arm64"}, id="empty"
+        ),
+        pytest.param(["self-hosted", "linux"], {"self-hosted", "linux"}, set(), id="equal"),
+        pytest.param(
+            ["self-hosted", "linux"], {"self-hosted", "linux", "arm64"}, set(), id="superset"
+        ),
+        pytest.param(["ubuntu-latest"], {"self-hosted"}, {"ubuntu-latest"}, id="non overlapping"),
+        pytest.param(
+            ["self-hosted", "linux", "amd"], {"self-hosted", "linux"}, {"amd"}, id="overlapping"
+        ),
     ],
 )
-def test_ignore_labels(labels: list[str], ignore_labels: Labels):
+def test_ignore_labels(labels: list[str], ignore_labels: Labels, expected_labels: Labels):
     """
     arrange: A valid payload dict with different combinations of ignore labels.
     act: Call webhook_to_job with the payload.
     assert: The ignore labels are removed from the labels.
     """
-    payload = {
-        "action": JobStatus.QUEUED,
-        "workflow_job": {"id": 22428484402, "url": FAKE_JOB_URL, "labels": labels},
-    }
-    result = webhook_to_job(payload, ignore_labels)
+    # check all permutations of labels to check if the ignore labels are removed correctly
+    # in order to check for bugs around ignoring certain elements
+    for label_permutation in permutations(labels):
+        payload = {
+            "action": JobStatus.QUEUED,
+            "workflow_job": {"id": 22428484402, "url": FAKE_JOB_URL, "labels": label_permutation},
+        }
+        result = webhook_to_job(payload, ignore_labels)
 
-    # mypy does not understand that we can pass strings instead of HttpUrl objects
-    # because of the underlying pydantic magic
-    assert result == Job(
-        labels=set(labels) - ignore_labels,
-        status=JobStatus.QUEUED,
-        url=FAKE_JOB_URL,  # type: ignore
-    )
+        assert result.labels == expected_labels
 
 
 def test_labels_are_parsed_in_lowercase():
