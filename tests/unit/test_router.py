@@ -50,15 +50,13 @@ def test_job_is_forwarded(
     # mypy does not understand that we can pass strings instead of HttpUrl objects
     # because of the underlying pydantic magic
     job = Job(
-        labels=["arm64"],
+        labels={"arm64"},
         status=job_status,
         url="https://api.github.com/repos/f/actions/jobs/8200803099",  # type: ignore
     )
     forward(
         job,
-        routing_table=RoutingTable(
-            value={("arm64",): "arm64"}, default_flavor="arm64", ignore_labels=set()
-        ),
+        routing_table=RoutingTable(value={("arm64",): "arm64"}, default_flavor="arm64"),
     )
 
     assert add_job_to_queue_mock.called == is_forwarded
@@ -73,14 +71,14 @@ def test_invalid_label_combination():
     # mypy does not understand that we can pass strings instead of HttpUrl objects
     # because of the underlying pydantic magic
     job = Job(
-        labels=["self-hosted", "linux", "arm64", "x64"],
+        labels={"self-hosted", "linux", "arm64", "x64"},
         status=JobStatus.QUEUED,
         url="https://api.github.com/repos/f/actions/jobs/8200803099",  # type: ignore
     )
     with pytest.raises(RouterError) as e:
         forward(
             job,
-            routing_table=RoutingTable(value={}, default_flavor="default", ignore_labels=set()),
+            routing_table=RoutingTable(value={}, default_flavor="default"),
         )
     assert "Not able to forward job: Invalid label combination:" in str(e.value)
 
@@ -93,9 +91,8 @@ def test_to_routing_table():
     """
     flavor_mapping = [("large", ["arm64", "large"]), ("x64-large", ["large", "x64", "jammy"])]
 
-    ignore_labels = {"self-hosted", "linux"}
     default_flavor = "x64-large"
-    routing_table = to_routing_table(flavor_mapping, ignore_labels, default_flavor)
+    routing_table = to_routing_table(flavor_mapping, default_flavor)
     assert routing_table == RoutingTable(
         value={
             ("arm64",): "large",
@@ -109,7 +106,6 @@ def test_to_routing_table():
             ("jammy", "large", "x64"): "x64-large",
         },
         default_flavor="x64-large",
-        ignore_labels=ignore_labels,
     )
 
 
@@ -120,9 +116,8 @@ def test_to_routing_table_case_insensitive():
     assert: A LabelsFlavorMapping object is returned which has all labels in lower case.
     """
     flavor_mapping = [("large", ["arM64", "LaRgE"])]
-    ignore_labels = {"self-HOSTED", "LINux"}
     default_flavor = "large"
-    routing_table = to_routing_table(flavor_mapping, ignore_labels, default_flavor)
+    routing_table = to_routing_table(flavor_mapping, default_flavor)
     assert routing_table == RoutingTable(
         value={
             ("arm64",): "large",
@@ -130,7 +125,6 @@ def test_to_routing_table_case_insensitive():
             ("arm64", "large"): "large",
         },
         default_flavor="large",
-        ignore_labels={"self-hosted", "linux"},
     )
 
 
@@ -172,7 +166,6 @@ def test__labels_to_flavor():
             **{label_combination: "x64-large" for label_combination in x64_label_combination},
         },
         default_flavor="large",
-        ignore_labels={"self-hosted", "linux"},
     )
 
     for label_combination in arm_label_combination:
@@ -200,20 +193,19 @@ def test__labels_to_flavor_case_insensitive():
             ("arm64", "large"): "large",
         },
         default_flavor="large",
-        ignore_labels={"self-hosted", "linux"},
     )
 
     assert _labels_to_flavor({"SMALl"}, routing_table) == "small"
     assert _labels_to_flavor({"ARM64"}, routing_table) == "large"
     assert _labels_to_flavor({"lARGE"}, routing_table) == "large"
     assert _labels_to_flavor({"arM64", "lArge"}, routing_table) == "large"
-    assert _labels_to_flavor({"small", "SELF-hosted"}, routing_table) == "small"
+    assert _labels_to_flavor({"small"}, routing_table) == "small"
 
 
-def test__labels_to_flavor_default_label():
+def test__labels_to_flavor_default_flavor():
     """
     arrange: Two flavors and a labels to flavor routing_table
-    act: Call labels_to_flavor with empty labels or ignored labels.
+    act: Call labels_to_flavor with empty labels.
     assert: The default flavor is returned.
     """
     routing_table = RoutingTable(
@@ -225,12 +217,8 @@ def test__labels_to_flavor_default_label():
             ("large", "x64"): "x64-large",
         },
         default_flavor="large",
-        ignore_labels={"self-hosted", "linux"},
     )
     assert _labels_to_flavor(set(), routing_table) == "large"
-    assert _labels_to_flavor({"self-hosted"}, routing_table) == "large"
-    assert _labels_to_flavor({"linux"}, routing_table) == "large"
-    assert _labels_to_flavor({"self-hosted", "linux"}, routing_table) == "large"
 
 
 def test__labels_to_flavor_invalid_combination():
@@ -248,7 +236,6 @@ def test__labels_to_flavor_invalid_combination():
             ("large", "x64"): "x64-large",
         },
         default_flavor="large",
-        ignore_labels={"self-hosted", "linux"},
     )
     labels = {"self-hosted", "linux", "arm64", "large", "x64"}
     with pytest.raises(_InvalidLabelCombinationError) as exc_info:
@@ -271,30 +258,8 @@ def test__labels_to_flavor_unrecognised_label():
             ("large", "x64"): "x64-large",
         },
         default_flavor="large",
-        ignore_labels={"self-hosted", "linux"},
     )
     labels = {"self-hosted", "linux", "arm64", "large", "noble"}
     with pytest.raises(_InvalidLabelCombinationError) as exc_info:
         _labels_to_flavor(labels, routing_table)
     assert "Invalid label combination:" in str(exc_info.value)
-
-
-def test__labels_to_flavor_ignore_labels():
-    """
-    arrange: Two flavors and a labels to flavor routing_table
-    act: Call labels_to_flavor with an ignored label.
-    assert: The correct flavor is returned.
-    """
-    routing_table = RoutingTable(
-        value={
-            ("arm64",): "large",
-            ("large",): "large",
-            ("arm64", "large"): "large",
-            ("x64",): "large-x64",
-            ("large", "x64"): "x64-large",
-        },
-        default_flavor="large",
-        ignore_labels={"self-hosted", "linux"},
-    )
-    labels = {"self-hosted", "linux", "arm64", "large"}
-    assert _labels_to_flavor(labels, routing_table) == "large"

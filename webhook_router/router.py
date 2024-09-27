@@ -26,12 +26,10 @@ class RoutingTable(BaseModel):
 
     Attributes:
         value: The mapping of labels to flavors.
-        ignore_labels: The labels to ignore (e.g. "self-hosted" or "linux").
         default_flavor: The default flavor.
     """
 
     value: dict[LabelCombinationIdentifier, Label]
-    ignore_labels: set[Label]
     default_flavor: Flavor
 
 
@@ -39,15 +37,12 @@ FlavorLabelsMappingList = list[tuple[Flavor, list[Label]]]
 
 
 def to_routing_table(
-    flavor_label_mapping_list: FlavorLabelsMappingList,
-    ignore_labels: set[Label],
-    default_flavor: Flavor,
+    flavor_label_mapping_list: FlavorLabelsMappingList, default_flavor: Flavor
 ) -> RoutingTable:
     """Convert the flavor label mapping to a route table.
 
     Args:
         flavor_label_mapping_list: The list of mappings of flavors to labels.
-        ignore_labels: The labels to ignore (e.g. "self-hosted" or "linux").
         default_flavor: The default flavor to use if no labels are provided.
 
     Returns:
@@ -90,7 +85,6 @@ def to_routing_table(
     return RoutingTable(
         default_flavor=default_flavor,
         value=routing_table,
-        ignore_labels={label.lower() for label in ignore_labels},
     )
 
 
@@ -147,11 +141,10 @@ def _labels_to_flavor(labels: set[str], routing_table: RoutingTable) -> Flavor:
         The flavor.
     """
     labels_lowered = {label.lower() for label in labels}
-    final_labels = labels_lowered - routing_table.ignore_labels
-    if not final_labels:
+    if not labels_lowered:
         return routing_table.default_flavor
 
-    label_key = tuple(sorted(final_labels))
+    label_key = tuple(sorted(labels_lowered))
     if label_key not in routing_table.value:
         raise _InvalidLabelCombinationError(f"Invalid label combination: {labels}")
     return routing_table.value[label_key]
