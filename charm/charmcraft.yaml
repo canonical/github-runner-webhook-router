@@ -52,6 +52,45 @@ config:
             If a job matches multiple flavours, the first flavour matching defined in this configuration will be used.
             Note that labels are treated case-insensitive.
          required: true
+    github_app_id:
+      description: >-
+        The app or client ID of the GitHub App to use for communication with GitHub,
+        if webhook redelivery functionality is desired.
+        If provided, the other github_app_* options must also be provided.
+        The Github App needs to have read permission for Webhooks.
+        Either this or the github_token must be provided if webhook redelivery functionality is desired.
+      type: string
+    github_app_installation_id:
+      description: >-
+        The app or client ID of the GitHub App to use for communication with GitHub,
+        if webhook redelivery functionality is desired.
+        If provided, the other github_app_* options must also be provided.
+        The Github App needs to have read permission for Administration. If private repositories
+        are checked, the Github App does also need read permission for Contents and Pull request.
+        Either this or the github_token must be provided if webhook redelivery functionality is desired.
+      type: string
+    github_app_private_key:
+      description: >-
+        The app or client ID of the GitHub App to use for communication with GitHub,
+        if webhook redelivery functionality is desired.
+        If provided, the other github_app_* options must also be provided.
+        The Github App needs to have read permission for Administration. If private repositories
+        are checked, the Github App does also need read permission for Contents and Pull request.
+        Either this or the github_token must be provided if webhook redelivery functionality is desired.
+      type: secret
+    github-token:
+      description: >-
+        The token to use for communication with GitHub, if webhook redelivery functionality is desired.
+        This can be a PAT with read admin:repo_hook or a fine-grained token with read permission for Webhooks. 
+        Either this or the GitHub App configuration must be provided if webhook redelivery functionality is desired.
+      required: false
+      type: secret
+    github-webhook-url:
+      description: >-
+        The URL of a webhook to check for failed deliveries. If this option is used, GitHub authentication details
+        must also be provided. A background worker will be started which periodically checks the webhook deliveries
+        for failures and adds those failed deliveries to the queue.
+      type: string
     log-level:
       type: string
       description: "The log level to use for the application logs. Use any of: CRITICAL, ERROR, WARNING, INFO, DEBUG, NOTSET"
