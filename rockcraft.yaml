@@ -34,3 +34,11 @@ parts:
        # Note: Prefix each entry with "flask/app/" followed by the local path.
        - flask/app/app.py
        - flask/app/webhook_router
+       - flask/app/webhook_redelivery
+
+services:
+  webhook-redelivery-scheduler:
+    override: merge
+    summary: "Example scheduler service"
+    command: "python3 -c 'import os;print(os.environ);import time;time.sleep(60)'"
+    startup: enabled
