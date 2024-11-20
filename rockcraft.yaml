@@ -2,7 +2,7 @@
 # See LICENSE file for licensing details.
 
 name: github-runner-webhook-router
-base: ubuntu@22.04
+base: ubuntu@24.04
 version: '0.1'
 summary: Forwards webhooks to a message queue to be consumed to spawn runners.  # 79 char long summary
 description: |
