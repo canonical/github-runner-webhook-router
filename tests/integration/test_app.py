@@ -7,6 +7,7 @@ import hmac
 import itertools
 import json
 import random
+import re
 import secrets
 from typing import Optional
 
@@ -397,7 +398,7 @@ async def _get_mongodb_uri_from_secrets(ops_test, model: Model) -> str | None:
 
     juju_secrets = await model.list_secrets()
     for secret in juju_secrets["results"]:
-        if secret.label == "database.2.user.secret":
+        if re.match(r"database\.(\d+)\.user\.secret", secret.label):
             _, show_secret, _ = await ops_test.juju(
                 "show-secret", secret.uri, "--reveal", "--format", "json"
             )
