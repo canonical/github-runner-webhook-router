@@ -62,7 +62,10 @@ async def mongodb_fixture(model: Model, use_existing_app: bool) -> Application:
         application = model.applications["mongodb"]
     else:
         application = await model.deploy(
-            "mongodb-k8s", channel="6/edge", application_name="mongodb"
+            "mongodb-k8s",
+            channel="6/edge",
+            application_name="mongodb",
+            trust=True,
         )
 
     await model.wait_for_idle(apps=[application.name], status="active")
