@@ -84,11 +84,13 @@ config:
         This can be a PAT with read admin:repo_hook or a fine-grained token with read permission for Webhooks. 
         Either this or the GitHub App configuration must be provided if webhook redelivery functionality is desired.
       required: false
+      type: secret
     github-webhook-url:
       description: >-
         The URL of a webhook to check for failed deliveries. If this option is used, GitHub authentication details
         must also be provided. A background worker will be started which periodically checks the webhook deliveries
         for failures and adds those failed deliveries to the queue.
+      type: string
     log-level:
       type: string
       description: "The log level to use for the application logs. Use any of: CRITICAL, ERROR, WARNING, INFO, DEBUG, NOTSET"
