@@ -23,7 +23,9 @@ class FlaskCharm(paas_charm.flask.Charm):
             args: passthrough to CharmBase.
         """
         super().__init__(*args)
-        self.framework.observe(self.on.forward_failed_webhooks_action, self._on_forward_failed_webhooks_action)
+        self.framework.observe(
+            self.on.forward_failed_webhooks_action, self._on_forward_failed_webhooks_action
+        )
 
 
 if __name__ == "__main__":
