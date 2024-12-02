@@ -39,18 +39,15 @@ actions:
     params:
       since:
         description: "The amount of minutes to look back for failed deliveries."
-        type: int
-        required: true
+        type: integer
       github-path:
         description: >-
           The path of the organisation or repository where the webhooks are registered. Should
           be in the format of <organisation> or <organisation>/<repository>.
         type: string
-        required: true
       webhook-id:
         description: "The id of the webhook to redeliver."
         type: string
-        required: true
       github-app-id:
         description: >-
           The app or client ID of the GitHub App to use for communication with GitHub,
@@ -58,7 +55,6 @@ actions:
           The Github App needs to have read permission for Webhooks.
           Either this or the github-token must be provided.
         type: string
-        required: false
       github-app-installation-id:
         description: >-
           The app installation id of the GitHub App to use for communication with GitHub.
@@ -66,22 +62,23 @@ actions:
           The Github App needs to have read permission for Webhooks.
           Either this or the github-token must be provided.
         type: string
-        required: false
       github-app-private-key-secret:
         description: >-
           The juju user secret id of the private key to use for communication with GitHub.
           If provided, the other github-app-* params must also be provided.
           The Github App needs to have read permission for Webhooks.
           Either this or the github-token must be provided.
-        type: secret
-        required: false
-      github-token:
+        type: string
+      github-token-secret:
         description: >-
-          The token to use for communication with GitHub.
+          The juju user secret id of the token to use for communication with GitHub.
           This can be a PAT with read admin:repo_hook or a fine-grained token with read permission for Webhooks. 
           Either this or the GitHub App configuration must be provided.
-        type: secret
-        required: false
+        type: string
+    required:
+      - since
+      - github-path
+      - webhook-id
 
 config:
   options:
