@@ -8,12 +8,12 @@ import logging
 import typing
 
 import ops
-import paas_app_charmer.flask
+import paas_charm.flask
 
 logger = logging.getLogger(__name__)
 
 
-class FlaskCharm(paas_app_charmer.flask.Charm):
+class FlaskCharm(paas_charm.flask.Charm):
     """Flask Charm service."""
 
     def __init__(self, *args: typing.Any) -> None:
@@ -23,7 +23,7 @@ class FlaskCharm(paas_app_charmer.flask.Charm):
             args: passthrough to CharmBase.
         """
         super().__init__(*args)
-        self.framework.observe(self.on.forward_failed_webhooks, self._on_failed_webhooks)
+        self.framework.observe(self.on.forward_failed_webhooks_action, self._on_forward_failed_webhooks_action)
 
 
 if __name__ == "__main__":
