@@ -1,7 +1,7 @@
 #  Copyright 2024 Canonical Ltd.
 #  See LICENSE file for licensing details.
 
-"""Implementation of the webhook redelivery logic."""
+"""Handle failed webhook deliveries by forwarding them to the message queue."""
 
 
 from dataclasses import dataclass
@@ -47,10 +47,10 @@ class RedeliveryError(Exception):
     """Raised when an error occurs during redelivery."""
 
 
-def redeliver_failed_webhooks(
+def forward_failed_webhook_deliveries(
     github_auth: GithubAuthDetails, webhook_address: WebhookAddress, since: datetime
 ) -> int:
-    """Redeliver failed webhooks since a given time.
+    """Forward failed webhooks to the message queue since a given time.
 
     Args:
         github_auth: The GitHub authentication details used to interact with the Github API.
@@ -60,3 +60,8 @@ def redeliver_failed_webhooks(
     Returns:
         The number of failed webhooks redelivered.
     """
+
+
+if __name__ == '__main__':
+    # Argument parsing and main entrypoint for the script.
+    pass

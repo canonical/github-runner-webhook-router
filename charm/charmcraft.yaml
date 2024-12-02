@@ -31,13 +31,11 @@ requires:
 
 
 actions:
-  redeliver-webhooks:
+  forward-failed-webhooks:
     description: >-
-      Redeliver failed webhooks since a certain time period. This action fetches the
-      Github api for failed deliveries and retriggers redelivery. Note that the amount of
-      webhooks that will be redelivered can be quite large and the requests are counted
-      against the rate limit of the Github API. The action returns the amount of webhooks
-      that were redelivered.
+      Handle failed webhook deliveries since a certain time period. This action fetches the
+      Github api for failed deliveries and forwards them directly to the queue. 
+      The action returns the amount of webhooks that were forwarded.
     params:
       since:
         description: "The amount of minutes to look back for failed deliveries."
