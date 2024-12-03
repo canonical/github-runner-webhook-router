@@ -30,6 +30,56 @@ requires:
     limit: 1
 
 
+actions:
+  forward-failed-webhooks:
+    description: >-
+      Handle failed webhook deliveries since a certain time period. This action fetches the
+      Github api for failed deliveries and forwards them directly to the queue. 
+      The action returns the amount of webhooks that were forwarded.
+    params:
+      since:
+        description: "The amount of seconds to look back for failed deliveries."
+        type: integer
+      github-path:
+        description: >-
+          The path of the organisation or repository where the webhooks are registered. Should
+          be in the format of <organisation> or <organisation>/<repository>.
+        type: string
+      webhook-id:
+        description: "The id of the webhook to redeliver."
+        type: string
+      github-app-id:
+        description: >-
+          The app or client ID of the GitHub App to use for communication with GitHub,
+          If provided, the other github-app-* params must also be provided.
+          The Github App needs to have read permission for Webhooks.
+          Either this or the github-token must be provided.
+        type: string
+      github-app-installation-id:
+        description: >-
+          The app installation id of the GitHub App to use for communication with GitHub.
+          If provided, the other github-app-* params must also be provided.
+          The Github App needs to have read permission for Webhooks.
+          Either this or the github-token must be provided.
+        type: string
+      github-app-private-key-secret:
+        description: >-
+          The juju user secret id of the private key to use for communication with GitHub.
+          If provided, the other github-app-* params must also be provided.
+          The Github App needs to have read permission for Webhooks.
+          Either this or the github-token must be provided.
+        type: string
+      github-token-secret:
+        description: >-
+          The juju user secret id of the token to use for communication with GitHub.
+          This can be a PAT with read admin:repo_hook or a fine-grained token with read permission for Webhooks. 
+          Either this or the GitHub App configuration must be provided.
+        type: string
+    required:
+      - since
+      - github-path
+      - webhook-id
+
 config:
   options:
     default-flavour:
@@ -52,6 +102,7 @@ config:
             If a job matches multiple flavours, the first flavour matching defined in this configuration will be used.
             Note that labels are treated case-insensitive.
          required: true
+
     log-level:
       type: string
       description: "The log level to use for the application logs. Use any of: CRITICAL, ERROR, WARNING, INFO, DEBUG, NOTSET"
