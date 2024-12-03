@@ -38,7 +38,7 @@ actions:
       The action returns the amount of webhooks that were forwarded.
     params:
       since:
-        description: "The amount of minutes to look back for failed deliveries."
+        description: "The amount of seconds to look back for failed deliveries."
         type: integer
       github-path:
         description: >-

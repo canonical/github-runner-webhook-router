@@ -48,14 +48,14 @@ class RedeliveryError(Exception):
 
 
 def forward_failed_webhook_deliveries(
-    github_auth: GithubAuthDetails, webhook_address: WebhookAddress, since: datetime
+    github_auth: GithubAuthDetails, webhook_address: WebhookAddress, since_seconds: int
 ) -> int:
     """Forward failed webhooks to the message queue since a given time.
 
     Args:
         github_auth: The GitHub authentication details used to interact with the Github API.
         webhook_address: The data to identify the webhook.
-        since: The time to redeliver failed webhooks since.
+        since_seconds: The amount of seconds to look back for failed deliveries.
 
     Returns:
         The number of failed webhooks redelivered.
