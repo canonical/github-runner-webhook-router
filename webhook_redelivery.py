@@ -11,6 +11,7 @@ from typing import Iterator
 from github import Github
 from github.Repository import Repository
 
+OK_STATUS = "OK"
 
 @dataclass
 class GithubAppAuthDetails:
@@ -29,7 +30,6 @@ class GithubAppAuthDetails:
 
 GithubToken = str
 GithubAuthDetails = GithubAppAuthDetails | GithubToken
-
 
 @dataclass
 class WebhookAddress:
@@ -90,7 +90,7 @@ def redeliver_failed_webhook_deliveries(
         if delivery.delivered_at < since_datetime:
             break
 
-        if delivery.status == "failed":
+        if delivery.status != OK_STATUS:
             _redeliver(github_client=github, webhook_address=webhook_address, delivery_id=delivery.delivery_id)
             deliver_count += 1
     return deliver_count
