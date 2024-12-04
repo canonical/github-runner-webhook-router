@@ -9,7 +9,7 @@ from datetime import datetime, timezone, timedelta
 from typing import Iterator
 
 from github import Github
-from github.Repository import Repository
+from github.Auth import AppAuth, AppInstallationAuth, Token
 
 OK_STATUS = "OK"
 
@@ -24,7 +24,7 @@ class GithubAppAuthDetails:
     """
 
     app_id: str
-    installation_id: str
+    installation_id: int
     private_key: str
 
 
@@ -105,6 +105,12 @@ def _get_github_client(github_auth: GithubAuthDetails) -> Github:
     Returns:
         The Github client.
     """
+    if isinstance(github_auth, GithubToken):
+        return Github(auth=Token(github_auth))
+
+    app_auth = AppAuth(app_id=github_auth.app_id, private_key=github_auth.private_key)
+    app_installation_auth = AppInstallationAuth(app_auth=app_auth, installation_id=github_auth.installation_id)
+    return Github(auth=app_installation_auth)
 
 def _get_deliveries(
     github_client: Github, webhook_address: WebhookAddress
@@ -116,6 +122,7 @@ def _get_deliveries(
     Returns:
         The webhook deliveries since the given time.
     """
+    # TODO: Implement the logic for org webhooks.
     repository = github_client.get_repo(f"{webhook_address.github_org}/{webhook_address.github_repo}")
     deliveries = repository.get_hook_deliveries(webhook_address.id)
     for delivery in deliveries:
@@ -138,6 +145,8 @@ def _redeliver(
     Raises:
         RedeliveryError: If an error occurs during redelivery.
     """
+    url = f"/repos/{webhook_address.github_org}/{webhook_address.github_repo}/hooks/{webhook_address.id}/deliveries/{delivery_id}/attempts"
+    github_client.requester.requestJsonAndCheck("POST", url)
 
 if __name__ == '__main__':
     # Argument parsing and main entrypoint for the script.

@@ -9,13 +9,7 @@ import github
 import pytest
 from github.HookDelivery import HookDeliverySummary
 
-from webhook_redelivery import (
-    OK_STATUS,
-    GithubAuthDetails,
-    WebhookAddress,
-    _WebhookDelivery,
-    redeliver_failed_webhook_deliveries,
-)
+from webhook_redelivery import OK_STATUS, WebhookAddress, redeliver_failed_webhook_deliveries
 
 _Delivery = namedtuple("_Deliveries", ["id", "status", "age"])
 
@@ -67,12 +61,7 @@ def test_redeliver(
     expected_redelivered: set[int],
 ):
     github_client = MagicMock(spec=github.Github)
-    monkeypatch.setattr(
-        "webhook_redelivery._get_github_client", MagicMock(return_value=github_client)
-    )
-    redeliver_mock = MagicMock()
-    monkeypatch.setattr("webhook_redelivery._redeliver", redeliver_mock)
-
+    monkeypatch.setattr("webhook_redelivery.Github", MagicMock(return_value=github_client))
     now = datetime.now(tz=timezone.utc)
     monkeypatch.setattr("webhook_redelivery.datetime", MagicMock(now=MagicMock(return_value=now)))
 
@@ -95,8 +84,11 @@ def test_redeliver(
     )
 
     assert redelivered == len(expected_redelivered)
+
+    redeliver_mock = github_client.requester.requestJsonAndCheck
     assert redeliver_mock.call_count == redelivered
     for _id in expected_redelivered:
-        redeliver_mock.assert_any_call(
-            github_client=github_client, webhook_address=webhook_address, delivery_id=_id
+        return redeliver_mock.assert_any_call(
+            "POST",
+            f"/repos/{webhook_address.github_org}/{webhook_address.github_repo}/hooks/{webhook_address.id}/deliveries/{_id}/attempts",
         )
