@@ -51,12 +51,12 @@ class _WebhookDelivery:
     """The details of a webhook delivery.
 
     Attributes:
-        delivery_id: The identifier of the delivery.
+        id: The identifier of the delivery.
         status: The status of the delivery.
         delivered_at: The time the delivery was made.
     """
 
-    delivery_id: int
+    id: int
     status: str
     delivered_at: datetime
 
@@ -82,8 +82,8 @@ def redeliver_failed_webhook_deliveries(
         RedeliveryError: If an error occurs during redelivery.
     """
     github = _get_github_client(github_auth)
-    repository = github.get_repo(f"{webhook_address.github_org}/{webhook_address.github_repo}")
-    deliveries = _get_deliveries(repository, webhook_address.id, since_seconds)
+
+    deliveries = _get_deliveries(github_client=github, webhook_address=webhook_address)
     since_datetime = datetime.now(tz=timezone.utc) - timedelta(seconds=since_seconds)
     deliver_count = 0
     for delivery in deliveries:
@@ -91,9 +91,10 @@ def redeliver_failed_webhook_deliveries(
             break
 
         if delivery.status != OK_STATUS:
-            _redeliver(github_client=github, webhook_address=webhook_address, delivery_id=delivery.delivery_id)
+            _redeliver(github_client=github, webhook_address=webhook_address, delivery_id=delivery.id)
             deliver_count += 1
     return deliver_count
+
 
 def _get_github_client(github_auth: GithubAuthDetails) -> Github:
     """Get a Github client.
@@ -106,18 +107,23 @@ def _get_github_client(github_auth: GithubAuthDetails) -> Github:
     """
 
 def _get_deliveries(
-    repository: Repository, webhook_id: int, since_seconds: int
+    github_client: Github, webhook_address: WebhookAddress
 ) -> Iterator[_WebhookDelivery]:
     """Get webhook deliveries since a given time.
 
     Args:
-        github_auth: The GitHub authentication details used to interact with the Github API.
-        webhook_address: The data to identify the webhook.
-        since_seconds: The amount of seconds to look back for failed deliveries.
 
     Returns:
         The webhook deliveries since the given time.
     """
+    repository = github_client.get_repo(f"{webhook_address.github_org}/{webhook_address.github_repo}")
+    deliveries = repository.get_hook_deliveries(webhook_address.id)
+    for delivery in deliveries:
+        yield _WebhookDelivery(
+            id=delivery.id,
+            status=delivery.status,
+            delivered_at=delivery.delivered_at,
+        )
 
 def _redeliver(
     github_client: Github, webhook_address: WebhookAddress, delivery_id: int

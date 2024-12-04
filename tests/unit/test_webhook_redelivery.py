@@ -3,7 +3,6 @@
 import secrets
 from collections import namedtuple
 from datetime import datetime, timedelta, timezone
-from typing import TypedDict
 from unittest.mock import MagicMock
 
 import github
@@ -71,17 +70,18 @@ def test_redeliver(
     monkeypatch.setattr(
         "webhook_redelivery._get_github_client", MagicMock(return_value=github_client)
     )
-    get_deliveries_mock = MagicMock()
-    monkeypatch.setattr("webhook_redelivery._get_deliveries", get_deliveries_mock)
     redeliver_mock = MagicMock()
     monkeypatch.setattr("webhook_redelivery._redeliver", redeliver_mock)
 
     now = datetime.now(tz=timezone.utc)
     monkeypatch.setattr("webhook_redelivery.datetime", MagicMock(now=MagicMock(return_value=now)))
 
-    get_deliveries_mock.return_value = [
-        _WebhookDelivery(
-            delivery_id=d.id, status=d.status, delivered_at=now - timedelta(seconds=d.age)
+    github_client.get_repo.return_value.get_hook_deliveries.return_value = [
+        MagicMock(
+            spec=HookDeliverySummary,
+            id=d.id,
+            status=d.status,
+            delivered_at=now - timedelta(seconds=d.age),
         )
         for d in deliveries
     ]
