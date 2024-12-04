@@ -24,7 +24,7 @@ class FlaskCharm(paas_charm.flask.Charm):
         """
         super().__init__(*args)
         self.framework.observe(
-            self.on.forward_failed_webhooks_action, self._on_forward_failed_webhooks_action
+            self.on.redeliver_failed_webhooks_action, self._on_redeliver_failed_webhooks_action
         )
 
 
