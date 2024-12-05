@@ -141,7 +141,8 @@ def redeliver_failed_webhook_deliveries(
     return deliver_count
 
 
-def _get_github_client(github_auth: GithubAuthDetails) -> Github:
+# Github App authentication is not tested in unit tests, but in integration tests.
+def _get_github_client(github_auth: GithubAuthDetails) -> Github:     # pragma: no cover
     """Get a Github client.
 
     Args:
