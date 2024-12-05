@@ -9,18 +9,32 @@ import github
 import pytest
 from github.HookDelivery import HookDeliverySummary
 
-from webhook_redelivery import OK_STATUS, WebhookAddress, redeliver_failed_webhook_deliveries
+from webhook_redelivery import (
+    OK_STATUS,
+    RedeliveryError,
+    WebhookAddress,
+    redeliver_failed_webhook_deliveries,
+)
 
 _Delivery = namedtuple("_Deliveries", ["id", "status", "age"])
 
 
-@pytest.mark.parametrize(
-    "with_repo",
-    [
+@pytest.fixture(
+    name="webhook_address",
+    params=[
         pytest.param(True, id="repository webhook"),
         pytest.param(False, id="organization webhook"),
     ],
 )
+def webhook_address_fixture(request: pytest.FixtureRequest) -> WebhookAddress:
+    """Return a webhook address for a repository and for an organization."""
+    return WebhookAddress(
+        github_org=secrets.token_hex(16),
+        github_repo=secrets.token_hex(16) if request.param else None,
+        id=1234,
+    )
+
+
 @pytest.mark.parametrize(
     "deliveries,since_seconds,expected_redelivered",
     [
@@ -66,18 +80,14 @@ def test_redeliver(
     deliveries: list[_Delivery],
     since_seconds: int,
     expected_redelivered: set[int],
-    with_repo: bool,
+    webhook_address: WebhookAddress,
 ):
     github_client = MagicMock(spec=github.Github)
     monkeypatch.setattr("webhook_redelivery.Github", MagicMock(return_value=github_client))
     now = datetime.now(tz=timezone.utc)
     monkeypatch.setattr("webhook_redelivery.datetime", MagicMock(now=MagicMock(return_value=now)))
 
-    get_hook_deliveries_mock = (
-        github_client.get_repo.return_value.get_hook_deliveries
-        if with_repo
-        else github_client.get_organization.return_value.get_hook_deliveries
-    )
+    get_hook_deliveries_mock = _get_get_deliveries_mock(github_client, webhook_address)
     get_hook_deliveries_mock.return_value = [
         MagicMock(
             spec=HookDeliverySummary,
@@ -89,11 +99,6 @@ def test_redeliver(
     ]
 
     github_token = secrets.token_hex(16)
-    webhook_address = WebhookAddress(
-        github_org=secrets.token_hex(16),
-        github_repo=secrets.token_hex(16) if with_repo else None,
-        id=1234,
-    )
     redelivered = redeliver_failed_webhook_deliveries(
         github_auth=github_token, webhook_address=webhook_address, since_seconds=since_seconds
     )
@@ -104,10 +109,65 @@ def test_redeliver(
     assert redeliver_mock.call_count == redelivered
     for _id in expected_redelivered:
         return redeliver_mock.assert_any_call(
-            "POST",
-            (
-                f"/repos/{webhook_address.github_org}/{webhook_address.github_repo}/hooks/{webhook_address.id}/deliveries/{_id}/attempts"
-                if with_repo
-                else f"/orgs/{webhook_address.github_org}/hooks/{webhook_address.id}/deliveries/{_id}/attempts"
-            ),
+            "POST", _get_redeliver_mock_api_url(webhook_address, _id)
         )
+
+
+@pytest.mark.parametrize(
+    "github_exception,expected_msg",
+    [
+        pytest.param(
+            github.BadCredentialsException(403),
+            "The github client returned a Bad Credential error",
+            id="BadCredentialsException",
+        ),
+        pytest.param(
+            github.RateLimitExceededException(403),
+            "The github client is returning a Rate Limit Exceeded error",
+            id="RateLimitExceededException",
+        ),
+        pytest.param(
+            github.GithubException(500),
+            "The github client encountered an error",
+            id="GithubException",
+        ),
+    ],
+)
+def test_redelivery_github_errors(
+    monkeypatch: pytest.MonkeyPatch,
+    github_exception: github.GithubException,
+    expected_msg: str,
+    webhook_address: WebhookAddress,
+):
+    github_client = MagicMock(spec=github.Github)
+    monkeypatch.setattr("webhook_redelivery.Github", MagicMock(return_value=github_client))
+
+    github_token = secrets.token_hex(16)
+    since_seconds = 5
+
+    get_hook_deliveries_mock = _get_get_deliveries_mock(github_client, webhook_address)
+    get_hook_deliveries_mock.side_effect = github_exception
+
+    with pytest.raises(RedeliveryError) as exc_info:
+        redeliver_failed_webhook_deliveries(
+            github_auth=github_token, webhook_address=webhook_address, since_seconds=since_seconds
+        )
+    assert expected_msg in str(exc_info.value)
+
+
+def _get_get_deliveries_mock(
+    github_client_mock: MagicMock, webhook_address: WebhookAddress
+) -> MagicMock:
+    return (
+        github_client_mock.get_repo.return_value.get_hook_deliveries
+        if webhook_address.github_repo
+        else github_client_mock.get_organization.return_value.get_hook_deliveries
+    )
+
+
+def _get_redeliver_mock_api_url(webhook_address: WebhookAddress, delivery_id: int) -> str:
+    return (
+        f"/repos/{webhook_address.github_org}/{webhook_address.github_repo}/hooks/{webhook_address.id}/deliveries/{delivery_id}/attempts"
+        if webhook_address.github_repo
+        else f"/orgs/{webhook_address.github_org}/hooks/{webhook_address.id}/deliveries/{delivery_id}/attempts"
+    )

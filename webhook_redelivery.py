@@ -2,16 +2,24 @@
 #  See LICENSE file for licensing details.
 
 """Redeliver failed webhooks."""
-
-
+import inspect
+import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
+from functools import wraps
 from typing import Iterator
 
-from github import Github
+from github import (
+    BadCredentialsException,
+    Github,
+    GithubException,
+    RateLimitExceededException,
+)
 from github.Auth import AppAuth, AppInstallationAuth, Token
 
 OK_STATUS = "OK"
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -68,6 +76,35 @@ class RedeliveryError(Exception):
     """Raised when an error occurs during redelivery."""
 
 
+def _github_api_exc_decorator(func):
+    """Decorator to handle GitHub API exceptions."""
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except BadCredentialsException as exc:
+            logging.error("Github client credentials error: %s", exc, exc_info=exc)
+            raise RedeliveryError(
+                "The github client returned a Bad Credential error, "
+                "please ensure credentials are set and have proper access rights."
+            ) from exc
+        except RateLimitExceededException as exc:
+            logging.error("Github rate limit exceeded error: %s", exc, exc_info=exc)
+            raise RedeliveryError(
+                "The github client is returning a Rate Limit Exceeded error, "
+                "please wait before retrying."
+            ) from exc
+        except GithubException as exc:
+            logging.error("Github API error: %s", exc, exc_info=exc)
+            raise RedeliveryError(
+                "The github client encountered an error. Please have a look at the logs."
+            ) from exc
+
+    return wrapper
+
+
+@_github_api_exc_decorator
 def redeliver_failed_webhook_deliveries(
     github_auth: GithubAuthDetails, webhook_address: WebhookAddress, since_seconds: int
 ) -> int:
@@ -151,9 +188,6 @@ def _redeliver(github_client: Github, webhook_address: WebhookAddress, delivery_
         github_auth: The GitHub authentication details used to interact with the Github API.
         webhook_address: The data to identify the webhook.
         delivery_id: The identifier of the webhook delivery.
-
-    Raises:
-        RedeliveryError: If an error occurs during redelivery.
     """
     path_base = (
         f"/repos/{webhook_address.github_org}/{webhook_address.github_repo}"
