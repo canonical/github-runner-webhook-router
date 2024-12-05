@@ -15,6 +15,13 @@ _Delivery = namedtuple("_Deliveries", ["id", "status", "age"])
 
 
 @pytest.mark.parametrize(
+    "with_repo",
+    [
+        pytest.param(True, id="repository webhook"),
+        pytest.param(False, id="organization webhook"),
+    ],
+)
+@pytest.mark.parametrize(
     "deliveries,since_seconds,expected_redelivered",
     [
         pytest.param([], 5, set(), id="empty"),
@@ -59,13 +66,19 @@ def test_redeliver(
     deliveries: list[_Delivery],
     since_seconds: int,
     expected_redelivered: set[int],
+    with_repo: bool,
 ):
     github_client = MagicMock(spec=github.Github)
     monkeypatch.setattr("webhook_redelivery.Github", MagicMock(return_value=github_client))
     now = datetime.now(tz=timezone.utc)
     monkeypatch.setattr("webhook_redelivery.datetime", MagicMock(now=MagicMock(return_value=now)))
 
-    github_client.get_repo.return_value.get_hook_deliveries.return_value = [
+    get_hook_deliveries_mock = (
+        github_client.get_repo.return_value.get_hook_deliveries
+        if with_repo
+        else github_client.get_organization.return_value.get_hook_deliveries
+    )
+    get_hook_deliveries_mock.return_value = [
         MagicMock(
             spec=HookDeliverySummary,
             id=d.id,
@@ -77,7 +90,9 @@ def test_redeliver(
 
     github_token = secrets.token_hex(16)
     webhook_address = WebhookAddress(
-        github_org=secrets.token_hex(16), github_repo=secrets.token_hex(16), id=1234
+        github_org=secrets.token_hex(16),
+        github_repo=secrets.token_hex(16) if with_repo else None,
+        id=1234,
     )
     redelivered = redeliver_failed_webhook_deliveries(
         github_auth=github_token, webhook_address=webhook_address, since_seconds=since_seconds
@@ -90,5 +105,9 @@ def test_redeliver(
     for _id in expected_redelivered:
         return redeliver_mock.assert_any_call(
             "POST",
-            f"/repos/{webhook_address.github_org}/{webhook_address.github_repo}/hooks/{webhook_address.id}/deliveries/{_id}/attempts",
+            (
+                f"/repos/{webhook_address.github_org}/{webhook_address.github_repo}/hooks/{webhook_address.id}/deliveries/{_id}/attempts"
+                if with_repo
+                else f"/orgs/{webhook_address.github_org}/hooks/{webhook_address.id}/deliveries/{_id}/attempts"
+            ),
         )

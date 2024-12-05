@@ -5,13 +5,14 @@
 
 
 from dataclasses import dataclass
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Iterator
 
 from github import Github
 from github.Auth import AppAuth, AppInstallationAuth, Token
 
 OK_STATUS = "OK"
+
 
 @dataclass
 class GithubAppAuthDetails:
@@ -31,6 +32,7 @@ class GithubAppAuthDetails:
 GithubToken = str
 GithubAuthDetails = GithubAppAuthDetails | GithubToken
 
+
 @dataclass
 class WebhookAddress:
     """The address details to identify the webhook.
@@ -45,6 +47,7 @@ class WebhookAddress:
     github_org: str
     github_repo: str | None
     id: int
+
 
 @dataclass
 class _WebhookDelivery:
@@ -91,7 +94,9 @@ def redeliver_failed_webhook_deliveries(
             break
 
         if delivery.status != OK_STATUS:
-            _redeliver(github_client=github, webhook_address=webhook_address, delivery_id=delivery.id)
+            _redeliver(
+                github_client=github, webhook_address=webhook_address, delivery_id=delivery.id
+            )
             deliver_count += 1
     return deliver_count
 
@@ -109,22 +114,28 @@ def _get_github_client(github_auth: GithubAuthDetails) -> Github:
         return Github(auth=Token(github_auth))
 
     app_auth = AppAuth(app_id=github_auth.app_id, private_key=github_auth.private_key)
-    app_installation_auth = AppInstallationAuth(app_auth=app_auth, installation_id=github_auth.installation_id)
+    app_installation_auth = AppInstallationAuth(
+        app_auth=app_auth, installation_id=github_auth.installation_id
+    )
     return Github(auth=app_installation_auth)
+
 
 def _get_deliveries(
     github_client: Github, webhook_address: WebhookAddress
 ) -> Iterator[_WebhookDelivery]:
-    """Get webhook deliveries since a given time.
+    """Get webhook deliveries.
 
     Args:
 
     Returns:
         The webhook deliveries since the given time.
     """
-    # TODO: Implement the logic for org webhooks.
-    repository = github_client.get_repo(f"{webhook_address.github_org}/{webhook_address.github_repo}")
-    deliveries = repository.get_hook_deliveries(webhook_address.id)
+    webhook_origin = (
+        github_client.get_repo(webhook_address.github_org)
+        if webhook_address.github_repo
+        else github_client.get_organization(webhook_address.github_org)
+    )
+    deliveries = webhook_origin.get_hook_deliveries(webhook_address.id)
     for delivery in deliveries:
         yield _WebhookDelivery(
             id=delivery.id,
@@ -132,9 +143,8 @@ def _get_deliveries(
             delivered_at=delivery.delivered_at,
         )
 
-def _redeliver(
-    github_client: Github, webhook_address: WebhookAddress, delivery_id: int
-) -> None:
+
+def _redeliver(github_client: Github, webhook_address: WebhookAddress, delivery_id: int) -> None:
     """Redeliver a webhook delivery.
 
     Args:
@@ -145,9 +155,15 @@ def _redeliver(
     Raises:
         RedeliveryError: If an error occurs during redelivery.
     """
-    url = f"/repos/{webhook_address.github_org}/{webhook_address.github_repo}/hooks/{webhook_address.id}/deliveries/{delivery_id}/attempts"
+    path_base = (
+        f"/repos/{webhook_address.github_org}/{webhook_address.github_repo}"
+        if webhook_address.github_repo
+        else f"/orgs/{webhook_address.github_org}"
+    )
+    url = f"{path_base}/hooks/{webhook_address.id}/deliveries/{delivery_id}/attempts"
     github_client.requester.requestJsonAndCheck("POST", url)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     # Argument parsing and main entrypoint for the script.
     pass
