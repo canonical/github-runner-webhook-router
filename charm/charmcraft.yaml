@@ -44,7 +44,7 @@ actions:
         type: integer
       github-path:
         description: >-
-          The path of the organisation or repository where the webhooks are registered. Should
+         The path of the organisation or repository where the webhooks are registered. Should
           be in the format of <organisation> or <organisation>/<repository>.
         type: string
       webhook-id:

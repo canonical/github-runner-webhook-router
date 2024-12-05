@@ -1,9 +1,11 @@
 #  Copyright 2024 Canonical Ltd.
 #  See LICENSE file for licensing details.
 
-"""Redeliver failed webhooks."""
-import inspect
+"""Redeliver failed webhooks since a given time."""
+import argparse
+import json
 import logging
+import sys
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from functools import wraps
@@ -16,6 +18,7 @@ from github import (
     RateLimitExceededException,
 )
 from github.Auth import AppAuth, AppInstallationAuth, Token
+from pydantic import BaseModel
 
 OK_STATUS = "OK"
 
@@ -23,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class GithubAppAuthDetails:
+class GithubAppAuthDetails(BaseModel):
     """The details to authenticate with Github using a Github App.
 
     Attributes:
@@ -189,6 +192,8 @@ def _redeliver(github_client: Github, webhook_address: WebhookAddress, delivery_
         webhook_address: The data to identify the webhook.
         delivery_id: The identifier of the webhook delivery.
     """
+    # pygithub doesn't support the endpoint so we have to use the requester directly to perform
+    # a raw request: https://pygithub.readthedocs.io/en/stable/utilities.html#raw-requests
     path_base = (
         f"/repos/{webhook_address.github_org}/{webhook_address.github_repo}"
         if webhook_address.github_repo
@@ -199,5 +204,64 @@ def _redeliver(github_client: Github, webhook_address: WebhookAddress, delivery_
 
 
 if __name__ == "__main__":
-    # Argument parsing and main entrypoint for the script.
-    pass
+    parser = argparse.ArgumentParser(
+        description=f"{__doc__}. The script assumes github app auth details to be parsed as json via stdin. The format has to be a json object with either the only key 'token' or the keys 'app_id', 'installation_id' and 'private_key'.,"
+                    f"depending on the authentication method (github token vs github app auth) used."
+    )
+    parser.add_argument(
+        "--since",
+        type=int,
+        help="The amount of seconds to look back for failed deliveries.",
+        required=True
+    )
+    parser.add_argument(
+        "--github-path",
+        type=str,
+        help=("The path of the organisation or repository where the webhooks are registered. Should"
+          "be in the format of <organisation> or <organisation>/<repository>."),
+        required=True
+    )
+    parser.add_argument(
+        "--webhook-id",
+        type=int,
+        help="The identifier of the webhook.",
+        required=True
+    )
+    args = parser.parse_args()
+
+    # read the github auth details from stdin for security reasons
+    github_auth_details_raw = input()
+
+    print(github_auth_details_raw)
+    try:
+        github_auth_json = json.loads(github_auth_details_raw)
+    except json.JSONDecodeError as exc:
+        logger.error("Failed to parse github auth details: %s", exc)
+        print("Failed to parse github auth details, assuming a json with either the only key 'token' or the keys 'app_id', 'installation_id' and 'private_key'", file=sys.stderr)
+        raise SystemExit(1)
+
+    if "token" in github_auth_json:
+        github_auth = github_auth_json["token"]
+    else:
+        try:
+            github_auth = GithubAppAuthDetails(**github_auth_json)
+        except ValueError as exc:
+            logger.error("Failed to parse github auth details: %s", exc)
+            print("Failed to parse github auth details", file=sys.stderr)
+            raise SystemExit(1)
+
+    webhook_address = WebhookAddress(
+        github_org=args.github_path.split("/")[0],
+        github_repo=args.github_path.split("/")[1] if "/" in args.github_path else None,
+        id=args.webhook_id
+    )
+
+    try:
+        redeliver_count = redeliver_failed_webhook_deliveries(
+            github_auth=github_auth, webhook_address=webhook_address, since_seconds=args.since
+        )
+    except RedeliveryError as exc:
+        logger.exception("Failed to redeliver webhook deliveries")
+        print(f"Failed to redeliver webhook deliveries: {exc}", file=sys.stderr)
+        raise SystemExit(1)
+    print(json.dumps({"redelivered": redeliver_count}))
