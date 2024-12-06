@@ -34,4 +34,4 @@ parts:
        # Note: Prefix each entry with "flask/app/" followed by the local path.
        - flask/app/app.py
        - flask/app/webhook_router
-       - flask/app/forward_failed_webhooks.py
+       - flask/app/webhook_redelivery.py

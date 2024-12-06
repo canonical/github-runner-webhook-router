@@ -11,12 +11,7 @@ from datetime import datetime, timedelta, timezone
 from functools import wraps
 from typing import Iterator
 
-from github import (
-    BadCredentialsException,
-    Github,
-    GithubException,
-    RateLimitExceededException,
-)
+from github import BadCredentialsException, Github, GithubException, RateLimitExceededException
 from github.Auth import AppAuth, AppInstallationAuth, Token
 from pydantic import BaseModel
 
@@ -142,7 +137,7 @@ def redeliver_failed_webhook_deliveries(
 
 
 # Github App authentication is not tested in unit tests, but in integration tests.
-def _get_github_client(github_auth: GithubAuthDetails) -> Github:     # pragma: no cover
+def _get_github_client(github_auth: GithubAuthDetails) -> Github:  # pragma: no cover
     """Get a Github client.
 
     Args:
@@ -180,7 +175,7 @@ def _get_deliveries(
     for delivery in deliveries:
         yield _WebhookDelivery(
             id=delivery.id,
-            status=delivery.status,
+            status=delivery.status,  # TODO we should also filter action to only redeliver queued
             delivered_at=delivery.delivered_at,
         )
 
@@ -207,38 +202,39 @@ def _redeliver(github_client: Github, webhook_address: WebhookAddress, delivery_
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description=f"{__doc__}. The script assumes github app auth details to be parsed as json via stdin. The format has to be a json object with either the only key 'token' or the keys 'app_id', 'installation_id' and 'private_key'.,"
-                    f"depending on the authentication method (github token vs github app auth) used."
+        f"depending on the authentication method (github token vs github app auth) used."
     )
     parser.add_argument(
         "--since",
         type=int,
         help="The amount of seconds to look back for failed deliveries.",
-        required=True
+        required=True,
     )
     parser.add_argument(
         "--github-path",
         type=str,
-        help=("The path of the organisation or repository where the webhooks are registered. Should"
-          "be in the format of <organisation> or <organisation>/<repository>."),
-        required=True
+        help=(
+            "The path of the organisation or repository where the webhooks are registered. Should"
+            "be in the format of <organisation> or <organisation>/<repository>."
+        ),
+        required=True,
     )
     parser.add_argument(
-        "--webhook-id",
-        type=int,
-        help="The identifier of the webhook.",
-        required=True
+        "--webhook-id", type=int, help="The identifier of the webhook.", required=True
     )
     args = parser.parse_args()
 
     # read the github auth details from stdin for security reasons
     github_auth_details_raw = input()
 
-    print(github_auth_details_raw)
     try:
         github_auth_json = json.loads(github_auth_details_raw)
     except json.JSONDecodeError as exc:
         logger.error("Failed to parse github auth details: %s", exc)
-        print("Failed to parse github auth details, assuming a json with either the only key 'token' or the keys 'app_id', 'installation_id' and 'private_key'", file=sys.stderr)
+        print(
+            "Failed to parse github auth details, assuming a json with either the only key 'token' or the keys 'app_id', 'installation_id' and 'private_key'",
+            file=sys.stderr,
+        )
         raise SystemExit(1)
 
     if "token" in github_auth_json:
@@ -254,7 +250,7 @@ if __name__ == "__main__":
     webhook_address = WebhookAddress(
         github_org=args.github_path.split("/")[0],
         github_repo=args.github_path.split("/")[1] if "/" in args.github_path else None,
-        id=args.webhook_id
+        id=args.webhook_id,
     )
 
     try:
