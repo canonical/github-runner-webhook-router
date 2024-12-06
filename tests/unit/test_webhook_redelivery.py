@@ -93,6 +93,7 @@ def test_redeliver(
             spec=HookDeliverySummary,
             id=d.id,
             status=d.status,
+            action="queued",
             delivered_at=now - timedelta(seconds=d.age),
         )
         for d in deliveries
@@ -153,6 +154,42 @@ def test_redelivery_github_errors(
             github_auth=github_token, webhook_address=webhook_address, since_seconds=since_seconds
         )
     assert expected_msg in str(exc_info.value)
+
+
+@pytest.mark.parametrize(
+    "action", ["completed", "in_progress", "waiting"]
+)
+def test_redelivery_ignores_non_queued(
+        monkeypatch: pytest.MonkeyPatch,
+        webhook_address: WebhookAddress,
+        action: str
+):
+    github_client = MagicMock(spec=github.Github)
+    monkeypatch.setattr("webhook_redelivery.Github", MagicMock(return_value=github_client))
+    now = datetime.now(tz=timezone.utc)
+    monkeypatch.setattr("webhook_redelivery.datetime", MagicMock(now=MagicMock(return_value=now)))
+
+    get_hook_deliveries_mock = _get_get_deliveries_mock(github_client, webhook_address)
+    get_hook_deliveries_mock.return_value = [
+        MagicMock(
+            spec=HookDeliverySummary,
+            id=d.id,
+            status=d.status,
+            action=action,
+            delivered_at=now - timedelta(seconds=d.age),
+        )
+        for d in [_Delivery(i, action, 4) for i in range(3)]
+    ]
+
+    github_token = secrets.token_hex(16)
+    redelivered = redeliver_failed_webhook_deliveries(
+        github_auth=github_token, webhook_address=webhook_address, since_seconds=5
+    )
+
+    assert redelivered == 0
+
+    redeliver_mock = github_client.requester.requestJsonAndCheck
+    assert redeliver_mock.call_count == 0
 
 
 def _get_get_deliveries_mock(
