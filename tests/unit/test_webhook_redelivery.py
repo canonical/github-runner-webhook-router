@@ -11,6 +11,8 @@ from github.HookDelivery import HookDeliverySummary
 
 from webhook_redelivery import (
     OK_STATUS,
+    QUEUED_ACTION,
+    WORKFLOW_JOB_EVENT,
     RedeliveryError,
     WebhookAddress,
     redeliver_failed_webhook_deliveries,
@@ -93,7 +95,8 @@ def test_redeliver(
             spec=HookDeliverySummary,
             id=d.id,
             status=d.status,
-            action="queued",
+            action=QUEUED_ACTION,
+            event=WORKFLOW_JOB_EVENT,
             delivered_at=now - timedelta(seconds=d.age),
         )
         for d in deliveries
@@ -157,12 +160,21 @@ def test_redelivery_github_errors(
 
 
 @pytest.mark.parametrize(
-    "action", ["completed", "in_progress", "waiting"]
+    "action,event",
+    [
+        pytest.param("completed", "workflow_job", id="completed workflow_job"),
+        pytest.param("in_progress", "workflow_job", id="in_progress workflow_job"),
+        pytest.param("waiting", "workflow_job", id="waiting workflow_job"),
+        pytest.param("queued", "push", id="queued push"),
+        pytest.param("completed", "push", id="completed push"),
+        pytest.param("queued", "workflow_run", id="queued workflow_run"),
+    ],
 )
-def test_redelivery_ignores_non_queued(
-        monkeypatch: pytest.MonkeyPatch,
-        webhook_address: WebhookAddress,
-        action: str
+def test_redelivery_ignores_non_queued_or_non_workflow_job(
+    monkeypatch: pytest.MonkeyPatch,
+    webhook_address: WebhookAddress,
+    action: str,
+    event: str,
 ):
     github_client = MagicMock(spec=github.Github)
     monkeypatch.setattr("webhook_redelivery.Github", MagicMock(return_value=github_client))
@@ -176,6 +188,7 @@ def test_redelivery_ignores_non_queued(
             id=d.id,
             status=d.status,
             action=action,
+            event=event,
             delivered_at=now - timedelta(seconds=d.age),
         )
         for d in [_Delivery(i, action, 4) for i in range(3)]

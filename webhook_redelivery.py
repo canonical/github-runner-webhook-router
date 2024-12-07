@@ -1,7 +1,7 @@
 #  Copyright 2024 Canonical Ltd.
 #  See LICENSE file for licensing details.
 
-"""Redeliver failed webhooks since a given time. Only webhooks with action type queued are redelivered (as the others are not routable). """  #TODO make routable more explicit by adding a constant in another module
+"""Redeliver failed webhooks since a given time. Only webhooks with action type queued are redelivered (as the others are not routable). """  # TODO make routable more explicit by adding a constant in another module
 import argparse
 import json
 import logging
@@ -17,6 +17,7 @@ from pydantic import BaseModel
 
 OK_STATUS = "OK"
 QUEUED_ACTION = "queued"
+WORKFLOW_JOB_EVENT = "workflow_job"
 
 logger = logging.getLogger(__name__)
 
@@ -64,13 +65,15 @@ class _WebhookDelivery:
         id: The identifier of the delivery.
         status: The status of the delivery.
         delivered_at: The time the delivery was made.
-        action: The action type of the delivery. See https://docs.github.com/en/webhooks/webhook-events-and-payloads#workflow_job for possible values.
+        action: The action type of the delivery. See https://docs.github.com/en/webhooks/webhook-events-and-payloads#workflow_job for possible values for the workflow_job event
+        event: The event type of the delivery.
     """
 
     id: int
     status: str
     delivered_at: datetime
     action: str
+    event: str
 
 
 class RedeliveryError(Exception):
@@ -131,7 +134,11 @@ def redeliver_failed_webhook_deliveries(
         if delivery.delivered_at < since_datetime:
             break
 
-        if delivery.status != OK_STATUS and delivery.action == QUEUED_ACTION:
+        if (
+            delivery.status != OK_STATUS
+            and delivery.action == QUEUED_ACTION
+            and delivery.event == WORKFLOW_JOB_EVENT
+        ):
             _redeliver(
                 github_client=github, webhook_address=webhook_address, delivery_id=delivery.id
             )
@@ -181,6 +188,7 @@ def _get_deliveries(
             status=delivery.status,
             delivered_at=delivery.delivered_at,
             action=delivery.action,
+            event=delivery.event,
         )
 
 
