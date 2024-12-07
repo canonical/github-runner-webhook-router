@@ -1,7 +1,7 @@
 #  Copyright 2024 Canonical Ltd.
 #  See LICENSE file for licensing details.
 
-"""Redeliver failed webhooks since a given time. Only webhooks with action type queued are redelivered (as the others are not routable). """  # TODO make routable more explicit by adding a constant in another module
+"""Redeliver failed webhooks since a given time. Only webhooks with action type queued are redelivered (as the others are not routable). """
 import argparse
 import json
 import logging
@@ -15,9 +15,10 @@ from github import BadCredentialsException, Github, GithubException, RateLimitEx
 from github.Auth import AppAuth, AppInstallationAuth, Token
 from pydantic import BaseModel
 
+from webhook_router.app import SUPPORTED_GITHUB_EVENT
+from webhook_router.router import ROUTABLE_JOB_STATUS
+
 OK_STATUS = "OK"
-QUEUED_ACTION = "queued"
-WORKFLOW_JOB_EVENT = "workflow_job"
 
 logger = logging.getLogger(__name__)
 
@@ -136,8 +137,8 @@ def redeliver_failed_webhook_deliveries(
 
         if (
             delivery.status != OK_STATUS
-            and delivery.action == QUEUED_ACTION
-            and delivery.event == WORKFLOW_JOB_EVENT
+            and delivery.action == ROUTABLE_JOB_STATUS
+            and delivery.event == SUPPORTED_GITHUB_EVENT
         ):
             _redeliver(
                 github_client=github, webhook_address=webhook_address, delivery_id=delivery.id

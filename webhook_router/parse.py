@@ -8,9 +8,6 @@ from typing import Collection
 
 from pydantic import BaseModel, HttpUrl
 
-WORKFLOW_JOB = "workflow_job"
-
-
 ValidationResult = namedtuple("ValidationResult", ["is_valid", "msg"])
 Labels = set[str]
 

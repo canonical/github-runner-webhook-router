@@ -11,8 +11,6 @@ from github.HookDelivery import HookDeliverySummary
 
 from webhook_redelivery import (
     OK_STATUS,
-    QUEUED_ACTION,
-    WORKFLOW_JOB_EVENT,
     RedeliveryError,
     WebhookAddress,
     redeliver_failed_webhook_deliveries,
@@ -95,8 +93,8 @@ def test_redeliver(
             spec=HookDeliverySummary,
             id=d.id,
             status=d.status,
-            action=QUEUED_ACTION,
-            event=WORKFLOW_JOB_EVENT,
+            action="queued",
+            event="workflow_job",
             delivered_at=now - timedelta(seconds=d.age),
         )
         for d in deliveries
