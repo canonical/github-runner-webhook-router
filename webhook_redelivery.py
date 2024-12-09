@@ -23,7 +23,6 @@ OK_STATUS = "OK"
 logger = logging.getLogger(__name__)
 
 
-@dataclass
 class GithubAppAuthDetails(BaseModel):
     """The details to authenticate with Github using a Github App.
 
@@ -33,7 +32,7 @@ class GithubAppAuthDetails(BaseModel):
         private_key: The private key to authenticate with Github.
     """
 
-    app_id: str
+    app_id: int | str  # app id is an int but client id is a string
     installation_id: int
     private_key: str
 

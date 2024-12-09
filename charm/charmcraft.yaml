@@ -56,14 +56,14 @@ actions:
           If provided, the other github-app-* params must also be provided.
           The Github App needs to have write permission for Webhooks.
           Either this or the github-token must be provided.
-        type: string
+        type: [integer, string] # client id is non-numerical, so we need to support string
       github-app-installation-id:
         description: >-
           The app installation id of the GitHub App to use for communication with GitHub.
           If provided, the other github-app-* params must also be provided.
           The Github App needs to have write permission for Webhooks.
           Either this or the github-token must be provided.
-        type: string
+        type: integer
       github-app-private-key-secret-id:
         description: >-
           The juju user secret id of the private key to use for communication with GitHub.
