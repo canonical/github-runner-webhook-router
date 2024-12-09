@@ -177,7 +177,7 @@ def _get_deliveries(
         The webhook deliveries since the given time.
     """
     webhook_origin = (
-        github_client.get_repo(webhook_address.github_org)
+        github_client.get_repo(f"{webhook_address.github_org}/{webhook_address.github_repo}")
         if webhook_address.github_repo
         else github_client.get_organization(webhook_address.github_org)
     )
