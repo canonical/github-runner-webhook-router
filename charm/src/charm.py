@@ -62,18 +62,9 @@ class FlaskCharm(paas_charm.flask.Charm):
         since_seconds = event.params[SINCE_PARAM_NAME]
         github_path = event.params[GITHUB_PATH_PARAM_NAME]
         webhook_id = event.params[WEBHOOK_ID_PARAM_NAME]
-        github_token_secret_id = event.params.get(GITHUB_TOKEN_SECRET_ID_PARAM_NAME)
-        github_app_id = event.params.get(GITHUB_APP_ID_PARAM_NAME)
-        github_app_installation_id = event.params.get(GITHUB_APP_INSTALLATION_ID_PARAM_NAME)
-        github_app_private_key_secret_id = event.params.get(GITHUB_APP_PRIVATE_KEY_PARAM_NAME)
 
         try:
-            auth_details = self._get_auth_details(
-                github_token_secret_id,
-                github_app_id,
-                github_app_installation_id,
-                github_app_private_key_secret_id,
-            )
+            auth_details = self._get_auth_details(event)
         except _ActionParamsInvalidError as exc:
             event.fail(f"Invalid action parameters passed: {exc}")
             return
@@ -102,47 +93,45 @@ class FlaskCharm(paas_charm.flask.Charm):
             event.fail("Webhooks redelivery failed. Look at the juju logs for more information.")
 
     def _get_auth_details(
-        self,
-        github_token_secret_id: str | None,
-        github_app_id: str | None,
-        github_app_installation_id_str: str | None,
-        github_app_private_key: str | None,
+        self, event: ops.charm.ActionEvent
     ) -> dict:
-        """Get the authentication details
+        """Get the authentication details from the action event.
 
         Args:
-            github_token_secret_id: The GitHub token secret ID.
-            github_app_id: The GitHub App ID or Client ID.
-            github_app_installation_id_str: The GitHub App Installation ID as a string.
-            github_app_private_key: The GitHub App private key.
-
-        Returns: a dict which can be passed to the webhook redelivery script as JSON.
+            event: The action event.
+        Returns:
+            a dict which can be passed to the webhook redelivery script as JSON.
 
         Raises: _ActionParamsInvalidError If the configuration is invalid.
         """
+        github_token_secret_id = event.params.get(GITHUB_TOKEN_SECRET_ID_PARAM_NAME)
+        github_app_id = event.params.get(GITHUB_APP_ID_PARAM_NAME)
+        github_app_installation_id_str = event.params.get(GITHUB_APP_INSTALLATION_ID_PARAM_NAME)
+        github_app_private_key_secret_id = event.params.get(GITHUB_APP_PRIVATE_KEY_PARAM_NAME)
+
         if not github_token_secret_id and not (
-            github_app_id or github_app_installation_id_str or github_app_private_key
+            github_app_id or github_app_installation_id_str or github_app_private_key_secret_id
         ):
             raise _ActionParamsInvalidError(
                 f"{MISSING_GITHUB_PARAMS_ERR_MSG}"
                 f"got: token: {github_token_secret_id!r}, app-id: {github_app_id!r}, app-installation-id: {github_app_installation_id_str!r}, "
-                f"private-key: {github_app_private_key!r}"
+                f"private-key: {github_app_private_key_secret_id!r}"
             )
         if github_token_secret_id and (
-            github_app_id or github_app_installation_id_str or github_app_private_key
+            github_app_id or github_app_installation_id_str or github_app_private_key_secret_id
         ):
             raise _ActionParamsInvalidError(
                 f"{PROVIDED_GITHUB_TOKEN_AND_APP_PARAMS_ERR_MSG}"
                 f"got: app-id: {github_app_id!r}, app-installation-id: {github_app_installation_id_str!r}, "
-                f"private-key: {github_app_private_key!r}"
+                f"private-key: {github_app_private_key_secret_id!r}"
             )
 
-        if github_app_id or github_app_installation_id_str or github_app_private_key:
-            if not (github_app_id and github_app_installation_id_str and github_app_private_key):
+        if github_app_id or github_app_installation_id_str or github_app_private_key_secret_id:
+            if not (github_app_id and github_app_installation_id_str and github_app_private_key_secret_id):
                 raise _ActionParamsInvalidError(
                     f"{NOT_ALL_GITHUB_APP_PARAMS_ERR_MSG}"
                     f"got: app-id: {github_app_id!r}, app-installation-id: {github_app_installation_id_str!r}, "
-                    f"private-key: {github_app_private_key!r}"
+                    f"private-key: {github_app_private_key_secret_id!r}"
                 )
 
         if github_token_secret_id:
@@ -150,7 +139,7 @@ class FlaskCharm(paas_charm.flask.Charm):
             github_token_secret_data = github_token_secret.get_content()
             return {"token": github_token_secret_data["token"]}
         return self._get_github_app_installation_auth_details(
-            github_app_id, github_app_installation_id_str, github_app_private_key
+            github_app_id, github_app_installation_id_str, github_app_private_key_secret_id
         )
 
     def _get_github_app_installation_auth_details(
