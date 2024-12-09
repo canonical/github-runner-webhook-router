@@ -19,17 +19,17 @@ WEBHOOK_ID_PARAM_NAME = "webhook-id"
 GITHUB_TOKEN_SECRET_ID_PARAM_NAME = "github-token-secret-id"
 GITHUB_APP_ID_PARAM_NAME = "github-app-id"
 GITHUB_APP_INSTALLATION_ID_PARAM_NAME = "github-app-installation-id"
-GITHUB_APP_PRIVATE_KEY_PARAM_NAME = "github-app-private-key-secret-id"
+GITHUB_APP_PRIVATE_KEY_SECRET_ID_PARAM_NAME = "github-app-private-key-secret-id"
 
 MISSING_GITHUB_PARAMS_ERR_MSG = (
     f"Either the {GITHUB_TOKEN_SECRET_ID_PARAM_NAME} or not all of {GITHUB_APP_ID_PARAM_NAME},"
-    f" {GITHUB_APP_INSTALLATION_ID_PARAM_NAME}, {GITHUB_APP_PRIVATE_KEY_PARAM_NAME} "
+    f" {GITHUB_APP_INSTALLATION_ID_PARAM_NAME}, {GITHUB_APP_PRIVATE_KEY_SECRET_ID_PARAM_NAME} "
     f"parameters were provided or are empty, "
     "the parameters are needed for interactions with GitHub, "
 )
 NOT_ALL_GITHUB_APP_PARAMS_ERR_MSG = (
     f"Not all of {GITHUB_APP_ID_PARAM_NAME}, {GITHUB_APP_INSTALLATION_ID_PARAM_NAME},"
-    f" {GITHUB_APP_PRIVATE_KEY_PARAM_NAME} environment variables were provided, "
+    f" {GITHUB_APP_PRIVATE_KEY_SECRET_ID_PARAM_NAME} environment variables were provided, "
 )
 # the following is no hardcoded password
 PROVIDED_GITHUB_TOKEN_AND_APP_PARAMS_ERR_MSG = (  # nosec
@@ -107,7 +107,7 @@ class FlaskCharm(paas_charm.flask.Charm):
         github_token_secret_id = event.params.get(GITHUB_TOKEN_SECRET_ID_PARAM_NAME)
         github_app_id = event.params.get(GITHUB_APP_ID_PARAM_NAME)
         github_app_installation_id_str = event.params.get(GITHUB_APP_INSTALLATION_ID_PARAM_NAME)
-        github_app_private_key_secret_id = event.params.get(GITHUB_APP_PRIVATE_KEY_PARAM_NAME)
+        github_app_private_key_secret_id = event.params.get(GITHUB_APP_PRIVATE_KEY_SECRET_ID_PARAM_NAME)
 
         if not github_token_secret_id and not (
             github_app_id or github_app_installation_id_str or github_app_private_key_secret_id

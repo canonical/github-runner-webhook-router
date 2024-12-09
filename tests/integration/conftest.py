@@ -12,7 +12,8 @@ from juju.application import Application
 from juju.model import Model
 from pytest_operator.plugin import OpsTest
 
-from tests.conftest import CHARM_FILE_PARAM, FLASK_APP_IMAGE_PARAM
+from tests.conftest import CHARM_FILE_PARAM, FLASK_APP_IMAGE_PARAM, GITHUB_TOKEN_PARAM, \
+    WEBHOOK_TEST_REPOSITORY_PARAM
 
 
 @pytest.fixture(name="use_existing_app", scope="module")
@@ -34,6 +35,17 @@ def flask_app_image_fixture(pytestconfig: pytest.Config) -> str | None:
     flask_app_image = pytestconfig.getoption(FLASK_APP_IMAGE_PARAM)
     return flask_app_image
 
+@pytest.fixture(name="github_token", scope="module")
+def github_token_fixture(pytestconfig: pytest.Config) -> str | None:
+    """Return the github token secret"""
+    github_token = pytestconfig.getoption(GITHUB_TOKEN_PARAM)
+    return github_token
+
+@pytest.fixture(name="test_repo", scope="module")
+def test_repo_fixture(pytestconfig: pytest.Config) -> str | None:
+    """Return the github test repository"""
+    test_repo = pytestconfig.getoption(WEBHOOK_TEST_REPOSITORY_PARAM)
+    return test_repo
 
 @pytest.fixture(name="model", scope="module")
 def model_fixture(ops_test: OpsTest) -> Model:
@@ -94,11 +106,10 @@ def deploy_config_fixture(
     }
 
 
-@pytest_asyncio.fixture(name="app", scope="module")
-async def app_fixture(
+@pytest_asyncio.fixture(name="router", scope="module")
+async def router_fixture(
     model: Model,
     deploy_config: dict[str, Any],
-    mongodb: Application,
 ) -> Application:
     """Deploy the application."""
     app_name = deploy_config["app-name"]
@@ -119,6 +130,5 @@ async def app_fixture(
             application_name=deploy_config["app-name"],
             config=deploy_config["config"],
         )
-        await model.relate(f"{application.name}:mongodb", f"{mongodb.name}:database")
-    await model.wait_for_idle(apps=[app_name, mongodb.name], status="active")
+    await model.wait_for_idle(apps=[app_name], status="blocked")
     return application

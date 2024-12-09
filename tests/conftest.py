@@ -8,6 +8,8 @@ from pytest import Parser
 CHARM_FILE_PARAM = "--charm-file"
 FLASK_APP_IMAGE_PARAM = "--github-runner-webhook-router-image"
 USE_EXISTING_APP_PARAM = "--use-existing-app"
+GITHUB_TOKEN_PARAM = "--github-token"
+WEBHOOK_TEST_REPOSITORY_PARAM = "--webhook-test-repository"
 
 
 def pytest_addoption(parser: Parser) -> None:
@@ -22,4 +24,11 @@ def pytest_addoption(parser: Parser) -> None:
         USE_EXISTING_APP_PARAM,
         action="store_true",
         help="Use an existing app instead of deploying a new one, useful for local testing",
+    )
+    parser.addoption(GITHUB_TOKEN_PARAM, action="store", help="GitHub token used for testing github API interactions")
+    parser.addoption(
+        WEBHOOK_TEST_REPOSITORY_PARAM,
+        action="store",
+        help="Name of the GitHub repository used to test webhook delivery",
+        default="canonical/github-runner-webhook-router",
     )
