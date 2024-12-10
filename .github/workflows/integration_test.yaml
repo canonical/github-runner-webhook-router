@@ -14,3 +14,5 @@ jobs:
       self-hosted-runner: false
       rockcraft-channel: latest/edge
       charmcraft-channel: latest/edge
+      # we use https://github.com/apps/cbartz-runner-test-app to test github app auth authentication
+      extra-arguments: --github-app-id 945427 --github-app-installation-id 58159077 --webhook-test-repository cbartz-org/gh-runner-test
