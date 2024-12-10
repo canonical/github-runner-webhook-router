@@ -11,12 +11,11 @@ jobs:
     secrets: inherit
 
     with:
-      juju-channel: 3.1/stable
+      juju-channel: 3.6/stable
       channel: 1.28-strict/stable
       trivy-image-config: "trivy.yaml"
       self-hosted-runner: false
       rockcraft-channel: latest/edge
       charmcraft-channel: latest/edge
       modules: '["test_app", "test_webhook_redelivery"]'
-      # we use https://github.com/apps/cbartz-runner-test-app to test github app auth authentication
       extra-arguments: --webhook-test-repository cbartz-org/gh-runner-test
