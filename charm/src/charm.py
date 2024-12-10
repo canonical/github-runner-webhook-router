@@ -29,7 +29,7 @@ MISSING_GITHUB_PARAMS_ERR_MSG = (
 )
 NOT_ALL_GITHUB_APP_PARAMS_ERR_MSG = (
     f"Not all of {GITHUB_APP_ID_PARAM_NAME}, {GITHUB_APP_INSTALLATION_ID_PARAM_NAME},"
-    f" {GITHUB_APP_PRIVATE_KEY_SECRET_ID_PARAM_NAME} environment variables were provided, "
+    f" {GITHUB_APP_PRIVATE_KEY_SECRET_ID_PARAM_NAME} parameters were provided, "
 )
 # the following is no hardcoded password
 PROVIDED_GITHUB_TOKEN_AND_APP_PARAMS_ERR_MSG = (  # nosec
@@ -135,9 +135,15 @@ class FlaskCharm(paas_charm.flask.Charm):
                 )
 
         if github_token_secret_id:
+            print(github_token_secret_id)
             github_token_secret = self.model.get_secret(id=github_token_secret_id)
             github_token_secret_data = github_token_secret.get_content()
-            return {"token": github_token_secret_data["token"]}
+
+            try:
+                github_token = github_token_secret_data["token"]
+            except KeyError:
+                raise _ActionParamsInvalidError("The github token secret does not contain a field called 'token'.")
+            return {"token": github_token}
         return self._get_github_app_installation_auth_details(
             github_app_id, github_app_installation_id_str, github_app_private_key_secret_id
         )
@@ -169,10 +175,16 @@ class FlaskCharm(paas_charm.flask.Charm):
             ) from exc
         github_app_private_key_secret = self.model.get_secret(id=github_app_private_key_secret_id)
         github_app_private_key_secret_data = github_app_private_key_secret.get_content()
+        try:
+            private_key = github_app_private_key_secret_data["private-key"]
+        except KeyError:
+            raise _ActionParamsInvalidError(
+                "The github app private key secret does not contain a field called 'private-key'."
+            )
         return {
             "app_id": github_app_id,
             "installation_id": github_app_installation_id,
-            "private_key": github_app_private_key_secret_data["private-key"],
+            "private_key": private_key,
         }
 
 

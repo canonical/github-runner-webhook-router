@@ -1,5 +1,6 @@
 #  Copyright 2024 Canonical Ltd.
 #  See LICENSE file for licensing details.
+import secrets
 from asyncio import sleep
 from typing import Iterator
 from uuid import uuid4
@@ -68,68 +69,104 @@ async def test_webhook_delivery(router: Application, github_token: str, repo: Re
 
     await wait_for_webhook_redelivered("workflow_job")
 
-# @pytest.mark.parametrize(
-#         "github_app_id, github_app_installation_id, github_app_private_key_secret_id, github_token_secret_id,"
-#         "expected_message",
-#         [
-#             pytest.param(
-#                 "123",
-#                 "456",
-#                 "private",
-#                 secrets.token_hex(16),
-#                 "Provided github app auth parameters and github token, only one of them should be provided",
-#                 id="github app config and github token secret",
-#             ),
-#             pytest.param(
-#                 None,
-#                 None,
-#                 None,
-#                 None,
-#                 "Either the github-token-secret-id or not all of github-app-id, github-app-installation-id, ",
-#                 id="no github app config or github token",
-#             ),
-#             pytest.param(
-#                 "eda",
-#                 "no int",
-#                 "private",
-#                 None,
-#                 "Invalid github app installation id",
-#                 id="invalid github app installation id",
-#             ),
-#             pytest.param(
-#                 "eda",
-#                 "123",
-#                 None,
-#                 None,
-#                 "Not all github app config provided",
-#                 id="not all github app config provided",
-#             ),
-#         ],
-#     )  # we use a lot of arguments, but it seems not worth to introduce a capsulating object for this
-#     def test_get_client_configuration_error(  # pylint: disable=too-many-arguments
-#             github_app_id: str,
-#             github_app_installation_id: str,
-#             github_app_private_key_secret_id: str,
-#             github_token_secret_id: str,
-#             expected_message: str,
-#             monkeypatch: pytest.MonkeyPatch,
-#     ):
-#         """
-#         arrange: Given a mocked environment with invalid github auth configuration.
-#         act: Call github_client.get.
-#         assert: ConfigurationError is raised.
-#         """
-#         harness = Harness(FlaskCharm)
-#         harness.begin_with_initial_hooks()
-#
-#         event = MagicMock(spec=ActionEvent)
-#         event.params = {
-#             GITHUB_APP_ID_PARAM_NAME: github_app_id,
-#             GITHUB_APP_INSTALLATION_ID_PARAM_NAME: github_app_installation_id,
-#             GITHUB_APP_PRIVATE_KEY_SECRET_ID_PARAM_NAME: github_app_private_key_secret_id,
-#             GITHUB_TOKEN_SECRET_ID_PARAM_NAME: github_token_secret_id,
-#         }
-#         result = harness.charm.on.redeliver_failed_webhooks_action(event)
-#
-#         assert expected_message in result
-#         event.set_results.assert_not_called()
+@pytest.mark.parametrize(
+"github_app_id, github_app_installation_id, github_app_private_key_secret, github_token_secret,"
+"expected_message",
+        [
+            pytest.param(
+                "123",
+                446,
+                "private",
+                "token",
+                "Provided github app auth parameters and github token, only one of them should be provided",
+                id="github app config and github token secret",
+            ),
+            pytest.param(
+                None,
+                None,
+                None,
+                None,
+                "Either the github-token-secret-id or not all of github-app-id, github-app-installation-id, github-app-private-key-secret-id parameters were provided or are empty, the parameters are needed for interactions with GitHub",
+                id="no github app config or github token",
+            ),
+            pytest.param(
+                "eda",
+                123,
+                None,
+                None,
+                "Not all of github-app-id, github-app-installation-id, github-app-private-key-secret-id parameters were provided",
+                id="not all github app config provided",
+            ),
+        ],
+    )  # we use a lot of arguments, but it seems not worth to introduce a capsulating object for this
+async def test_action_github_auth_param_error(  # pylint: disable=too-many-arguments
+        github_app_id: str | None,
+        github_app_installation_id: int | None,
+        github_app_private_key_secret: str | None,
+        github_token_secret: str | None,
+        expected_message: str,
+        router: Application, repo: Repository, hook: Hook
+):
+    """
+    arrange: Given a mocked environment with invalid github auth configuration.
+    act: Call github_client.get.
+    assert: ConfigurationError is raised.
+    """
+    unit: Unit = router.units[0]
+    # create secret with github token
+    model: Model = router.model
+    secret_name = f"github-creds-{uuid4().hex}" # use uuid in case same model is reused
+    secret_data = []
+    action_parms = {"webhook-id": hook.id, "since": 600, "github-path": repo.full_name}
+    if github_app_private_key_secret:
+        secret_data.append(f"private-key={github_app_private_key_secret}")
+    if github_token_secret:
+        secret_data.append(f"token={github_token_secret}")
+    if secret_data:
+        secret = await model.add_secret(secret_name, secret_data)
+        secret_id = secret.split(":")[-1]
+        await model.grant_secret(secret_name, router.name)
+        if github_app_private_key_secret:
+            action_parms["github-app-private-key-secret-id"] = secret_id
+        if github_token_secret:
+            action_parms["github-token-secret-id"] = secret_id
+    if github_app_id:
+        action_parms["github-app-id"] = github_app_id
+    if github_app_installation_id:
+        action_parms["github-app-installation-id"] = github_app_installation_id
+
+
+    action: Action = await unit.run_action("redeliver-failed-webhooks", **action_parms)
+    await action.wait()
+    assert action.status == "failed"
+    assert "Invalid action parameters passed" in (action_msg:=action.data["message"])
+    assert expected_message in action_msg
+
+
+@pytest.mark.parametrize(
+"use_app_auth, expected_message",
+[
+pytest.param(True, "The github app private key secret does not contain a field called 'private-key'.", id="wrong field in github app secret"),
+pytest.param(False, "The github token secret does not contain a field called 'token'.", id="wrong field in github token secret"),
+])
+async def test_secret_key_missing(use_app_auth: bool, expected_message: str, router: Application, repo: Repository, hook: Hook) -> None:
+    unit: Unit = router.units[0]
+    # create secret with github token
+    model: Model = router.model
+    secret_name = f"github-creds-{uuid4().hex}"  # use uuid in case same model is reused
+    secret_data = []
+    action_parms = {"webhook-id": hook.id, "since": 600, "github-path": repo.full_name}
+    secret_data = [f"private-key-invalid={secrets.token_hex(16)}", f"token-invalid={secrets.token_hex(16)}"]
+    secret = await model.add_secret(secret_name, secret_data)
+    secret_id = secret.split(":")[-1]
+    await model.grant_secret(secret_name, router.name)
+    if use_app_auth:
+        action_parms |= {"github-app-private-key-secret-id": secret_id, "github-app-id": secrets.token_hex(16), "github-app-installation-id": 123}
+    else:
+        action_parms["github-token-secret-id"] = secret_id
+
+    action: Action = await unit.run_action("redeliver-failed-webhooks", **action_parms)
+    await action.wait()
+    assert action.status == "failed"
+    assert "Invalid action parameters passed" in (action_msg := action.data["message"])
+    assert expected_message in action_msg
