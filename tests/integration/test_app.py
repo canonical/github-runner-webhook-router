@@ -12,6 +12,7 @@ import secrets
 from typing import Any, Optional
 
 import pytest
+import pytest_asyncio
 import requests
 from juju.application import Application
 from juju.model import Model
@@ -28,7 +29,7 @@ from webhook_router.parse import Job, JobStatus
 PORT = 8000
 
 
-@pytest.fixture(name="app")
+@pytest_asyncio.fixture(name="app")
 async def app(
     router: Application,
     mongodb: Application,
