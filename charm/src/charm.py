@@ -92,9 +92,7 @@ class FlaskCharm(paas_charm.flask.Charm):
             logger.warning("Webhook redelivery failed, script reported: %s", exc.stderr)
             event.fail("Webhooks redelivery failed. Look at the juju logs for more information.")
 
-    def _get_auth_details(
-        self, event: ops.charm.ActionEvent
-    ) -> dict:
+    def _get_auth_details(self, event: ops.charm.ActionEvent) -> dict:
         """Get the authentication details from the action event.
 
         Args:
@@ -107,7 +105,9 @@ class FlaskCharm(paas_charm.flask.Charm):
         github_token_secret_id = event.params.get(GITHUB_TOKEN_SECRET_ID_PARAM_NAME)
         github_app_id = event.params.get(GITHUB_APP_ID_PARAM_NAME)
         github_app_installation_id_str = event.params.get(GITHUB_APP_INSTALLATION_ID_PARAM_NAME)
-        github_app_private_key_secret_id = event.params.get(GITHUB_APP_PRIVATE_KEY_SECRET_ID_PARAM_NAME)
+        github_app_private_key_secret_id = event.params.get(
+            GITHUB_APP_PRIVATE_KEY_SECRET_ID_PARAM_NAME
+        )
 
         if not github_token_secret_id and not (
             github_app_id or github_app_installation_id_str or github_app_private_key_secret_id
@@ -127,7 +127,11 @@ class FlaskCharm(paas_charm.flask.Charm):
             )
 
         if github_app_id or github_app_installation_id_str or github_app_private_key_secret_id:
-            if not (github_app_id and github_app_installation_id_str and github_app_private_key_secret_id):
+            if not (
+                github_app_id
+                and github_app_installation_id_str
+                and github_app_private_key_secret_id
+            ):
                 raise _ActionParamsInvalidError(
                     f"{NOT_ALL_GITHUB_APP_PARAMS_ERR_MSG}"
                     f"got: app-id: {github_app_id!r}, app-installation-id: {github_app_installation_id_str!r}, "
@@ -142,7 +146,9 @@ class FlaskCharm(paas_charm.flask.Charm):
             try:
                 github_token = github_token_secret_data["token"]
             except KeyError:
-                raise _ActionParamsInvalidError("The github token secret does not contain a field called 'token'.")
+                raise _ActionParamsInvalidError(
+                    "The github token secret does not contain a field called 'token'."
+                )
             return {"token": github_token}
         return self._get_github_app_installation_auth_details(
             github_app_id, github_app_installation_id_str, github_app_private_key_secret_id

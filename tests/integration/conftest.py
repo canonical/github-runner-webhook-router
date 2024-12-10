@@ -4,6 +4,7 @@
 """Fixtures for the github-runner-webhook-router charm."""
 
 import random
+from collections import namedtuple
 from typing import Any
 
 import pytest
@@ -12,8 +13,19 @@ from juju.application import Application
 from juju.model import Model
 from pytest_operator.plugin import OpsTest
 
-from tests.conftest import CHARM_FILE_PARAM, FLASK_APP_IMAGE_PARAM, GITHUB_TOKEN_PARAM, \
-    WEBHOOK_TEST_REPOSITORY_PARAM
+from tests.conftest import (
+    CHARM_FILE_PARAM,
+    FLASK_APP_IMAGE_PARAM,
+    GITHUB_APP_ID_PARAM,
+    GITHUB_APP_INSTALLATION_ID_PARAM_NAME,
+    GITHUB_APP_PRIVATE_KEY_PARAM_NAME,
+    GITHUB_TOKEN_PARAM,
+    WEBHOOK_TEST_REPOSITORY_PARAM,
+)
+
+GithubAuthenticationMethodParams = namedtuple(
+    "GithubAuthenticationMethodParams", ["app_id", "installation_id", "private_key", "token"]
+)
 
 
 @pytest.fixture(name="use_existing_app", scope="module")
@@ -35,17 +47,74 @@ def flask_app_image_fixture(pytestconfig: pytest.Config) -> str | None:
     flask_app_image = pytestconfig.getoption(FLASK_APP_IMAGE_PARAM)
     return flask_app_image
 
+
 @pytest.fixture(name="github_token", scope="module")
 def github_token_fixture(pytestconfig: pytest.Config) -> str | None:
     """Return the github token secret"""
     github_token = pytestconfig.getoption(GITHUB_TOKEN_PARAM)
     return github_token
 
+
+@pytest.fixture(name="github_app_id", scope="module")
+def github_app_id_fixture(pytestconfig: pytest.Config) -> str | None:
+    """Return the github app id"""
+    github_app_id = pytestconfig.getoption(GITHUB_APP_ID_PARAM)
+    return github_app_id
+
+
+@pytest.fixture(name="github_app_installation_id", scope="module")
+def github_app_installation_id_fixture(pytestconfig: pytest.Config) -> int | None:
+    """Return the github app installation id"""
+    github_app_installation_id = pytestconfig.getoption(GITHUB_APP_INSTALLATION_ID_PARAM_NAME)
+    if github_app_installation_id is None:
+        return None
+    return int(github_app_installation_id)
+
+
+@pytest.fixture(name="github_app_private_key", scope="module")
+def github_app_private_key_fixture(pytestconfig: pytest.Config) -> str | None:
+    """Return the github app private key"""
+    github_app_private_key = pytestconfig.getoption(GITHUB_APP_PRIVATE_KEY_PARAM_NAME)
+    return github_app_private_key
+
+
+@pytest.fixture(
+    name="github_app_auth",
+    scope="module",
+    params=[
+        pytest.param(True, id="use github token"),
+        pytest.param(False, id="use github app auth"),
+    ],
+)
+def github_app_auth_fixture(
+    request: pytest.FixtureRequest,
+    github_token: str | None,
+    github_app_id: str | None,
+    github_app_installation_id: str | None,
+    github_app_private_key: str | None,
+) -> GithubAuthenticationMethodParams:
+    """Return whether to use github app auth"""
+    if request.param:
+        assert github_token is not None, "Github token is required"
+        return GithubAuthenticationMethodParams(
+            app_id=None, installation_id=None, private_key=None, token=github_token
+        )
+    if not (github_app_id or github_app_installation_id or github_app_private_key):
+        pytest.skip("Not all github app auth parameters provided/non-empty")
+    return GithubAuthenticationMethodParams(
+        app_id=github_app_id,
+        installation_id=github_app_installation_id,
+        private_key=github_app_private_key,
+        token=None,
+    )
+
+
 @pytest.fixture(name="test_repo", scope="module")
 def test_repo_fixture(pytestconfig: pytest.Config) -> str | None:
     """Return the github test repository"""
     test_repo = pytestconfig.getoption(WEBHOOK_TEST_REPOSITORY_PARAM)
     return test_repo
+
 
 @pytest.fixture(name="model", scope="module")
 def model_fixture(ops_test: OpsTest) -> Model:

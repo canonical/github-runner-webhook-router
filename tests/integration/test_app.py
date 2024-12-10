@@ -9,7 +9,7 @@ import json
 import random
 import re
 import secrets
-from typing import Optional, Any
+from typing import Any, Optional
 
 import pytest
 import requests
@@ -27,8 +27,13 @@ from webhook_router.parse import Job, JobStatus
 
 PORT = 8000
 
+
 @pytest.fixture(name="app")
-async def app(router: Application, mongodb: Application, deploy_config: dict[str, Any], ) -> Application:
+async def app(
+    router: Application,
+    mongodb: Application,
+    deploy_config: dict[str, Any],
+) -> Application:
     if not deploy_config["use-existing-app"]:
         await router.model.relate(f"{router.name}:mongodb", f"{mongodb.name}:database")
     await router.model.wait_for_idle(apps=[router.name, mongodb.name], status="active")
