@@ -2,11 +2,12 @@
 #  See LICENSE file for licensing details.
 import secrets
 from asyncio import sleep
+from datetime import datetime, timezone
 from typing import Iterator
 from uuid import uuid4
 
 import pytest
-from github import Github, Hook, Repository
+from github import Github, Hook, Repository, Workflow
 from github.Auth import Token
 from juju.action import Action
 from juju.application import Application
@@ -19,6 +20,7 @@ from tests.integration.conftest import GithubAuthenticationMethodParams
 FAKE_HOOK_ID = 123
 FAKE_REPO = "org/repo"
 
+TEST_WORKFLOW_DISPATCH_FILE = "webhook_redelivery_test.yaml"
 
 @pytest.fixture(name="repo", scope="module")
 def repo_fixture(github_token: str, test_repo: str) -> Repository:
@@ -41,12 +43,21 @@ def hook_fixture(github_token: str, repo: Repository) -> Iterator["Hook"]:
 
     hook.delete()
 
+@pytest.fixture(name="test_workflow", scope="module")
+def test_workflow_fixture(repo: Repository) -> Workflow:
+    start_time = datetime.now(timezone.utc)
+    workflow = repo.get_workflow(TEST_WORKFLOW_DISPATCH_FILE)
+    yield workflow
+    # cancel all runs, it's not necessary to stay in queue or be picked up by a runner
+    for run in workflow.get_runs(created=f">={start_time.isoformat()}"):
+        run.cancel()
 
 async def test_webhook_delivery(
     router: Application,
     github_app_auth: GithubAuthenticationMethodParams,
     repo: Repository,
     hook: Hook,
+    test_workflow: Workflow,
 ) -> None:
     unit: Unit = router.units[0]
     # create secret with github token
@@ -69,9 +80,8 @@ async def test_webhook_delivery(
             "github-app-installation-id": github_app_auth.installation_id,
         }
     await model.grant_secret(secret_name, router.name)
-    # create webhook
     # trigger run
-    assert repo.get_workflow("dispatch_test.yaml").create_dispatch(ref="main")
+    assert test_workflow.create_dispatch(ref="main")
 
     # confirm webhook delivery failed
     async def wait_for_webhook_delivery(event: str) -> None:
