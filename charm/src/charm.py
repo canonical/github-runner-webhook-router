@@ -97,10 +97,12 @@ class FlaskCharm(paas_charm.flask.Charm):
 
         Args:
             event: The action event.
+
         Returns:
             a dict which can be passed to the webhook redelivery script as JSON.
 
-        Raises: _ActionParamsInvalidError If the configuration is invalid.
+        Raises:
+            _ActionParamsInvalidError: If the configuration is invalid.
         """
         github_token_secret_id = event.params.get(GITHUB_TOKEN_SECRET_ID_PARAM_NAME)
         github_app_id = event.params.get(GITHUB_APP_ID_PARAM_NAME)
@@ -114,7 +116,9 @@ class FlaskCharm(paas_charm.flask.Charm):
         ):
             raise _ActionParamsInvalidError(
                 f"{MISSING_GITHUB_PARAMS_ERR_MSG}"
-                f"got: token: {github_token_secret_id!r}, app-id: {github_app_id!r}, app-installation-id: {github_app_installation_id_str!r}, "
+                f"got: token: {github_token_secret_id!r}, "
+                f"app-id: {github_app_id!r}, "
+                f"app-installation-id: {github_app_installation_id_str!r}, "
                 f"private-key: {github_app_private_key_secret_id!r}"
             )
         if github_token_secret_id and (
@@ -122,7 +126,8 @@ class FlaskCharm(paas_charm.flask.Charm):
         ):
             raise _ActionParamsInvalidError(
                 f"{PROVIDED_GITHUB_TOKEN_AND_APP_PARAMS_ERR_MSG}"
-                f"got: app-id: {github_app_id!r}, app-installation-id: {github_app_installation_id_str!r}, "
+                f"got: app-id: {github_app_id!r}, "
+                f"app-installation-id: {github_app_installation_id_str!r}, "
                 f"private-key: {github_app_private_key_secret_id!r}"
             )
 
@@ -134,8 +139,9 @@ class FlaskCharm(paas_charm.flask.Charm):
             ):
                 raise _ActionParamsInvalidError(
                     f"{NOT_ALL_GITHUB_APP_PARAMS_ERR_MSG}"
-                    f"got: app-id: {github_app_id!r}, app-installation-id: {github_app_installation_id_str!r}, "
-                    f"private-key: {github_app_private_key_secret_id!r}"
+                    f"got: app-id: {github_app_id!r},"
+                    f" app-installation-id: {github_app_installation_id_str!r},"
+                    f" private-key: {github_app_private_key_secret_id!r}"
                 )
 
         if github_token_secret_id:
@@ -162,15 +168,16 @@ class FlaskCharm(paas_charm.flask.Charm):
     ) -> dict:
         """Get the Github app installation auth details.
 
-            Args:
-                github_app_id: The GitHub App ID or Client ID.
-                github_app_installation_id_str: The GitHub App Installation ID as a string.
-                github_app_private_key_secret_id: The GitHub App private key secret id
+        Args:
+            github_app_id: The GitHub App ID or Client ID.
+            github_app_installation_id_str: The GitHub App Installation ID as a string.
+            github_app_private_key_secret_id: The GitHub App private key secret id
 
-            Returns:
-                a dict which can be passed to the webhook redelivery script as JSON.
+        Returns:
+            a dict which can be passed to the webhook redelivery script as JSON.
 
-        Raises: _ActionParamsInvalidError If the configuration is invalid.
+        Raises:
+            _ActionParamsInvalidError: If the configuration is invalid.
         """
         try:
             github_app_installation_id = int(github_app_installation_id_str)

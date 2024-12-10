@@ -22,6 +22,7 @@ FAKE_REPO = "org/repo"
 
 TEST_WORKFLOW_DISPATCH_FILE = "webhook_redelivery_test.yaml"
 
+
 @pytest.fixture(name="repo", scope="module")
 def repo_fixture(github_token: str, test_repo: str) -> Repository:
     github = Github(auth=Token(github_token))
@@ -43,6 +44,7 @@ def hook_fixture(github_token: str, repo: Repository) -> Iterator["Hook"]:
 
     hook.delete()
 
+
 @pytest.fixture(name="test_workflow", scope="module")
 def test_workflow_fixture(repo: Repository) -> Workflow:
     start_time = datetime.now(timezone.utc)
@@ -51,6 +53,7 @@ def test_workflow_fixture(repo: Repository) -> Workflow:
     # cancel all runs, it's not necessary to stay in queue or be picked up by a runner
     for run in workflow.get_runs(created=f">={start_time.isoformat()}"):
         run.cancel()
+
 
 async def test_webhook_delivery(
     router: Application,

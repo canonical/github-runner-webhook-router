@@ -1,7 +1,10 @@
 #  Copyright 2024 Canonical Ltd.
 #  See LICENSE file for licensing details.
 
-"""Redeliver failed webhooks since a given time. Only webhooks with action type queued are redelivered (as the others are not routable). """
+"""Redeliver failed webhooks since a given time.
+
+Only webhooks with action type queued are redelivered (as the others are not routable).
+"""
 import argparse
 import json
 import logging
@@ -65,7 +68,9 @@ class _WebhookDelivery:
         id: The identifier of the delivery.
         status: The status of the delivery.
         delivered_at: The time the delivery was made.
-        action: The action type of the delivery. See https://docs.github.com/en/webhooks/webhook-events-and-payloads#workflow_job for possible values for the workflow_job event
+        action: The action type of the delivery.
+         See https://docs.github.com/en/webhooks/webhook-events-and-payloads#workflow_job for
+         possible values for the workflow_job event
         event: The event type of the delivery.
     """
 
@@ -84,7 +89,18 @@ def _github_api_exc_decorator(func):
     """Decorator to handle GitHub API exceptions."""
 
     @wraps(func)
-    def wrapper(*args, **kwargs):
+    def _wrapper(*args, **kwargs):
+        """Wrap the function to handle Github API exceptions.
+
+        Catch Github API exceptions and raise an appropriate RedeliveryError instead.
+
+
+        Raises:
+            RedeliveryError: If an error occurs during redelivery.
+
+        Returns:
+            The result of the origin function when no github error occurs.
+        """
         try:
             return func(*args, **kwargs)
         except BadCredentialsException as exc:
@@ -105,7 +121,7 @@ def _github_api_exc_decorator(func):
                 "The github client encountered an error. Please have a look at the logs."
             ) from exc
 
-    return wrapper
+    return _wrapper
 
 
 @_github_api_exc_decorator
@@ -122,7 +138,7 @@ def redeliver_failed_webhook_deliveries(
     Returns:
         The number of failed webhook deliveries redelivered.
 
-    Raises:
+    Raises:  # noqa: DCO051 its a public fct so we should mention that this exc is raised
         RedeliveryError: If an error occurs during redelivery.
     """
     github = _get_github_client(github_auth)
@@ -172,9 +188,8 @@ def _get_deliveries(
     """Get webhook deliveries.
 
     Args:
-
-    Returns:
-        The webhook deliveries since the given time.
+        github_client: The GitHub client used to interact with the Github API.
+        webhook_address: The data to identify the webhook.
     """
     webhook_origin = (
         github_client.get_repo(f"{webhook_address.github_org}/{webhook_address.github_repo}")
@@ -196,7 +211,7 @@ def _redeliver(github_client: Github, webhook_address: WebhookAddress, delivery_
     """Redeliver a webhook delivery.
 
     Args:
-        github_auth: The GitHub authentication details used to interact with the Github API.
+        github_client: The GitHub client used to interact with the Github API.
         webhook_address: The data to identify the webhook.
         delivery_id: The identifier of the webhook delivery.
     """
@@ -213,8 +228,10 @@ def _redeliver(github_client: Github, webhook_address: WebhookAddress, delivery_
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description=f"{__doc__}. The script assumes github app auth details to be parsed as json via stdin. The format has to be a json object with either the only key 'token' or the keys 'app_id', 'installation_id' and 'private_key'.,"
-        f"depending on the authentication method (github token vs github app auth) used."
+        description=f"{__doc__}. The script assumes github app auth details to be parsed as json"
+        " via stdin. The format has to be a json object with either the only key"
+        " 'token' or the keys 'app_id', 'installation_id' and 'private_key'.,"
+        " depending on the authentication method (github token vs github app auth) used."
     )
     parser.add_argument(
         "--since",
@@ -244,7 +261,8 @@ if __name__ == "__main__":
     except json.JSONDecodeError as exc:
         logger.error("Failed to parse github auth details: %s", exc)
         print(
-            "Failed to parse github auth details, assuming a json with either the only key 'token' or the keys 'app_id', 'installation_id' and 'private_key'",
+            "Failed to parse github auth details, assuming a json with either the only key"
+            " 'token' or the keys 'app_id', 'installation_id' and 'private_key'",
             file=sys.stderr,
         )
         raise SystemExit(1)
