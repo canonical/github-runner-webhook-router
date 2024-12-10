@@ -9,10 +9,11 @@ import argparse
 import json
 import logging
 import sys
+from collections import namedtuple
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from functools import wraps
-from typing import Iterator
+from typing import Callable, Iterator, ParamSpec, TypeVar
 
 from github import BadCredentialsException, Github, GithubException, RateLimitExceededException
 from github.Auth import AppAuth, AppInstallationAuth, Token
@@ -22,6 +23,9 @@ from webhook_router.app import SUPPORTED_GITHUB_EVENT
 from webhook_router.router import ROUTABLE_JOB_STATUS
 
 OK_STATUS = "OK"
+
+P = ParamSpec("P")
+R = TypeVar("R")
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +46,8 @@ class GithubAppAuthDetails(BaseModel):
 
 GithubToken = str
 GithubAuthDetails = GithubAppAuthDetails | GithubToken
+
+_ParsedArgs = namedtuple("_ParsedArgs", ["since", "github_auth_details", "webhook_address"])
 
 
 @dataclass
@@ -85,11 +91,11 @@ class RedeliveryError(Exception):
     """Raised when an error occurs during redelivery."""
 
 
-def _github_api_exc_decorator(func):
+def _github_api_exc_decorator(func: Callable[P, R]) -> Callable[P, R]:
     """Decorator to handle GitHub API exceptions."""
 
     @wraps(func)
-    def _wrapper(*args, **kwargs):
+    def _wrapper(*posargs: P.args, **kwargs: P.kwargs) -> R:
         """Wrap the function to handle Github API exceptions.
 
         Catch Github API exceptions and raise an appropriate RedeliveryError instead.
@@ -102,7 +108,7 @@ def _github_api_exc_decorator(func):
             The result of the origin function when no github error occurs.
         """
         try:
-            return func(*args, **kwargs)
+            return func(*posargs, **kwargs)
         except BadCredentialsException as exc:
             logging.error("Github client credentials error: %s", exc, exc_info=exc)
             raise RedeliveryError(
@@ -198,12 +204,21 @@ def _get_deliveries(
     )
     deliveries = webhook_origin.get_hook_deliveries(webhook_address.id)
     for delivery in deliveries:
+        if None in (
+            delivery.id,
+            delivery.status,
+            delivery.delivered_at,
+            delivery.action,
+            delivery.event,
+        ):
+            # all these fields are required per API schema, this shouldn't be expected
+            raise AssertionError("The webhook delivery is missing required fields.")
         yield _WebhookDelivery(
-            id=delivery.id,
-            status=delivery.status,
-            delivered_at=delivery.delivered_at,
-            action=delivery.action,
-            event=delivery.event,
+            id=delivery.id,  # type: ignore
+            status=delivery.status,  # type: ignore
+            delivered_at=delivery.delivered_at,  # type: ignore
+            action=delivery.action,  # type: ignore
+            event=delivery.event,  # type: ignore
         )
 
 
@@ -226,9 +241,29 @@ def _redeliver(github_client: Github, webhook_address: WebhookAddress, delivery_
     github_client.requester.requestJsonAndCheck("POST", url)
 
 
-if __name__ == "__main__":
+def _main() -> None:
+    """Run the module as script."""
+    args = _arg_parsing()
+
+    try:
+        redelivery_count = redeliver_failed_webhook_deliveries(
+            github_auth=args.github_auth_details,
+            webhook_address=args.webhook_address,
+            since_seconds=args.since,
+        )
+    except RedeliveryError as exc:
+        logger.exception("Failed to redeliver webhook deliveries")
+        print(f"Failed to redeliver webhook deliveries: {exc}", file=sys.stderr)
+        raise SystemExit(1) from exc
+
+    print(_create_json_output(redelivery_count))
+
+
+def _arg_parsing() -> _ParsedArgs:
+    """Parse the command line arguments."""
     parser = argparse.ArgumentParser(
-        description=f"{__doc__}. The script assumes github app auth details to be parsed as json"
+        description=f"{__doc__}. The script returns the amount of redelivered webhooks in JSON"
+        "format.The script assumes github app auth details to be parsed as json"
         " via stdin. The format has to be a json object with either the only key"
         " 'token' or the keys 'app_id', 'installation_id' and 'private_key'.,"
         " depending on the authentication method (github token vs github app auth) used."
@@ -257,7 +292,7 @@ if __name__ == "__main__":
     github_auth_details_raw = input()
 
     try:
-        github_auth_json = json.loads(github_auth_details_raw)
+        github_auth_details_json = json.loads(github_auth_details_raw)
     except json.JSONDecodeError as exc:
         logger.error("Failed to parse github auth details: %s", exc)
         print(
@@ -265,17 +300,17 @@ if __name__ == "__main__":
             " 'token' or the keys 'app_id', 'installation_id' and 'private_key'",
             file=sys.stderr,
         )
-        raise SystemExit(1)
+        raise SystemExit(1) from exc
 
-    if "token" in github_auth_json:
-        github_auth = github_auth_json["token"]
+    if "token" in github_auth_details_json:
+        github_auth_details = github_auth_details_json["token"]
     else:
         try:
-            github_auth = GithubAppAuthDetails(**github_auth_json)
+            github_auth_details = GithubAppAuthDetails(**github_auth_details_json)
         except ValueError as exc:
             logger.error("Failed to parse github auth details: %s", exc)
             print("Failed to parse github auth details", file=sys.stderr)
-            raise SystemExit(1)
+            raise SystemExit(1) from exc
 
     webhook_address = WebhookAddress(
         github_org=args.github_path.split("/")[0],
@@ -283,12 +318,19 @@ if __name__ == "__main__":
         id=args.webhook_id,
     )
 
-    try:
-        redeliver_count = redeliver_failed_webhook_deliveries(
-            github_auth=github_auth, webhook_address=webhook_address, since_seconds=args.since
-        )
-    except RedeliveryError as exc:
-        logger.exception("Failed to redeliver webhook deliveries")
-        print(f"Failed to redeliver webhook deliveries: {exc}", file=sys.stderr)
-        raise SystemExit(1)
-    print(json.dumps({"redelivered": redeliver_count}))
+    return _ParsedArgs(
+        since=args.since, github_auth_details=github_auth_details, webhook_address=webhook_address
+    )
+
+
+def _create_json_output(redelivery_count: int) -> str:
+    """Create a JSON output as strong  with the redelivery count.
+
+    Args:
+        redelivery_count: The number of redelivered webhooks.
+    """
+    return json.dumps({"redelivered": redelivery_count})
+
+
+if __name__ == "__main__":
+    _main()

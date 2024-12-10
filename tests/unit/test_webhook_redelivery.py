@@ -1,5 +1,7 @@
 #  Copyright 2024 Canonical Ltd.
 #  See LICENSE file for licensing details.
+
+"""Unit tests for webhook redelivery script."""
 import secrets
 from collections import namedtuple
 from datetime import datetime, timedelta, timezone
@@ -16,7 +18,7 @@ from webhook_redelivery import (
     redeliver_failed_webhook_deliveries,
 )
 
-_Delivery = namedtuple("_Deliveries", ["id", "status", "age"])
+_Delivery = namedtuple("_Delivery", ["id", "status", "age"])
 
 
 @pytest.fixture(
@@ -206,6 +208,7 @@ def test_redelivery_ignores_non_queued_or_non_workflow_job(
 def _get_get_deliveries_mock(
     github_client_mock: MagicMock, webhook_address: WebhookAddress
 ) -> MagicMock:
+    """Return the mock for the get_hook_deliveries method."""
     return (
         github_client_mock.get_repo.return_value.get_hook_deliveries
         if webhook_address.github_repo
@@ -214,8 +217,11 @@ def _get_get_deliveries_mock(
 
 
 def _get_redeliver_mock_api_url(webhook_address: WebhookAddress, delivery_id: int) -> str:
+    """Return the expected API URL for redelivering a webhook."""
     return (
-        f"/repos/{webhook_address.github_org}/{webhook_address.github_repo}/hooks/{webhook_address.id}/deliveries/{delivery_id}/attempts"
+        f"/repos/{webhook_address.github_org}/{webhook_address.github_repo}"
+        f"/hooks/{webhook_address.id}/deliveries/{delivery_id}/attempts"
         if webhook_address.github_repo
-        else f"/orgs/{webhook_address.github_org}/hooks/{webhook_address.id}/deliveries/{delivery_id}/attempts"
+        else f"/orgs/{webhook_address.github_org}/hooks/{webhook_address.id}"
+        f"/deliveries/{delivery_id}/attempts"
     )

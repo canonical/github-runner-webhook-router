@@ -151,10 +151,10 @@ class FlaskCharm(paas_charm.flask.Charm):
 
             try:
                 github_token = github_token_secret_data["token"]
-            except KeyError:
+            except KeyError as exc:
                 raise _ActionParamsInvalidError(
                     "The github token secret does not contain a field called 'token'."
-                )
+                ) from exc
             return {"token": github_token}
         return self._get_github_app_installation_auth_details(
             github_app_id, github_app_installation_id_str, github_app_private_key_secret_id
@@ -190,10 +190,10 @@ class FlaskCharm(paas_charm.flask.Charm):
         github_app_private_key_secret_data = github_app_private_key_secret.get_content()
         try:
             private_key = github_app_private_key_secret_data["private-key"]
-        except KeyError:
+        except KeyError as exc:
             raise _ActionParamsInvalidError(
                 "The github app private key secret does not contain a field called 'private-key'."
-            )
+            ) from exc
         return {
             "app_id": github_app_id,
             "installation_id": github_app_installation_id,

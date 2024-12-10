@@ -7,8 +7,11 @@ from typing import Iterator
 from uuid import uuid4
 
 import pytest
-from github import Github, Hook, Repository, Workflow
+from github import Github
 from github.Auth import Token
+from github.Hook import Hook
+from github.Repository import Repository
+from github.Workflow import Workflow
 from juju.action import Action
 from juju.application import Application
 from juju.model import Model
@@ -33,7 +36,9 @@ def repo_fixture(github_token: str, test_repo: str) -> Repository:
 
 @pytest.fixture(name="hook")
 def hook_fixture(github_token: str, repo: Repository) -> Iterator["Hook"]:
-    unique_url = f"http://192.168.0.1:8080/{uuid4().hex}"  # we need a unique url to distinguish this webhook from others, the ip is internal and the webhook delivery is expected to fail
+    # we need a unique url to distinguish this webhook from others
+    # the ip is internal and the webhook delivery is expected to fail
+    unique_url = f"http://192.168.0.1:8080/{uuid4().hex}"
     hook = repo.create_hook(
         name="web",
         events=["workflow_job"],
@@ -46,7 +51,7 @@ def hook_fixture(github_token: str, repo: Repository) -> Iterator["Hook"]:
 
 
 @pytest.fixture(name="test_workflow", scope="module")
-def test_workflow_fixture(repo: Repository) -> Workflow:
+def test_workflow_fixture(repo: Repository) -> Iterator[Workflow]:
     start_time = datetime.now(timezone.utc)
     workflow = repo.get_workflow(TEST_WORKFLOW_DISPATCH_FILE)
     yield workflow
@@ -87,7 +92,8 @@ async def test_webhook_delivery(
     assert test_workflow.create_dispatch(ref="main")
 
     # confirm webhook delivery failed
-    async def wait_for_webhook_delivery(event: str) -> None:
+    async def _wait_for_webhook_delivery(event: str) -> None:
+        """Wait for the webhook to be delivered."""
         for _ in range(10):
             deliveries = repo.get_hook_deliveries(hook.id)
             for d in deliveries:
@@ -96,7 +102,7 @@ async def test_webhook_delivery(
             await sleep(1)
         assert False, f"Did not receive a webhook with event {event}"
 
-    await wait_for_webhook_delivery("workflow_job")
+    await _wait_for_webhook_delivery("workflow_job")
     # call redliver webhook action
     action: Action = await unit.run_action("redeliver-failed-webhooks", **action_parms)
     await action.wait()
@@ -105,7 +111,8 @@ async def test_webhook_delivery(
         action.results.get("redelivered") == "1"
     ), f"redelivered not matching in {action.results}"
 
-    async def wait_for_webhook_redelivered(event: str) -> None:
+    async def _wait_for_webhook_redelivered(event: str) -> None:
+        """Wait for the webhook to be redelivered."""
         for _ in range(10):
             deliveries = repo.get_hook_deliveries(hook.id)
             for d in deliveries:
@@ -114,11 +121,12 @@ async def test_webhook_delivery(
             await sleep(1)
         assert False, f"Did not receive a redelivered webhook with event {event}"
 
-    await wait_for_webhook_redelivered("workflow_job")
+    await _wait_for_webhook_redelivered("workflow_job")
 
 
 @pytest.mark.parametrize(
-    "github_app_id, github_app_installation_id, github_app_private_key_secret, github_token_secret,"
+    "github_app_id, github_app_installation_id, "
+    "github_app_private_key_secret, github_token_secret,"
     "expected_message",
     [
         pytest.param(
@@ -126,7 +134,8 @@ async def test_webhook_delivery(
             446,
             "private",
             "token",
-            "Provided github app auth parameters and github token, only one of them should be provided",
+            "Provided github app auth parameters and github token, "
+            "only one of them should be provided",
             id="github app config and github token secret",
         ),
         pytest.param(
@@ -134,7 +143,9 @@ async def test_webhook_delivery(
             None,
             None,
             None,
-            "Either the github-token-secret-id or not all of github-app-id, github-app-installation-id, github-app-private-key-secret-id parameters were provided or are empty, the parameters are needed for interactions with GitHub",
+            "Either the github-token-secret-id or not all of github-app-id, "
+            "github-app-installation-id, github-app-private-key-secret-id parameters were"
+            " provided or are empty, the parameters are needed for interactions with GitHub",
             id="no github app config or github token",
         ),
         pytest.param(
@@ -142,7 +153,8 @@ async def test_webhook_delivery(
             123,
             None,
             None,
-            "Not all of github-app-id, github-app-installation-id, github-app-private-key-secret-id parameters were provided",
+            "Not all of github-app-id, github-app-installation-id, "
+            "github-app-private-key-secret-id parameters were provided",
             id="not all github app config provided",
         ),
     ],
