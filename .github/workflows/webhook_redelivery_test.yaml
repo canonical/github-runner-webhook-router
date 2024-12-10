@@ -1,0 +1,15 @@
+name: Webhook Redelivery Test
+#  This workflow will be triggered by the integration test used to test webhook redelivery.
+# It is not necessary to be picked up by a runner, we only need to ensure a webhook is triggered.
+
+on:
+  workflow_dispatch:
+
+
+jobs:
+  dispatch-job:
+    runs-on: ["self-hosted", "invalid-flavor"] # The job is not supposed to take a runner, therefore we use an invalid-flavor
+    steps:
+     - name: Hello world
+       run: |
+          echo "Hello, world"

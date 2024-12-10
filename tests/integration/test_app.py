@@ -9,9 +9,10 @@ import json
 import random
 import re
 import secrets
-from typing import Optional
+from typing import Any, Optional
 
 import pytest
+import pytest_asyncio
 import requests
 from juju.application import Application
 from juju.model import Model
@@ -26,6 +27,18 @@ from webhook_router.app import (
 from webhook_router.parse import Job, JobStatus
 
 PORT = 8000
+
+
+@pytest_asyncio.fixture(name="app")
+async def app(
+    router: Application,
+    mongodb: Application,
+    deploy_config: dict[str, Any],
+) -> Application:
+    if not deploy_config["use-existing-app"]:
+        await router.model.relate(f"{router.name}:mongodb", f"{mongodb.name}:database")
+    await router.model.wait_for_idle(apps=[router.name, mongodb.name], status="active")
+    return router
 
 
 @pytest.mark.parametrize(
