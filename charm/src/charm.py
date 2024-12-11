@@ -112,7 +112,9 @@ class FlaskCharm(paas_charm.flask.Charm):
         )
 
         if not github_token_secret_id and not (
-            github_app_client_id or github_app_installation_id_str or github_app_private_key_secret_id
+            github_app_client_id
+            or github_app_installation_id_str
+            or github_app_private_key_secret_id
         ):
             raise _ActionParamsInvalidError(
                 f"{MISSING_GITHUB_PARAMS_ERR_MSG}"
@@ -122,7 +124,9 @@ class FlaskCharm(paas_charm.flask.Charm):
                 f"private-key-secret-id: {github_app_private_key_secret_id!r}"
             )
         if github_token_secret_id and (
-            github_app_client_id or github_app_installation_id_str or github_app_private_key_secret_id
+            github_app_client_id
+            or github_app_installation_id_str
+            or github_app_private_key_secret_id
         ):
             raise _ActionParamsInvalidError(
                 f"{PROVIDED_GITHUB_TOKEN_AND_APP_PARAMS_ERR_MSG}"
@@ -131,18 +135,22 @@ class FlaskCharm(paas_charm.flask.Charm):
                 f"private-key-secret-id: {github_app_private_key_secret_id!r}"
             )
 
-        if github_app_client_id or github_app_installation_id_str or github_app_private_key_secret_id:
-            if not (
+        if (
+            github_app_client_id
+            or github_app_installation_id_str
+            or github_app_private_key_secret_id
+            and not (
                 github_app_client_id
                 and github_app_installation_id_str
                 and github_app_private_key_secret_id
-            ):
-                raise _ActionParamsInvalidError(
-                    f"{NOT_ALL_GITHUB_APP_PARAMS_ERR_MSG}"
-                    f"got: app-client-id: {github_app_client_id!r},"
-                    f" app-installation-id: {github_app_installation_id_str!r},"
-                    f" private-key-secret-id: {github_app_private_key_secret_id!r}"
-                )
+            )
+        ):
+            raise _ActionParamsInvalidError(
+                f"{NOT_ALL_GITHUB_APP_PARAMS_ERR_MSG}"
+                f"got: app-client-id: {github_app_client_id!r},"
+                f" app-installation-id: {github_app_installation_id_str!r},"
+                f" private-key-secret-id: {github_app_private_key_secret_id!r}"
+            )
 
         if github_token_secret_id:
             github_token_secret = self.model.get_secret(id=github_token_secret_id)

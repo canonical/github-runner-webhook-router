@@ -15,7 +15,7 @@ from webhook_redelivery import (
     OK_STATUS,
     RedeliveryError,
     WebhookAddress,
-    redeliver_failed_webhook_deliveries,
+    _redeliver_failed_webhook_delivery_attempts,
 )
 
 _Delivery = namedtuple("_Delivery", ["id", "status", "age"])
@@ -103,7 +103,7 @@ def test_redeliver(
     ]
 
     github_token = secrets.token_hex(16)
-    redelivered = redeliver_failed_webhook_deliveries(
+    redelivered = _redeliver_failed_webhook_delivery_attempts(
         github_auth=github_token, webhook_address=webhook_address, since_seconds=since_seconds
     )
 
@@ -153,7 +153,7 @@ def test_redelivery_github_errors(
     get_hook_deliveries_mock.side_effect = github_exception
 
     with pytest.raises(RedeliveryError) as exc_info:
-        redeliver_failed_webhook_deliveries(
+        _redeliver_failed_webhook_delivery_attempts(
             github_auth=github_token, webhook_address=webhook_address, since_seconds=since_seconds
         )
     assert expected_msg in str(exc_info.value)
@@ -195,7 +195,7 @@ def test_redelivery_ignores_non_queued_or_non_workflow_job(
     ]
 
     github_token = secrets.token_hex(16)
-    redelivered = redeliver_failed_webhook_deliveries(
+    redelivered = _redeliver_failed_webhook_delivery_attempts(
         github_auth=github_token, webhook_address=webhook_address, since_seconds=5
     )
 

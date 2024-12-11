@@ -67,8 +67,8 @@ class WebhookAddress:
 
 
 @dataclass
-class _WebhookDelivery:
-    """The details of a webhook delivery.
+class _WebhookDeliveryAttempts:
+    """The details of a webhook delivery attempt.
 
     Attributes:
         id: The identifier of the delivery.
@@ -91,157 +91,12 @@ class RedeliveryError(Exception):
     """Raised when an error occurs during redelivery."""
 
 
-def _github_api_exc_decorator(func: Callable[P, R]) -> Callable[P, R]:
-    """Decorator to handle GitHub API exceptions."""
-
-    @wraps(func)
-    def _wrapper(*posargs: P.args, **kwargs: P.kwargs) -> R:
-        """Wrap the function to handle Github API exceptions.
-
-        Catch Github API exceptions and raise an appropriate RedeliveryError instead.
-
-
-        Raises:
-            RedeliveryError: If an error occurs during redelivery.
-
-        Returns:
-            The result of the origin function when no github error occurs.
-        """
-        try:
-            return func(*posargs, **kwargs)
-        except BadCredentialsException as exc:
-            logging.error("Github client credentials error: %s", exc, exc_info=exc)
-            raise RedeliveryError(
-                "The github client returned a Bad Credential error, "
-                "please ensure credentials are set and have proper access rights."
-            ) from exc
-        except RateLimitExceededException as exc:
-            logging.error("Github rate limit exceeded error: %s", exc, exc_info=exc)
-            raise RedeliveryError(
-                "The github client is returning a Rate Limit Exceeded error, "
-                "please wait before retrying."
-            ) from exc
-        except GithubException as exc:
-            logging.error("Github API error: %s", exc, exc_info=exc)
-            raise RedeliveryError(
-                "The github client encountered an error. Please have a look at the logs."
-            ) from exc
-
-    return _wrapper
-
-
-@_github_api_exc_decorator
-def redeliver_failed_webhook_deliveries(
-    github_auth: GithubAuthDetails, webhook_address: WebhookAddress, since_seconds: int
-) -> int:
-    """Redeliver failed webhook deliveries since a given time.
-
-    Args:
-        github_auth: The GitHub authentication details used to interact with the Github API.
-        webhook_address: The data to identify the webhook.
-        since_seconds: The amount of seconds to look back for failed deliveries.
-
-    Returns:
-        The number of failed webhook deliveries redelivered.
-
-    Raises:  # noqa: DCO051 its a public fct so we should mention that this exc is raised
-        RedeliveryError: If an error occurs during redelivery.
-    """
-    github = _get_github_client(github_auth)
-
-    deliveries = _get_deliveries(github_client=github, webhook_address=webhook_address)
-    since_datetime = datetime.now(tz=timezone.utc) - timedelta(seconds=since_seconds)
-    deliver_count = 0
-    for delivery in deliveries:
-        if delivery.delivered_at < since_datetime:
-            break
-
-        if (
-            delivery.status != OK_STATUS
-            and delivery.action == ROUTABLE_JOB_STATUS
-            and delivery.event == SUPPORTED_GITHUB_EVENT
-        ):
-            _redeliver(
-                github_client=github, webhook_address=webhook_address, delivery_id=delivery.id
-            )
-            deliver_count += 1
-    return deliver_count
-
-
-# Github App authentication is not tested in unit tests, but in integration tests.
-def _get_github_client(github_auth: GithubAuthDetails) -> Github:  # pragma: no cover
-    """Get a Github client.
-
-    Args:
-        github_auth: The Github authentication details.
-
-    Returns:
-        The Github client.
-    """
-    if isinstance(github_auth, GithubToken):
-        return Github(auth=Token(github_auth))
-
-    app_auth = AppAuth(app_id=github_auth.client_id, private_key=github_auth.private_key)
-    app_installation_auth = AppInstallationAuth(
-        app_auth=app_auth, installation_id=github_auth.installation_id
-    )
-    return Github(auth=app_installation_auth)
-
-
-def _get_deliveries(
-    github_client: Github, webhook_address: WebhookAddress
-) -> Iterator[_WebhookDelivery]:
-    """Get webhook deliveries.
-
-    Args:
-        github_client: The GitHub client used to interact with the Github API.
-        webhook_address: The data to identify the webhook.
-    """
-    webhook_origin = (
-        github_client.get_repo(f"{webhook_address.github_org}/{webhook_address.github_repo}")
-        if webhook_address.github_repo
-        else github_client.get_organization(webhook_address.github_org)
-    )
-    deliveries = webhook_origin.get_hook_deliveries(webhook_address.id)
-    for delivery in deliveries:
-        required_fields = {"id", "status", "delivered_at", "action", "event"}
-        none_fields = {field for field in required_fields if not hasattr(delivery, field)}
-        if none_fields:
-            raise AssertionError(f"The webhook delivery is missing required fields: {none_fields}")
-        yield _WebhookDelivery(
-            id=delivery.id,  # type: ignore
-            status=delivery.status,  # type: ignore
-            delivered_at=delivery.delivered_at,  # type: ignore
-            action=delivery.action,  # type: ignore
-            event=delivery.event,  # type: ignore
-        )
-
-
-def _redeliver(github_client: Github, webhook_address: WebhookAddress, delivery_id: int) -> None:
-    """Redeliver a webhook delivery.
-
-    Args:
-        github_client: The GitHub client used to interact with the Github API.
-        webhook_address: The data to identify the webhook.
-        delivery_id: The identifier of the webhook delivery.
-    """
-    # pygithub doesn't support the endpoint so we have to use the requester directly to perform
-    # a raw request: https://pygithub.readthedocs.io/en/stable/utilities.html#raw-requests
-    path_base = (
-        f"/repos/{webhook_address.github_org}/{webhook_address.github_repo}"
-        if webhook_address.github_repo
-        else f"/orgs/{webhook_address.github_org}"
-    )
-    url = f"{path_base}/hooks/{webhook_address.id}/deliveries/{delivery_id}/attempts"
-    github_client.requester.requestJsonAndCheck("POST", url)
-
-
-def _main() -> None:
+def main() -> None:
     """Run the module as script."""
     args = _arg_parsing()
 
     try:
-        redelivery_count = redeliver_failed_webhook_deliveries(
+        redelivery_count = _redeliver_failed_webhook_delivery_attempts(
             github_auth=args.github_auth_details,
             webhook_address=args.webhook_address,
             since_seconds=args.since,
@@ -327,5 +182,191 @@ def _create_json_output(redelivery_count: int) -> str:
     return json.dumps({"redelivered": redelivery_count})
 
 
+def _github_api_exc_decorator(func: Callable[P, R]) -> Callable[P, R]:
+    """Decorator to handle GitHub API exceptions."""
+
+    @wraps(func)
+    def _wrapper(*posargs: P.args, **kwargs: P.kwargs) -> R:
+        """Wrap the function to handle Github API exceptions.
+
+        Catch Github API exceptions and raise an appropriate RedeliveryError instead.
+
+
+        Raises:
+            RedeliveryError: If an error occurs during redelivery.
+
+        Returns:
+            The result of the origin function when no github error occurs.
+        """
+        try:
+            return func(*posargs, **kwargs)
+        except BadCredentialsException as exc:
+            logging.error("Github client credentials error: %s", exc, exc_info=exc)
+            raise RedeliveryError(
+                "The github client returned a Bad Credential error, "
+                "please ensure credentials are set and have proper access rights."
+            ) from exc
+        except RateLimitExceededException as exc:
+            logging.error("Github rate limit exceeded error: %s", exc, exc_info=exc)
+            raise RedeliveryError(
+                "The github client is returning a Rate Limit Exceeded error, "
+                "please wait before retrying."
+            ) from exc
+        except GithubException as exc:
+            logging.error("Github API error: %s", exc, exc_info=exc)
+            raise RedeliveryError(
+                "The github client encountered an error. Please have a look at the logs."
+            ) from exc
+
+    return _wrapper
+
+
+@_github_api_exc_decorator
+def _redeliver_failed_webhook_delivery_attempts(
+    github_auth: GithubAuthDetails, webhook_address: WebhookAddress, since_seconds: int
+) -> int:
+    """Redeliver failed webhook deliveries since a given time.
+
+    Args:
+        github_auth: The GitHub authentication details used to interact with the Github API.
+        webhook_address: The data to identify the webhook.
+        since_seconds: The amount of seconds to look back for failed deliveries.
+
+    Returns:
+        The number of failed webhook deliveries redelivered.
+
+    """
+    github = _get_github_client(github_auth)
+
+    deliveries = _iter_delivery_attempts(github_client=github, webhook_address=webhook_address)
+    since_datetime = datetime.now(tz=timezone.utc) - timedelta(seconds=since_seconds)
+    failed_deliveries = _filter_for_failed_attempts(
+        deliveries=deliveries, since_datetime=since_datetime
+    )
+    redelivered_count = _redeliver_attempts(
+        deliveries=failed_deliveries, github_client=github, webhook_address=webhook_address
+    )
+
+    return redelivered_count
+
+
+# Github App authentication is not tested in unit tests, but in integration tests.
+def _get_github_client(github_auth: GithubAuthDetails) -> Github:  # pragma: no cover
+    """Get a Github client.
+
+    Args:
+        github_auth: The Github authentication details.
+
+    Returns:
+        The Github client.
+    """
+    if isinstance(github_auth, GithubToken):
+        return Github(auth=Token(github_auth))
+
+    app_auth = AppAuth(app_id=github_auth.client_id, private_key=github_auth.private_key)
+    app_installation_auth = AppInstallationAuth(
+        app_auth=app_auth, installation_id=github_auth.installation_id
+    )
+    return Github(auth=app_installation_auth)
+
+
+def _iter_delivery_attempts(
+    github_client: Github, webhook_address: WebhookAddress
+) -> Iterator[_WebhookDeliveryAttempts]:
+    """Iterate over webhook delivery attempts.
+
+    Args:
+        github_client: The GitHub client used to interact with the Github API.
+        webhook_address: The data to identify the webhook.
+    """
+    webhook_origin = (
+        github_client.get_repo(f"{webhook_address.github_org}/{webhook_address.github_repo}")
+        if webhook_address.github_repo
+        else github_client.get_organization(webhook_address.github_org)
+    )
+    deliveries = webhook_origin.get_hook_deliveries(webhook_address.id)
+    for delivery in deliveries:
+        required_fields = {"id", "status", "delivered_at", "action", "event"}
+        none_fields = {field for field in required_fields if not hasattr(delivery, field)}
+        if none_fields:
+            raise AssertionError(f"The webhook delivery is missing required fields: {none_fields}")
+        yield _WebhookDeliveryAttempts(
+            id=delivery.id,  # type: ignore
+            status=delivery.status,  # type: ignore
+            delivered_at=delivery.delivered_at,  # type: ignore
+            action=delivery.action,  # type: ignore
+            event=delivery.event,  # type: ignore
+        )
+
+
+def _filter_for_failed_attempts(
+    deliveries: Iterator[_WebhookDeliveryAttempts], since_datetime: datetime
+) -> Iterator[_WebhookDeliveryAttempts]:
+    """Filter webhook delivery attempts for failed deliveries since a given time.
+
+    Args:
+        deliveries: The webhook delivery attempts.
+        since_datetime: The time to look back for failed deliveries.
+
+    Returns:
+        An iterator over the failed webhook deliveries.
+    """
+    for delivery in deliveries:
+        if delivery.delivered_at < since_datetime:
+            break
+
+        if (
+            delivery.status != OK_STATUS
+            and delivery.action == ROUTABLE_JOB_STATUS
+            and delivery.event == SUPPORTED_GITHUB_EVENT
+        ):
+            yield delivery
+
+
+def _redeliver_attempts(
+    deliveries: Iterator[_WebhookDeliveryAttempts],
+    github_client: Github,
+    webhook_address: WebhookAddress,
+) -> int:
+    """Redeliver failed webhook deliveries since a given time.
+
+    Args:
+        deliveries: The webhook delivery attempts.
+        github_client: The GitHub client used to interact with the Github API.
+        webhook_address: The data to identify the webhook.
+
+    Returns:
+        The number of failed webhook deliveries redelivered.
+    """
+    deliver_count = 0
+    for delivery in deliveries:
+        _redeliver_attempt(
+            github_client=github_client, webhook_address=webhook_address, delivery_id=delivery.id
+        )
+        deliver_count += 1
+    return deliver_count
+
+
+def _redeliver_attempt(
+    github_client: Github, webhook_address: WebhookAddress, delivery_id: int
+) -> None:
+    """Redeliver a webhook delivery.
+
+    Args:
+        github_client: The GitHub client used to interact with the Github API.
+        webhook_address: The data to identify the webhook.
+        delivery_id: The identifier of the webhook delivery to redeliver.
+    """
+    # pygithub doesn't support the endpoint so we have to use the requester directly to perform
+    # a raw request: https://pygithub.readthedocs.io/en/stable/utilities.html#raw-requests
+    path_base = (
+        f"/repos/{webhook_address.github_org}/{webhook_address.github_repo}"
+        if webhook_address.github_repo
+        else f"/orgs/{webhook_address.github_org}"
+    )
+    url = f"{path_base}/hooks/{webhook_address.id}/deliveries/{delivery_id}/attempts"
+    github_client.requester.requestJsonAndCheck("POST", url)
+
+
 if __name__ == "__main__":
-    _main()
+    main()

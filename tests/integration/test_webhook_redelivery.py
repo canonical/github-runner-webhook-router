@@ -17,7 +17,6 @@ from juju.application import Application
 from juju.model import Model
 from juju.unit import Unit
 
-
 from tests.integration.conftest import GithubAuthenticationMethodParams
 
 # some tests do not require real gh resources, so we use fake values for them in those tests
