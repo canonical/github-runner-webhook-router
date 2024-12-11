@@ -17,11 +17,17 @@ from juju.application import Application
 from juju.model import Model
 from juju.unit import Unit
 
+
 from tests.integration.conftest import GithubAuthenticationMethodParams
 
 # some tests do not require real gh resources, so we use fake values for them in those tests
 FAKE_HOOK_ID = 123
 FAKE_REPO = "org/repo"
+
+GITHUB_APP_PRIVATE_KEY_SECRET_ID_PARAM_NAME = "github-app-private-key-secret-id"
+GITHUB_APP_CLIENT_ID_PARAM_NAME = "github-app-client-id"
+GITHUB_APP_INSTALLATION_ID_PARAM_NAME = "github-app-installation-id"
+GITHUB_TOKEN_SECRET_ID_PARAM_NAME = "github-token-secret-id"
 
 TEST_WORKFLOW_DISPATCH_FILE = "webhook_redelivery_test.yaml"
 
@@ -83,12 +89,12 @@ async def test_webhook_delivery(
         )
         secret_id = secret.split(":")[-1]
         action_parms |= {
-            "github-app-private-key-secret-id": secret_id,
-            "github-app-id": github_app_auth.app_id,
-            "github-app-installation-id": github_app_auth.installation_id,
+            GITHUB_APP_PRIVATE_KEY_SECRET_ID_PARAM_NAME: secret_id,
+            GITHUB_APP_CLIENT_ID_PARAM_NAME: github_app_auth.client_id,
+            GITHUB_APP_INSTALLATION_ID_PARAM_NAME: github_app_auth.installation_id,
         }
     await model.grant_secret(secret_name, router.name)
-    # trigger run
+
     assert test_workflow.create_dispatch(ref="main")
 
     # confirm webhook delivery failed
@@ -106,7 +112,7 @@ async def test_webhook_delivery(
     # call redliver webhook action
     action: Action = await unit.run_action("redeliver-failed-webhooks", **action_parms)
     await action.wait()
-    assert action.status == "completed"
+    assert action.status == "completed", f"action failed with f{action.data['message']}"
     assert (
         action.results.get("redelivered") == "1"
     ), f"redelivered not matching in {action.results}"
@@ -125,7 +131,7 @@ async def test_webhook_delivery(
 
 
 @pytest.mark.parametrize(
-    "github_app_id, github_app_installation_id, "
+    "github_app_client_id, github_app_installation_id, "
     "github_app_private_key_secret, github_token_secret,"
     "expected_message",
     [
@@ -160,7 +166,7 @@ async def test_webhook_delivery(
     ],
 )  # we use a lot of arguments, but it seems not worth to introduce a capsulating object for this
 async def test_action_github_auth_param_error(  # pylint: disable=too-many-arguments
-    github_app_id: str | None,
+    github_app_client_id: str | None,
     github_app_installation_id: int | None,
     github_app_private_key_secret: str | None,
     github_token_secret: str | None,
@@ -187,13 +193,13 @@ async def test_action_github_auth_param_error(  # pylint: disable=too-many-argum
         secret_id = secret.split(":")[-1]
         await model.grant_secret(secret_name, router.name)
         if github_app_private_key_secret:
-            action_parms["github-app-private-key-secret-id"] = secret_id
+            action_parms[GITHUB_APP_PRIVATE_KEY_SECRET_ID_PARAM_NAME] = secret_id
         if github_token_secret:
-            action_parms["github-token-secret-id"] = secret_id
-    if github_app_id:
-        action_parms["github-app-id"] = github_app_id
+            action_parms[GITHUB_TOKEN_SECRET_ID_PARAM_NAME] = secret_id
+    if github_app_client_id:
+        action_parms[GITHUB_APP_CLIENT_ID_PARAM_NAME] = github_app_client_id
     if github_app_installation_id:
-        action_parms["github-app-installation-id"] = github_app_installation_id
+        action_parms[GITHUB_APP_INSTALLATION_ID_PARAM_NAME] = github_app_installation_id
 
     action: Action = await unit.run_action("redeliver-failed-webhooks", **action_parms)
     await action.wait()
@@ -235,9 +241,9 @@ async def test_secret_key_missing(
     await model.grant_secret(secret_name, router.name)
     if use_app_auth:
         action_parms |= {
-            "github-app-private-key-secret-id": secret_id,
-            "github-app-id": secrets.token_hex(16),
-            "github-app-installation-id": 123,
+            GITHUB_APP_PRIVATE_KEY_SECRET_ID_PARAM_NAME: secret_id,
+            GITHUB_APP_CLIENT_ID_PARAM_NAME: secrets.token_hex(16),
+            GITHUB_APP_INSTALLATION_ID_PARAM_NAME: 123,
         }
     else:
         action_parms["github-token-secret-id"] = secret_id

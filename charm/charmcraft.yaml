@@ -44,19 +44,19 @@ actions:
         type: integer
       github-path:
         description: >-
-         The path of the organisation or repository where the webhooks are registered. Should
+          The path of the organisation or repository where the webhooks are registered. Should
           be in the format of <organisation> or <organisation>/<repository>.
         type: string
       webhook-id:
         description: "The id of the webhook to redeliver."
         type: integer
-      github-app-id:
+      github-client-id:
         description: >-
-          The app or client ID of the GitHub App to use for communication with GitHub,
+          The client ID of the GitHub App to use for communication with GitHub,
           If provided, the other github-app-* params must also be provided.
           The Github App needs to have write permission for Webhooks.
           Either this or the github-token must be provided.
-        type: [integer, string] # client id is non-numerical, so we need to support string
+        type: string
       github-app-installation-id:
         description: >-
           The app installation id of the GitHub App to use for communication with GitHub.

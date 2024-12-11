@@ -17,18 +17,18 @@ SINCE_PARAM_NAME = "since"
 GITHUB_PATH_PARAM_NAME = "github-path"
 WEBHOOK_ID_PARAM_NAME = "webhook-id"
 GITHUB_TOKEN_SECRET_ID_PARAM_NAME = "github-token-secret-id"
-GITHUB_APP_ID_PARAM_NAME = "github-app-id"
+GITHUB_APP_CLIENT_ID_PARAM_NAME = "github-app-client-id"
 GITHUB_APP_INSTALLATION_ID_PARAM_NAME = "github-app-installation-id"
 GITHUB_APP_PRIVATE_KEY_SECRET_ID_PARAM_NAME = "github-app-private-key-secret-id"
 
 MISSING_GITHUB_PARAMS_ERR_MSG = (
-    f"Either the {GITHUB_TOKEN_SECRET_ID_PARAM_NAME} or not all of {GITHUB_APP_ID_PARAM_NAME},"
+    f"Either the {GITHUB_TOKEN_SECRET_ID_PARAM_NAME} or not all of {GITHUB_APP_CLIENT_ID_PARAM_NAME},"
     f" {GITHUB_APP_INSTALLATION_ID_PARAM_NAME}, {GITHUB_APP_PRIVATE_KEY_SECRET_ID_PARAM_NAME} "
     f"parameters were provided or are empty, "
     "the parameters are needed for interactions with GitHub, "
 )
 NOT_ALL_GITHUB_APP_PARAMS_ERR_MSG = (
-    f"Not all of {GITHUB_APP_ID_PARAM_NAME}, {GITHUB_APP_INSTALLATION_ID_PARAM_NAME},"
+    f"Not all of {GITHUB_APP_CLIENT_ID_PARAM_NAME}, {GITHUB_APP_INSTALLATION_ID_PARAM_NAME},"
     f" {GITHUB_APP_PRIVATE_KEY_SECRET_ID_PARAM_NAME} parameters were provided, "
 )
 # the following is no hardcoded password
@@ -105,47 +105,46 @@ class FlaskCharm(paas_charm.flask.Charm):
             _ActionParamsInvalidError: If the configuration is invalid.
         """
         github_token_secret_id = event.params.get(GITHUB_TOKEN_SECRET_ID_PARAM_NAME)
-        github_app_id = event.params.get(GITHUB_APP_ID_PARAM_NAME)
+        github_app_client_id = event.params.get(GITHUB_APP_CLIENT_ID_PARAM_NAME)
         github_app_installation_id_str = event.params.get(GITHUB_APP_INSTALLATION_ID_PARAM_NAME)
         github_app_private_key_secret_id = event.params.get(
             GITHUB_APP_PRIVATE_KEY_SECRET_ID_PARAM_NAME
         )
 
         if not github_token_secret_id and not (
-            github_app_id or github_app_installation_id_str or github_app_private_key_secret_id
+            github_app_client_id or github_app_installation_id_str or github_app_private_key_secret_id
         ):
             raise _ActionParamsInvalidError(
                 f"{MISSING_GITHUB_PARAMS_ERR_MSG}"
-                f"got: token: {github_token_secret_id!r}, "
-                f"app-id: {github_app_id!r}, "
+                f"got: token-secret-id: {github_token_secret_id!r}, "
+                f"app-client-id: {github_app_client_id!r}, "
                 f"app-installation-id: {github_app_installation_id_str!r}, "
-                f"private-key: {github_app_private_key_secret_id!r}"
+                f"private-key-secret-id: {github_app_private_key_secret_id!r}"
             )
         if github_token_secret_id and (
-            github_app_id or github_app_installation_id_str or github_app_private_key_secret_id
+            github_app_client_id or github_app_installation_id_str or github_app_private_key_secret_id
         ):
             raise _ActionParamsInvalidError(
                 f"{PROVIDED_GITHUB_TOKEN_AND_APP_PARAMS_ERR_MSG}"
-                f"got: app-id: {github_app_id!r}, "
+                f"got: app-client-id: {github_app_client_id!r}, "
                 f"app-installation-id: {github_app_installation_id_str!r}, "
-                f"private-key: {github_app_private_key_secret_id!r}"
+                f"private-key-secret-id: {github_app_private_key_secret_id!r}"
             )
 
-        if github_app_id or github_app_installation_id_str or github_app_private_key_secret_id:
+        if github_app_client_id or github_app_installation_id_str or github_app_private_key_secret_id:
             if not (
-                github_app_id
+                github_app_client_id
                 and github_app_installation_id_str
                 and github_app_private_key_secret_id
             ):
                 raise _ActionParamsInvalidError(
                     f"{NOT_ALL_GITHUB_APP_PARAMS_ERR_MSG}"
-                    f"got: app-id: {github_app_id!r},"
+                    f"got: app-client-id: {github_app_client_id!r},"
                     f" app-installation-id: {github_app_installation_id_str!r},"
-                    f" private-key: {github_app_private_key_secret_id!r}"
+                    f" private-key-secret-id: {github_app_private_key_secret_id!r}"
                 )
 
         if github_token_secret_id:
-            print(github_token_secret_id)
             github_token_secret = self.model.get_secret(id=github_token_secret_id)
             github_token_secret_data = github_token_secret.get_content()
 
@@ -157,19 +156,19 @@ class FlaskCharm(paas_charm.flask.Charm):
                 ) from exc
             return {"token": github_token}
         return self._get_github_app_installation_auth_details(
-            github_app_id, github_app_installation_id_str, github_app_private_key_secret_id
+            github_app_client_id, github_app_installation_id_str, github_app_private_key_secret_id
         )
 
     def _get_github_app_installation_auth_details(
         self,
-        github_app_id: str,
+        github_app_client_id: str,
         github_app_installation_id_str: str,
         github_app_private_key_secret_id: str,
     ) -> dict:
         """Get the Github app installation auth details.
 
         Args:
-            github_app_id: The GitHub App ID or Client ID.
+            github_app_client_id: The GitHub App Client ID.
             github_app_installation_id_str: The GitHub App Installation ID as a string.
             github_app_private_key_secret_id: The GitHub App private key secret id
 
@@ -195,7 +194,7 @@ class FlaskCharm(paas_charm.flask.Charm):
                 "The github app private key secret does not contain a field called 'private-key'."
             ) from exc
         return {
-            "app_id": github_app_id,
+            "client_id": github_app_client_id,
             "installation_id": github_app_installation_id,
             "private_key": private_key,
         }

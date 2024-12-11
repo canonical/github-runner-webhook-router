@@ -16,7 +16,7 @@ from pytest_operator.plugin import OpsTest
 from tests.conftest import (
     CHARM_FILE_PARAM,
     FLASK_APP_IMAGE_PARAM,
-    GITHUB_APP_ID_PARAM,
+    GITHUB_APP_CLIENT_ID_PARAM,
     GITHUB_APP_INSTALLATION_ID_PARAM_NAME,
     GITHUB_APP_PRIVATE_KEY_PARAM_NAME,
     GITHUB_TOKEN_PARAM,
@@ -24,7 +24,7 @@ from tests.conftest import (
 )
 
 GithubAuthenticationMethodParams = namedtuple(
-    "GithubAuthenticationMethodParams", ["app_id", "installation_id", "private_key", "token"]
+    "GithubAuthenticationMethodParams", ["client_id", "installation_id", "private_key", "token"]
 )
 
 
@@ -55,11 +55,11 @@ def github_token_fixture(pytestconfig: pytest.Config) -> str | None:
     return github_token
 
 
-@pytest.fixture(name="github_app_id", scope="module")
-def github_app_id_fixture(pytestconfig: pytest.Config) -> str | None:
+@pytest.fixture(name="github_app_client_id", scope="module")
+def github_app_client_id_fixture(pytestconfig: pytest.Config) -> str | None:
     """Return the github app id"""
-    github_app_id = pytestconfig.getoption(GITHUB_APP_ID_PARAM)
-    return github_app_id
+    github_app_client_id = pytestconfig.getoption(GITHUB_APP_CLIENT_ID_PARAM)
+    return github_app_client_id
 
 
 @pytest.fixture(name="github_app_installation_id", scope="module")
@@ -89,7 +89,7 @@ def github_app_private_key_fixture(pytestconfig: pytest.Config) -> str | None:
 def github_app_auth_fixture(
     request: pytest.FixtureRequest,
     github_token: str | None,
-    github_app_id: str | None,
+    github_app_client_id: str | None,
     github_app_installation_id: str | None,
     github_app_private_key: str | None,
 ) -> GithubAuthenticationMethodParams:
@@ -97,12 +97,12 @@ def github_app_auth_fixture(
     if request.param:
         assert github_token is not None, "Github token is required"
         return GithubAuthenticationMethodParams(
-            app_id=None, installation_id=None, private_key=None, token=github_token
+            client_id=None, installation_id=None, private_key=None, token=github_token
         )
-    if not (github_app_id or github_app_installation_id or github_app_private_key):
+    if not (github_app_client_id or github_app_installation_id or github_app_private_key):
         pytest.skip("Not all github app auth parameters provided/non-empty")
     return GithubAuthenticationMethodParams(
-        app_id=github_app_id,
+        client_id=github_app_client_id,
         installation_id=github_app_installation_id,
         private_key=github_app_private_key,
         token=None,

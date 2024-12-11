@@ -9,7 +9,7 @@ CHARM_FILE_PARAM = "--charm-file"
 FLASK_APP_IMAGE_PARAM = "--github-runner-webhook-router-image"
 USE_EXISTING_APP_PARAM = "--use-existing-app"
 GITHUB_TOKEN_PARAM = "--github-token"
-GITHUB_APP_ID_PARAM = "--github-app-id"
+GITHUB_APP_CLIENT_ID_PARAM = "--github-app-client-id"
 GITHUB_APP_INSTALLATION_ID_PARAM_NAME = "--github-app-installation-id"
 GITHUB_APP_PRIVATE_KEY_PARAM_NAME = "--github-app-private-key"
 WEBHOOK_TEST_REPOSITORY_PARAM = "--webhook-test-repository"
@@ -34,7 +34,7 @@ def pytest_addoption(parser: Parser) -> None:
         help="GitHub token used for testing github API interactions",
     )
     parser.addoption(
-        GITHUB_APP_ID_PARAM,
+        GITHUB_APP_CLIENT_ID_PARAM,
         action="store",
         help="GitHub App ID used for testing github API interactions",
     )

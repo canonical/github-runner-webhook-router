@@ -34,12 +34,12 @@ class GithubAppAuthDetails(BaseModel):
     """The details to authenticate with Github using a Github App.
 
     Attributes:
-        app_id: The Github App (or client) ID.
+        client_id: The Github App client ID.
         installation_id: The installation ID of the Github App.
         private_key: The private key to authenticate with Github.
     """
 
-    app_id: int | str  # app id is an int but client id is a string
+    client_id: str
     installation_id: int
     private_key: str
 
@@ -181,7 +181,7 @@ def _get_github_client(github_auth: GithubAuthDetails) -> Github:  # pragma: no 
     if isinstance(github_auth, GithubToken):
         return Github(auth=Token(github_auth))
 
-    app_auth = AppAuth(app_id=github_auth.app_id, private_key=github_auth.private_key)
+    app_auth = AppAuth(app_id=github_auth.client_id, private_key=github_auth.private_key)
     app_installation_auth = AppInstallationAuth(
         app_auth=app_auth, installation_id=github_auth.installation_id
     )
@@ -204,15 +204,10 @@ def _get_deliveries(
     )
     deliveries = webhook_origin.get_hook_deliveries(webhook_address.id)
     for delivery in deliveries:
-        if None in (
-            delivery.id,
-            delivery.status,
-            delivery.delivered_at,
-            delivery.action,
-            delivery.event,
-        ):
-            # all these fields are required per API schema, this shouldn't be expected
-            raise AssertionError("The webhook delivery is missing required fields.")
+        required_fields = {"id", "status", "delivered_at", "action", "event"}
+        none_fields = {field for field in required_fields if not hasattr(delivery, field)}
+        if none_fields:
+            raise AssertionError(f"The webhook delivery is missing required fields: {none_fields}")
         yield _WebhookDelivery(
             id=delivery.id,  # type: ignore
             status=delivery.status,  # type: ignore
