@@ -1,26 +1,72 @@
-<!--
-Avoid using this README file for information that is maintained or published elsewhere, e.g.:
+# GitHub Runner Webhook Router
+[![CharmHub Badge](https://charmhub.io/github-runner-webhook-router/badge.svg)](https://charmhub.io/github-runner-webhook-router)
+[![Promote charm](https://github.com/canonical/github-runner-webhook-router/actions/workflows/promote_charm.yaml/badge.svg)](https://github.com/canonical/github-runner-webhook-router/actions/workflows/promote_charm.yaml)
+[![Discourse Status](https://img.shields.io/discourse/status?server=https%3A%2F%2Fdiscourse.charmhub.io&style=flat&label=CharmHub%20Discourse)](https://discourse.charmhub.io)
 
-* metadata.yaml > published on Charmhub
-* documentation > published on (or linked to from) Charmhub
-* detailed contribution guide > documentation or CONTRIBUTING.md
+This charm provides a webhook router for self-hosted GitHub Actions runners. 
+It is designed to be used in conjunction with the [GitHub Runner](https://github.com/canonical/github-runner-operator) charm.
 
-Use links instead.
--->
+The charm was built using the [paas-charm](https://github.com/canonical/paas-charm)  approach and runs on Kubernetes.
 
-# github-runner-webhook-router
-
-> **Warning**
-Work in progress: This charm is still in development and not yet ready for use in production.
-
-The github-runner-webhook-router charm is a Juju charm that provides a webhook router for GitHub Actions self-hosted runners. 
-This charm is designed to be used in conjunction with the [github-runner-operator](https://github.com/canonical/github-runner-operator) charm.
+The router is a Flask application that listens for incoming webhooks from GitHub and routes them 
+to the appropriate GitHub Runner charm application, which then spawns a runner to execute the job.
+It is a critical component for the "reactive" mode of the GitHub Runner Charm.
 
 
-## Other resources
 
-<!-- If your charm is documented somewhere else other than Charmhub, provide a link separately. -->
 
-- [Contributing](CONTRIBUTING.md) <!-- or link to other contribution documentation -->
+Like any Juju charm, this charm supports one-line deployment, configuration, integration, scaling, and more.
+For the GitHub Runner Webhook Router, this includes
 
-- See the [Juju SDK documentation](https://juju.is/docs/sdk) for more information about developing and improving charms.
+* All the general and Flask-related features of [paas-charm](https://github.com/canonical/paas-charm)
+* Configuring the routing table
+* Configuring a webhook secret to improve the security of the webhook endpoint
+
+For information on how to deploy, integrate and manage this charm, please see the official
+[GitHub Runner Webhook Router Documentation](https://charmhub.io/github-runner-webhook-router).
+
+
+## Get started
+As the charm is designed to be used in conjunction with the [GitHub Runner](https://github.com/canonical/github-runner-operator) charm,
+please see [How to set up reactive spawning](https://charmhub.io/github-runner/docs/how-to-reactive) to learn how to deploy the charm.
+
+The charm requires an integration with mongodb (either the machine or k8s charm), otherwise it will
+go into a blocked state.
+
+### Basic operations
+
+Configure a routing table to decide which labels should be routed to which GitHub Runner charm application:
+
+```shell
+cat <<EOF > routing_table.yaml
+- large: [large, x64]
+- large-arm: [large, arm64]
+- small: [small]
+EOF
+juju config github-runner-webhook-router routing-table="$(cat routing_table.yaml)"
+```
+
+Change the default flavor to be used for jobs only containing default self-hosted-labels:
+
+```shell
+juju config github-runner-webhook-router default-flavour=small
+```
+
+Change the webhook secret used for webhook validation:
+
+```shell
+juju config github-runner-webhook-router webhook-secret=<your-secret>
+```
+
+
+## Learn more
+* [Read more](https://charmhub.io/github-runner-webhook-router)
+* [Developer documentation](https://github.com/canonical/github-runner-webhook-router/blob/main/CONTRIBUTING.md)
+* [PaaS Charm](https://github.com/canonical/paas-charm)
+* [Write your first Kubernetes charm for a Flask app](https://juju.is/docs/sdk/write-your-first-kubernetes-charm-for-a-flask-app)
+* [How to build a 12-Factor app charm](https://juju.is/docs/sdk/build-a-12-factor-app-charm)
+
+## Project and community
+* [Issues](https://github.com/canonical/github-runner-operator/issues)
+* [Contributing](https://charmhub.io/github-runner/docs/how-to-contribute)
+* [Matrix](https://matrix.to/#/#charmhub-charmdev:ubuntu.com)
