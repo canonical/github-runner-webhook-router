@@ -12,9 +12,6 @@ The router is a Flask application that listens for incoming webhooks from GitHub
 to the appropriate GitHub Runner charm application, which then spawns a runner to execute the job.
 It is a critical component for the "reactive" mode of the GitHub Runner Charm.
 
-
-
-
 Like any Juju charm, this charm supports one-line deployment, configuration, integration, scaling, and more.
 For the GitHub Runner Webhook Router, this includes
 
@@ -25,13 +22,10 @@ For the GitHub Runner Webhook Router, this includes
 For information on how to deploy, integrate and manage this charm, please see the official
 [GitHub Runner Webhook Router Documentation](https://charmhub.io/github-runner-webhook-router).
 
-
 ## Get started
 As the charm is designed to be used in conjunction with the [GitHub Runner](https://github.com/canonical/github-runner-operator) charm,
 please see [How to set up reactive spawning](https://charmhub.io/github-runner/docs/how-to-reactive) to learn how to deploy the charm.
 
-The charm requires an integration with mongodb (either the machine or k8s charm), otherwise it will
-go into a blocked state.
 
 ### Basic operations
 
@@ -58,6 +52,13 @@ Change the webhook secret used for webhook validation:
 juju config github-runner-webhook-router webhook-secret=<your-secret>
 ```
 
+### Integrations
+
+The charm requires an integration with MongoDB (either the [machine](https://charmhub.io/mongodb)
+or [k8s](https://charmhub.io/mongodb-k8s) charm), otherwise it will go into a blocked state.
+For a complete list of integrations, 
+see the [Charmhub documentation](https://charmhub.io/github-runner-webhook-router/integrations).
+
 
 ## Learn more
 * [Read more](https://charmhub.io/github-runner-webhook-router)
@@ -65,6 +66,7 @@ juju config github-runner-webhook-router webhook-secret=<your-secret>
 * [PaaS Charm repository](https://github.com/canonical/paas-charm)
 * [Write your first Kubernetes charm for a Flask app](https://juju.is/docs/sdk/write-your-first-kubernetes-charm-for-a-flask-app)
 * [How to build a 12-Factor app charm](https://juju.is/docs/sdk/build-a-12-factor-app-charm)
+* [Troubleshooting](https://matrix.to/#/#12-factor-charms:ubuntu.com)
 
 ## Project and community
 * [Issues](https://github.com/canonical/github-runner-operator/issues)
