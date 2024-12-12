@@ -22,7 +22,8 @@ GITHUB_APP_INSTALLATION_ID_PARAM_NAME = "github-app-installation-id"
 GITHUB_APP_PRIVATE_KEY_SECRET_ID_PARAM_NAME = "github-app-private-key-secret-id"
 
 MISSING_GITHUB_PARAMS_ERR_MSG = (
-    f"Either the {GITHUB_TOKEN_SECRET_ID_PARAM_NAME} or not all of {GITHUB_APP_CLIENT_ID_PARAM_NAME},"
+    f"Either the {GITHUB_TOKEN_SECRET_ID_PARAM_NAME} "
+    f"or not all of {GITHUB_APP_CLIENT_ID_PARAM_NAME},"
     f" {GITHUB_APP_INSTALLATION_ID_PARAM_NAME}, {GITHUB_APP_PRIVATE_KEY_SECRET_ID_PARAM_NAME} "
     f"parameters were provided or are empty, "
     "the parameters are needed for interactions with GitHub, "
