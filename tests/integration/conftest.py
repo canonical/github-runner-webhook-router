@@ -2,7 +2,7 @@
 #  See LICENSE file for licensing details.
 
 """Fixtures for the github-runner-webhook-router charm."""
-
+import os
 import random
 from collections import namedtuple
 from typing import Any
@@ -22,6 +22,11 @@ from tests.conftest import (
     GITHUB_TOKEN_PARAM,
     WEBHOOK_TEST_REPOSITORY_PARAM,
 )
+
+GITHUB_TOKEN_ENV_VAR = "GITHUB_TOKEN"
+GITHUB_APP_INSTALLATION_ID_ENV_VAR = "GITHUB_APP_INSTALLATION_ID"
+GITHUB_APP_PRIVATE_KEY_ENV_VAR = "GITHUB_APP_PRIVATE_KEY"
+GITHUB_APP_CLIENT_ID_ENV_VAR = "GITHUB_APP_CLIENT_ID"
 
 GithubAuthenticationMethodParams = namedtuple(
     "GithubAuthenticationMethodParams", ["client_id", "installation_id", "private_key", "token"]
@@ -51,21 +56,23 @@ def flask_app_image_fixture(pytestconfig: pytest.Config) -> str | None:
 @pytest.fixture(name="github_token", scope="module")
 def github_token_fixture(pytestconfig: pytest.Config) -> str | None:
     """Return the github token secret"""
-    github_token = pytestconfig.getoption(GITHUB_TOKEN_PARAM)
+    github_token = pytestconfig.getoption(GITHUB_TOKEN_PARAM) or os.getenv(GITHUB_TOKEN_ENV_VAR)
     return github_token
 
 
 @pytest.fixture(name="github_app_client_id", scope="module")
 def github_app_client_id_fixture(pytestconfig: pytest.Config) -> str | None:
     """Return the github app id"""
-    github_app_client_id = pytestconfig.getoption(GITHUB_APP_CLIENT_ID_PARAM)
+    github_app_client_id = pytestconfig.getoption(GITHUB_APP_CLIENT_ID_PARAM) or os.getenv(GITHUB_APP_CLIENT_ID_ENV_VAR)
     return github_app_client_id
 
 
 @pytest.fixture(name="github_app_installation_id", scope="module")
 def github_app_installation_id_fixture(pytestconfig: pytest.Config) -> int | None:
     """Return the github app installation id"""
-    github_app_installation_id = pytestconfig.getoption(GITHUB_APP_INSTALLATION_ID_PARAM_NAME)
+    github_app_installation_id = pytestconfig.getoption(GITHUB_APP_INSTALLATION_ID_PARAM_NAME) or os.getenv(
+        GITHUB_APP_INSTALLATION_ID_ENV_VAR
+    )
     if github_app_installation_id is None:
         return None
     return int(github_app_installation_id)
@@ -74,7 +81,9 @@ def github_app_installation_id_fixture(pytestconfig: pytest.Config) -> int | Non
 @pytest.fixture(name="github_app_private_key", scope="module")
 def github_app_private_key_fixture(pytestconfig: pytest.Config) -> str | None:
     """Return the github app private key"""
-    github_app_private_key = pytestconfig.getoption(GITHUB_APP_PRIVATE_KEY_PARAM_NAME)
+    github_app_private_key = pytestconfig.getoption(GITHUB_APP_PRIVATE_KEY_PARAM_NAME) or os.getenv(
+        GITHUB_APP_PRIVATE_KEY_ENV_VAR
+    )
     return github_app_private_key
 
 
