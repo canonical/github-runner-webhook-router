@@ -62,7 +62,7 @@ juju config github-runner-webhook-router webhook-secret=<your-secret>
 ## Learn more
 * [Read more](https://charmhub.io/github-runner-webhook-router)
 * [Developer documentation](https://github.com/canonical/github-runner-webhook-router/blob/main/CONTRIBUTING.md)
-* [PaaS Charm](https://github.com/canonical/paas-charm)
+* [PaaS Charm repository](https://github.com/canonical/paas-charm)
 * [Write your first Kubernetes charm for a Flask app](https://juju.is/docs/sdk/write-your-first-kubernetes-charm-for-a-flask-app)
 * [How to build a 12-Factor app charm](https://juju.is/docs/sdk/build-a-12-factor-app-charm)
 
