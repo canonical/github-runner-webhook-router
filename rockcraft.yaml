@@ -34,3 +34,5 @@ parts:
        # Note: Prefix each entry with "flask/app/" followed by the local path.
        - flask/app/app.py
        - flask/app/webhook_router
+    flask-framework/statsd-exporter: # need manual upgrade due to CVE-2024-45337 with v0.26.0
+      source-tag: v0.28.0
