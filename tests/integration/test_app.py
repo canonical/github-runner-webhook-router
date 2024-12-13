@@ -29,7 +29,7 @@ from webhook_router.parse import Job, JobStatus
 PORT = 8000
 
 
-@pytest_asyncio.fixture(name="app")
+@pytest_asyncio.fixture(name="app", scope="module")
 async def app(
     router: Application,
     mongodb: Application,
@@ -410,7 +410,7 @@ async def _get_mongodb_uri_from_secrets(ops_test, model: Model) -> str | None:
     mongodb_uri = None
 
     juju_secrets = await model.list_secrets()
-    for secret in juju_secrets["results"]:
+    for secret in juju_secrets:
         if re.match(r"database\.(\d+)\.user\.secret", secret.label):
             _, show_secret, _ = await ops_test.juju(
                 "show-secret", secret.uri, "--reveal", "--format", "json"

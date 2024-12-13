@@ -210,5 +210,5 @@ async def router_fixture(
             application_name=deploy_config["app-name"],
             config=deploy_config["config"],
         )
-    await model.wait_for_idle(apps=[app_name], status="blocked")
+        await model.wait_for_idle(apps=[app_name], status="blocked")
     return application
