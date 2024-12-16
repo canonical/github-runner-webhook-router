@@ -25,10 +25,11 @@ from tests.integration.conftest import GithubAuthenticationMethodParams
 FAKE_HOOK_ID = 123
 FAKE_REPO = "org/repo"
 
-GITHUB_APP_PRIVATE_KEY_SECRET_ID_PARAM_NAME = "github-app-private-key-secret-id"
+# this is no hardcoded password
+GITHUB_APP_PRIVATE_KEY_SECRET_ID_PARAM_NAME = "github-app-private-key-secret-id"  # nosec
 GITHUB_APP_CLIENT_ID_PARAM_NAME = "github-app-client-id"
 GITHUB_APP_INSTALLATION_ID_PARAM_NAME = "github-app-installation-id"
-GITHUB_TOKEN_SECRET_ID_PARAM_NAME = "github-token-secret-id"
+GITHUB_TOKEN_SECRET_ID_PARAM_NAME = "github-token-secret-id"  # nosec this is no hardcoded password
 
 TEST_WORKFLOW_DISPATCH_FILE = "webhook_redelivery_test.yaml"
 
