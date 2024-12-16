@@ -61,7 +61,7 @@ class FlaskCharm(paas_charm.flask.Charm):
         try:
             auth_env = self._get_github_auth_env(event)
         except _ActionParamsInvalidError as exc:
-            event.fail(str(exc))
+            event.fail(f"Invalid action parameters passed: {exc}")
             return
         try:
             stdout, _ = container.exec(
@@ -159,7 +159,7 @@ class FlaskCharm(paas_charm.flask.Charm):
             return secret_data[key]
         except KeyError as exc:
             raise _ActionParamsInvalidError(
-                f"Secret {secret_id} does not contain a field called {key}."
+                f"Secret {secret_id} does not contain a field called '{key}'."
             ) from exc
 
 

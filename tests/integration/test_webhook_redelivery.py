@@ -65,7 +65,7 @@ def test_workflow_fixture(repo: Repository) -> Iterator[Workflow]:
         run.cancel()
 
 
-async def test_webhook_delivery(
+async def test_webhook_redelivery(
     router: Application,
     github_app_auth: GithubAuthenticationMethodParams,
     repo: Repository,
@@ -139,7 +139,7 @@ async def test_webhook_delivery(
             446,
             "private",
             "token",
-            "Provided github app auth parameters and github token, "
+            "Invalid action parameters passed: Provided github app auth parameters and github token, "
             "only one of them should be provided",
             id="github app config and github token secret",
         ),
@@ -148,9 +148,7 @@ async def test_webhook_delivery(
             None,
             None,
             None,
-            "Either the github-token-secret-id or not all of github-app-id, "
-            "github-app-installation-id, github-app-private-key-secret-id parameters were"
-            " provided or are empty, the parameters are needed for interactions with GitHub",
+            "Webhooks redelivery failed. Look at the juju logs for more information.",
             id="no github app config or github token",
         ),
         pytest.param(
@@ -158,8 +156,7 @@ async def test_webhook_delivery(
             123,
             None,
             None,
-            "Not all of github-app-id, github-app-installation-id, "
-            "github-app-private-key-secret-id parameters were provided",
+            "Webhooks redelivery failed. Look at the juju logs for more information.",
             id="not all github app config provided",
         ),
     ],
@@ -203,21 +200,54 @@ async def test_action_github_auth_param_error(  # pylint: disable=too-many-argum
     action: Action = await unit.run_action("redeliver-failed-webhooks", **action_parms)
     await action.wait()
     assert action.status == "failed"
-    assert "Invalid action parameters passed" in (action_msg := action.data["message"])
-    assert expected_message in action_msg
+    assert expected_message in action.data["message"]
 
+
+@pytest.mark.parametrize(
+    "use_app_auth",
+    [
+        pytest.param(
+            True,
+            id="wrong field in github app secret",
+        ),
+        pytest.param(
+            False,
+            id="wrong field in github token secret",
+        ),
+    ],
+)
+async def test_secret_missing(
+    use_app_auth: bool, router: Application
+) -> None:
+    unit: Unit = router.units[0]
+
+    action_parms = {"webhook-id": FAKE_HOOK_ID, "since": 600, "github-path": FAKE_REPO}
+    if use_app_auth:
+        action_parms |= {
+            GITHUB_APP_PRIVATE_KEY_SECRET_ID_PARAM_NAME: secrets.token_hex(16),
+            GITHUB_APP_CLIENT_ID_PARAM_NAME: secrets.token_hex(16),
+            GITHUB_APP_INSTALLATION_ID_PARAM_NAME: 123,
+        }
+    else:
+        action_parms["github-token-secret-id"] = secrets.token_hex(16)
+
+    action: Action = await unit.run_action("redeliver-failed-webhooks", **action_parms)
+    await action.wait()
+    assert action.status == "failed"
+    assert "Invalid action parameters passed" in (action_msg := action.data["message"])
+    assert "Could not access/find secret" in action_msg
 
 @pytest.mark.parametrize(
     "use_app_auth, expected_message",
     [
         pytest.param(
             True,
-            "The github app private key secret does not contain a field called 'private-key'.",
+            "does not contain a field called 'private-key'.",
             id="wrong field in github app secret",
         ),
         pytest.param(
             False,
-            "The github token secret does not contain a field called 'token'.",
+            "does not contain a field called 'token'.",
             id="wrong field in github token secret",
         ),
     ],
