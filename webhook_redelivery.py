@@ -155,6 +155,7 @@ def _arg_parsing() -> _ParsedArgs:
     github_app_private_key = os.getenv(GITHUB_APP_PRIVATE_KEY_ENV_NAME)
     github_token = os.getenv(GITHUB_TOKEN_ENV_NAME)
 
+    github_auth_details: GithubAuthDetails
     if github_token:
         github_auth_details = github_token
     elif github_app_client_id and github_app_installation_id and github_app_private_key:

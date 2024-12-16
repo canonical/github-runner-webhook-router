@@ -30,11 +30,12 @@ PORT = 8000
 
 
 @pytest_asyncio.fixture(name="app", scope="module")
-async def app(
+async def app_fixture(
     router: Application,
     mongodb: Application,
     deploy_config: dict[str, Any],
 ) -> Application:
+    """Relate the router with mongodb and return the router application."""
     if not deploy_config["use-existing-app"]:
         await router.model.relate(f"{router.name}:mongodb", f"{mongodb.name}:database")
     await router.model.wait_for_idle(apps=[router.name, mongodb.name], status="active")

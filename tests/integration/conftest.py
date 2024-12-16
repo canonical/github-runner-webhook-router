@@ -90,14 +90,14 @@ def github_app_private_key_fixture(pytestconfig: pytest.Config) -> str | None:
 
 
 @pytest.fixture(
-    name="github_app_auth",
+    name="github_auth",
     scope="module",
     params=[
         pytest.param(True, id="use github token"),
         pytest.param(False, id="use github app auth"),
     ],
 )
-def github_app_auth_fixture(
+def github_auth_fixture(
     request: pytest.FixtureRequest,
     github_token: str | None,
     github_app_client_id: str | None,

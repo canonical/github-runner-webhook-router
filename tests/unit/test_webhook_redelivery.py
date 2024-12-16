@@ -84,6 +84,11 @@ def test_redeliver(
     expected_redelivered: set[int],
     webhook_address: WebhookAddress,
 ):
+    """
+    arrange: A mocked github client and different combinations of deliveries.
+    act: Call the script.
+    assert: The expected redeliveries are made.
+    """
     github_client = MagicMock(spec=github.Github)
     monkeypatch.setattr("webhook_redelivery.Github", MagicMock(return_value=github_client))
     now = datetime.now(tz=timezone.utc)
@@ -143,6 +148,11 @@ def test_redelivery_github_errors(
     expected_msg: str,
     webhook_address: WebhookAddress,
 ):
+    """
+    arrange: A mocked github client and a github exception.
+    act: Call the script.
+    assert: The expected error is raised.
+    """
     github_client = MagicMock(spec=github.Github)
     monkeypatch.setattr("webhook_redelivery.Github", MagicMock(return_value=github_client))
 
@@ -176,6 +186,11 @@ def test_redelivery_ignores_non_queued_or_non_workflow_job(
     action: str,
     event: str,
 ):
+    """
+    arrange: A mocked github client and different combinations of non-routable actions and events.
+    act: Call the script.
+    assert: No redeliveries are made.
+    """
     github_client = MagicMock(spec=github.Github)
     monkeypatch.setattr("webhook_redelivery.Github", MagicMock(return_value=github_client))
     now = datetime.now(tz=timezone.utc)
