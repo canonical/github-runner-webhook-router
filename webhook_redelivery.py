@@ -8,6 +8,7 @@ Only webhooks with action type queued are redelivered (as the others are not rou
 import argparse
 import json
 import logging
+import os
 import sys
 from collections import namedtuple
 from dataclasses import dataclass
@@ -21,6 +22,11 @@ from pydantic import BaseModel
 
 from webhook_router.app import SUPPORTED_GITHUB_EVENT
 from webhook_router.router import ROUTABLE_JOB_STATUS
+
+GITHUB_TOKEN_ENV_NAME = "GITHUB_TOKEN"
+GITHUB_APP_CLIENT_ID_ENV_NAME = "GITHUB_APP_CLIENT_ID"
+GITHUB_APP_INSTALLATION_ID_ENV_NAME = "GITHUB_APP_INSTALLATION_ID"
+GITHUB_APP_PRIVATE_KEY_ENV_NAME = "GITHUB_APP_PRIVATE_KEY"
 
 OK_STATUS = "OK"
 
@@ -104,7 +110,7 @@ def main() -> None:
     except RedeliveryError as exc:
         logger.exception("Failed to redeliver webhook deliveries")
         print(f"Failed to redeliver webhook deliveries: {exc}", file=sys.stderr)
-        raise SystemExit(1) from exc
+        sys.exit(1)
 
     print(_create_json_output(redelivery_count))
 
@@ -113,7 +119,7 @@ def _arg_parsing() -> _ParsedArgs:
     """Parse the command line arguments."""
     parser = argparse.ArgumentParser(
         description=f"{__doc__}. The script returns the amount of redelivered webhooks in JSON"
-        "format.The script assumes github app auth details to be parsed as json"
+        "format.The script assumes github app auth details to be given via env variables"
         " via stdin. The format has to be a json object with either the only key"
         " 'token' or the keys 'app_id', 'installation_id' and 'private_key'.,"
         " depending on the authentication method (github token vs github app auth) used."
@@ -138,30 +144,35 @@ def _arg_parsing() -> _ParsedArgs:
     )
     args = parser.parse_args()
 
-    # read the github auth details from stdin for security reasons
-    github_auth_details_raw = input()
+    github_app_client_id = os.getenv(GITHUB_APP_CLIENT_ID_ENV_NAME)
+    github_app_installation_id = os.getenv(GITHUB_APP_INSTALLATION_ID_ENV_NAME)
+    github_app_private_key = os.getenv(GITHUB_APP_PRIVATE_KEY_ENV_NAME)
+    github_token = os.getenv(GITHUB_TOKEN_ENV_NAME)
 
-    try:
-        github_auth_details_json = json.loads(github_auth_details_raw)
-    except json.JSONDecodeError as exc:
-        logger.error("Failed to parse github auth details: %s", exc)
-        print(
-            "Failed to parse github auth details, assuming a json with either the only key"
-            " 'token' or the keys 'app_id', 'installation_id' and 'private_key'",
-            file=sys.stderr,
-        )
-        raise SystemExit(1) from exc
-
-    if "token" in github_auth_details_json:
-        github_auth_details = github_auth_details_json["token"]
-    else:
+    if github_token:
+        github_auth_details = github_token
+    elif github_app_client_id and github_app_installation_id and github_app_private_key:
         try:
-            github_auth_details = GithubAppAuthDetails(**github_auth_details_json)
+            github_auth_details = GithubAppAuthDetails(
+                client_id=github_app_client_id,
+                installation_id=int(github_app_installation_id),
+                private_key=github_app_private_key,
+            )
         except ValueError as exc:
             logger.error("Failed to parse github auth details: %s", exc)
             print("Failed to parse github auth details", file=sys.stderr)
             raise SystemExit(1) from exc
-
+    else:
+        print(
+            "Github auth details are not specified completely. "
+            "Am missing github_token or complete set of app auth parameters."
+            f" Got github_app_client_id = {github_app_client_id},"
+            f" github_app_installation_id = {github_app_installation_id},"
+            f" github_app_private_key = {'***' if github_app_private_key else None},"
+            f" github_token = None",
+            file=sys.stderr,
+        )
+        raise SystemExit(1)
     webhook_address = WebhookAddress(
         github_org=args.github_path.split("/")[0],
         github_repo=args.github_path.split("/")[1] if "/" in args.github_path else None,
@@ -307,9 +318,6 @@ def _filter_for_failed_attempts(
     Args:
         deliveries: The webhook delivery attempts.
         since_datetime: The time to look back for failed deliveries.
-
-    Returns:
-        An iterator over the failed webhook deliveries.
     """
     for delivery in deliveries:
         if delivery.delivered_at < since_datetime:

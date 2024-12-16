@@ -50,7 +50,7 @@ actions:
       webhook-id:
         description: "The id of the webhook to redeliver."
         type: integer
-      github-client-id:
+      github-app-client-id:
         description: >-
           The client ID of the GitHub App to use for communication with GitHub,
           If provided, the other github-app-* params must also be provided.

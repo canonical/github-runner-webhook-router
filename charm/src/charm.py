@@ -9,6 +9,7 @@ import typing
 
 import ops
 import paas_charm.flask
+from ops import ActionEvent
 from ops.pebble import ExecError
 
 logger = logging.getLogger(__name__)
@@ -20,18 +21,11 @@ GITHUB_TOKEN_SECRET_ID_PARAM_NAME = "github-token-secret-id"
 GITHUB_APP_CLIENT_ID_PARAM_NAME = "github-app-client-id"
 GITHUB_APP_INSTALLATION_ID_PARAM_NAME = "github-app-installation-id"
 GITHUB_APP_PRIVATE_KEY_SECRET_ID_PARAM_NAME = "github-app-private-key-secret-id"
+GITHUB_TOKEN_ENV_NAME = "GITHUB_TOKEN"
+GITHUB_APP_CLIENT_ID_ENV_NAME = "GITHUB_APP_CLIENT_ID"
+GITHUB_APP_INSTALLATION_ID_ENV_NAME = "GITHUB_APP_INSTALLATION_ID"
+GITHUB_APP_PRIVATE_KEY_ENV_NAME = "GITHUB_APP_PRIVATE_KEY"
 
-MISSING_GITHUB_PARAMS_ERR_MSG = (
-    f"Either the {GITHUB_TOKEN_SECRET_ID_PARAM_NAME} "
-    f"or not all of {GITHUB_APP_CLIENT_ID_PARAM_NAME},"
-    f" {GITHUB_APP_INSTALLATION_ID_PARAM_NAME}, {GITHUB_APP_PRIVATE_KEY_SECRET_ID_PARAM_NAME} "
-    f"parameters were provided or are empty, "
-    "the parameters are needed for interactions with GitHub, "
-)
-NOT_ALL_GITHUB_APP_PARAMS_ERR_MSG = (
-    f"Not all of {GITHUB_APP_CLIENT_ID_PARAM_NAME}, {GITHUB_APP_INSTALLATION_ID_PARAM_NAME},"
-    f" {GITHUB_APP_PRIVATE_KEY_SECRET_ID_PARAM_NAME} parameters were provided, "
-)
 # the following is no hardcoded password
 PROVIDED_GITHUB_TOKEN_AND_APP_PARAMS_ERR_MSG = (  # nosec
     "Provided github app auth parameters and github token, only one of them should be provided, "
@@ -65,11 +59,10 @@ class FlaskCharm(paas_charm.flask.Charm):
         webhook_id = event.params[WEBHOOK_ID_PARAM_NAME]
 
         try:
-            auth_details = self._get_auth_details(event)
+            auth_env = self._get_github_auth_env(event)
         except _ActionParamsInvalidError as exc:
-            event.fail(f"Invalid action parameters passed: {exc}")
+            event.fail(str(exc))
             return
-
         try:
             stdout, _ = container.exec(
                 [
@@ -82,7 +75,7 @@ class FlaskCharm(paas_charm.flask.Charm):
                     "--webhook-id",
                     str(webhook_id),
                 ],
-                stdin=json.dumps(auth_details),
+                environment=auth_env,
             ).wait_output()
             logger.info("Got %s", stdout)
             result = json.loads(
@@ -93,120 +86,81 @@ class FlaskCharm(paas_charm.flask.Charm):
             logger.warning("Webhook redelivery failed, script reported: %s", exc.stderr)
             event.fail("Webhooks redelivery failed. Look at the juju logs for more information.")
 
-    def _get_auth_details(self, event: ops.charm.ActionEvent) -> dict:
-        """Get the authentication details from the action event.
+    def _get_github_auth_env(self, event: ActionEvent) -> dict[str, str]:
+        """Get the GitHub auth environment variables from the action parameters.
 
         Args:
             event: The action event.
 
         Returns:
-            a dict which can be passed to the webhook redelivery script as JSON.
+            The GitHub auth environment variables used by the script in the workload.
 
         Raises:
-            _ActionParamsInvalidError: If the configuration is invalid.
+            _ActionParamsInvalidError: If the action parameters are invalid.
         """
         github_token_secret_id = event.params.get(GITHUB_TOKEN_SECRET_ID_PARAM_NAME)
         github_app_client_id = event.params.get(GITHUB_APP_CLIENT_ID_PARAM_NAME)
-        github_app_installation_id_str = event.params.get(GITHUB_APP_INSTALLATION_ID_PARAM_NAME)
+        github_app_installation_id = event.params.get(GITHUB_APP_INSTALLATION_ID_PARAM_NAME)
         github_app_private_key_secret_id = event.params.get(
             GITHUB_APP_PRIVATE_KEY_SECRET_ID_PARAM_NAME
         )
 
-        if not github_token_secret_id and not (
-            github_app_client_id
-            or github_app_installation_id_str
-            or github_app_private_key_secret_id
-        ):
-            raise _ActionParamsInvalidError(
-                f"{MISSING_GITHUB_PARAMS_ERR_MSG}"
-                f"got: token-secret-id: {github_token_secret_id!r}, "
-                f"app-client-id: {github_app_client_id!r}, "
-                f"app-installation-id: {github_app_installation_id_str!r}, "
-                f"private-key-secret-id: {github_app_private_key_secret_id!r}"
-            )
         if github_token_secret_id and (
-            github_app_client_id
-            or github_app_installation_id_str
-            or github_app_private_key_secret_id
+            github_app_client_id or github_app_installation_id or github_app_private_key_secret_id
         ):
             raise _ActionParamsInvalidError(
                 f"{PROVIDED_GITHUB_TOKEN_AND_APP_PARAMS_ERR_MSG}"
                 f"got: app-client-id: {github_app_client_id!r}, "
-                f"app-installation-id: {github_app_installation_id_str!r}, "
-                f"private-key-secret-id: {github_app_private_key_secret_id!r}"
+                f"app-installation-id: {github_app_installation_id!r}, "
+                f"private-key-secret-id: {github_app_private_key_secret_id!r}, "
+                f"token-secret-id: {github_token_secret_id!r}"
             )
 
-        if (
-            github_app_client_id
-            or github_app_installation_id_str
-            or github_app_private_key_secret_id
-            and not (
-                github_app_client_id
-                and github_app_installation_id_str
-                and github_app_private_key_secret_id
-            )
-        ):
-            raise _ActionParamsInvalidError(
-                f"{NOT_ALL_GITHUB_APP_PARAMS_ERR_MSG}"
-                f"got: app-client-id: {github_app_client_id!r},"
-                f" app-installation-id: {github_app_installation_id_str!r},"
-                f" private-key-secret-id: {github_app_private_key_secret_id!r}"
-            )
-
-        if github_token_secret_id:
-            github_token_secret = self.model.get_secret(id=github_token_secret_id)
-            github_token_secret_data = github_token_secret.get_content()
-
-            try:
-                github_token = github_token_secret_data["token"]
-            except KeyError as exc:
-                raise _ActionParamsInvalidError(
-                    "The github token secret does not contain a field called 'token'."
-                ) from exc
-            return {"token": github_token}
-        return self._get_github_app_installation_auth_details(
-            github_app_client_id, github_app_installation_id_str, github_app_private_key_secret_id
+        github_token = (
+            self._get_secret_value(github_token_secret_id, "token")
+            if github_token_secret_id
+            else None
+        )
+        github_app_private_key = (
+            self._get_secret_value(github_app_private_key_secret_id, "private-key")
+            if github_app_private_key_secret_id
+            else None
         )
 
-    def _get_github_app_installation_auth_details(
-        self,
-        github_app_client_id: str,
-        github_app_installation_id_str: str,
-        github_app_private_key_secret_id: str,
-    ) -> dict:
-        """Get the Github app installation auth details.
+        return {
+            GITHUB_TOKEN_ENV_NAME: github_token,
+            GITHUB_APP_CLIENT_ID_ENV_NAME: github_app_client_id,
+            GITHUB_APP_INSTALLATION_ID_ENV_NAME: (
+                str(github_app_installation_id) if github_app_installation_id else None
+            ),
+            GITHUB_APP_PRIVATE_KEY_ENV_NAME: github_app_private_key,
+        }
+
+    def _get_secret_value(self, secret_id: str, key: str) -> str:
+        """Get the value of a secret.
 
         Args:
-            github_app_client_id: The GitHub App Client ID.
-            github_app_installation_id_str: The GitHub App Installation ID as a string.
-            github_app_private_key_secret_id: The GitHub App private key secret id
+            secret_id: The secret id.
+            key: The key of the secret value to extract.
 
         Returns:
-            a dict which can be passed to the webhook redelivery script as JSON.
+            The secret value.
 
         Raises:
-            _ActionParamsInvalidError: If the configuration is invalid.
+            _ActionParamsInvalidError: If the secret does not exist
+                or the key is not in the secret.
         """
         try:
-            github_app_installation_id = int(github_app_installation_id_str)
-        except ValueError as exc:
-            raise _ActionParamsInvalidError(
-                f"Invalid github app installation id {github_app_installation_id_str!r}, "
-                f"it should be an integer."
-            ) from exc
-        github_app_private_key_secret = self.model.get_secret(id=github_app_private_key_secret_id)
-        github_app_private_key_secret_data = github_app_private_key_secret.get_content()
+            secret = self.model.get_secret(id=secret_id)
+        except ops.model.ModelError as exc:
+            raise _ActionParamsInvalidError(f"Could not access/find secret {secret_id}") from exc
+        secret_data = secret.get_content()
         try:
-            private_key = github_app_private_key_secret_data["private-key"]
+            return secret_data[key]
         except KeyError as exc:
             raise _ActionParamsInvalidError(
-                "The github app private key secret does not contain a field called 'private-key'."
+                f"Secret {secret_id} does not contain a field called {key}."
             ) from exc
-        return {
-            "client_id": github_app_client_id,
-            "installation_id": github_app_installation_id,
-            "private_key": private_key,
-        }
 
 
 if __name__ == "__main__":
