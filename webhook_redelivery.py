@@ -97,26 +97,32 @@ class RedeliveryError(Exception):
     """Raised when an error occurs during redelivery."""
 
 
+class ArgParseError(Exception):
+    """Raised when an error occurs during argument parsing."""
+
+
 def main() -> None:
     """Run the module as script."""
     args = _arg_parsing()
 
-    try:
-        redelivery_count = _redeliver_failed_webhook_delivery_attempts(
-            github_auth=args.github_auth_details,
-            webhook_address=args.webhook_address,
-            since_seconds=args.since,
-        )
-    except RedeliveryError as exc:
-        logger.exception("Failed to redeliver webhook deliveries")
-        print(f"Failed to redeliver webhook deliveries: {exc}", file=sys.stderr)
-        sys.exit(1)
+    redelivery_count = _redeliver_failed_webhook_delivery_attempts(
+        github_auth=args.github_auth_details,
+        webhook_address=args.webhook_address,
+        since_seconds=args.since,
+    )
 
     print(_create_json_output(redelivery_count))
 
 
 def _arg_parsing() -> _ParsedArgs:
-    """Parse the command line arguments."""
+    """Parse the command line arguments.
+
+    Raises:
+        ArgParseError: If the arguments are invalid.
+
+    Returns:
+        The parsed arguments.
+    """
     parser = argparse.ArgumentParser(
         description=f"{__doc__}. The script returns the amount of redelivered webhooks in JSON"
         "format.The script assumes github app auth details to be given via env variables"
@@ -159,20 +165,16 @@ def _arg_parsing() -> _ParsedArgs:
                 private_key=github_app_private_key,
             )
         except ValueError as exc:
-            logger.error("Failed to parse github auth details: %s", exc)
-            print("Failed to parse github auth details", file=sys.stderr)
-            raise SystemExit(1) from exc
+            raise ArgParseError("Failed to parse github auth details") from exc
     else:
-        print(
+        raise ArgParseError(
             "Github auth details are not specified completely. "
             "Am missing github_token or complete set of app auth parameters."
             f" Got github_app_client_id = {github_app_client_id},"
             f" github_app_installation_id = {github_app_installation_id},"
             f" github_app_private_key = {'***' if github_app_private_key else None},"
             f" github_token = None",
-            file=sys.stderr,
         )
-        raise SystemExit(1)
     webhook_address = WebhookAddress(
         github_org=args.github_path.split("/")[0],
         github_repo=args.github_path.split("/")[1] if "/" in args.github_path else None,
@@ -377,4 +379,11 @@ def _redeliver_attempt(
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except ArgParseError as exc:
+        logger.exception("Argument parsing failed: %s", exc)
+        sys.exit(1)
+    except RedeliveryError as exc:
+        logger.exception("Webhook redelivery failed: %s", exc)
+        sys.exit(1)
