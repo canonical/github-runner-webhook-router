@@ -150,7 +150,7 @@ async def test_webhook_redelivery(
             None,
             None,
             None,
-            "Webhooks redelivery failed. Look at the juju logs for more information.",
+            "Argument parsing failed. Look at the juju logs for more information.",
             id="no github app config or github token",
         ),
         pytest.param(
@@ -158,7 +158,7 @@ async def test_webhook_redelivery(
             123,
             None,
             None,
-            "Webhooks redelivery failed. Look at the juju logs for more information.",
+            "Argument parsing failed. Look at the juju logs for more information.",
             id="not all github app config provided",
         ),
     ],

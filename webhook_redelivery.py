@@ -23,6 +23,10 @@ from pydantic import BaseModel
 from webhook_router.app import SUPPORTED_GITHUB_EVENT
 from webhook_router.router import ROUTABLE_JOB_STATUS
 
+REDELIVERY_ERROR_EXIT_CODE = 2
+
+ARG_PARSE_ERROR_EXIT_CODE = 1
+
 GITHUB_TOKEN_ENV_NAME = "GITHUB_TOKEN"
 GITHUB_APP_CLIENT_ID_ENV_NAME = "GITHUB_APP_CLIENT_ID"
 GITHUB_APP_INSTALLATION_ID_ENV_NAME = "GITHUB_APP_INSTALLATION_ID"
@@ -389,7 +393,7 @@ if __name__ == "__main__":  # pragma: no cover this is checked by integration te
         main()
     except ArgParseError as exc:
         logger.exception("Argument parsing failed: %s", exc)
-        sys.exit(1)
+        sys.exit(ARG_PARSE_ERROR_EXIT_CODE)
     except RedeliveryError as exc:
         logger.exception("Webhook redelivery failed: %s", exc)
-        sys.exit(1)
+        sys.exit(REDELIVERY_ERROR_EXIT_CODE)

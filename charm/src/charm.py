@@ -14,6 +14,8 @@ from ops.pebble import ExecError
 
 logger = logging.getLogger(__name__)
 
+
+SCRIPT_ARG_PARSE_ERROR_EXIT_CODE = 1
 SINCE_PARAM_NAME = "since"
 GITHUB_PATH_PARAM_NAME = "github-path"
 WEBHOOK_ID_PARAM_NAME = "webhook-id"
@@ -84,7 +86,12 @@ class FlaskCharm(paas_charm.flask.Charm):
             event.set_results(result)
         except ExecError as exc:
             logger.warning("Webhook redelivery failed, script reported: %s", exc.stderr)
-            event.fail("Webhooks redelivery failed. Look at the juju logs for more information.")
+            if exc.exit_code == SCRIPT_ARG_PARSE_ERROR_EXIT_CODE:
+                event.fail("Argument parsing failed. Look at the juju logs for more information.")
+            else:
+                event.fail(
+                    "Webhooks redelivery failed. Look at the juju logs for more information."
+                )
 
     def _get_github_auth_env(self, event: ActionEvent) -> dict[str, str | None]:
         """Get the GitHub auth environment variables from the action parameters.
