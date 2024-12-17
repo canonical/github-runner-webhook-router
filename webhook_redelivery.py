@@ -159,6 +159,20 @@ def _arg_parsing() -> _ParsedArgs:  # pragma: no cover this is checked by integr
     github_token = os.getenv(GITHUB_TOKEN_ENV_NAME)
 
     github_auth_details: GithubAuthDetails
+    got_str = (
+        f" Got github_app_client_id = {github_app_client_id},"
+        f" github_app_installation_id = {github_app_installation_id},"
+        f" github_app_private_key = {'***' if github_app_private_key else None},"
+        f" github_token = {'***' if github_app_private_key else None}",
+    )
+    if github_token and (
+        github_app_client_id or github_app_installation_id or github_app_private_key
+    ):
+        raise ArgParseError(
+            "Github auth details are specified in two ways. "
+            "Please specify only one of github token or github app auth details."
+            f"{got_str}"
+        )
     if github_token:
         github_auth_details = github_token
     elif github_app_client_id and github_app_installation_id and github_app_private_key:
@@ -173,11 +187,8 @@ def _arg_parsing() -> _ParsedArgs:  # pragma: no cover this is checked by integr
     else:
         raise ArgParseError(
             "Github auth details are not specified completely. "
-            "Am missing github_token or complete set of app auth parameters."
-            f" Got github_app_client_id = {github_app_client_id},"
-            f" github_app_installation_id = {github_app_installation_id},"
-            f" github_app_private_key = {'***' if github_app_private_key else None},"
-            f" github_token = None",
+            "Am missing github token or complete set of app auth parameters."
+            f"{got_str}"
         )
     webhook_address = WebhookAddress(
         github_org=args.github_path.split("/")[0],
@@ -391,7 +402,7 @@ if __name__ == "__main__":  # pragma: no cover this is checked by integration te
     try:
         main()
     except ArgParseError as exc:
-        logger.exception("Argument parsing failed: %s", exc)
+        print(f"{exc}", file=sys.stderr)
         sys.exit(ARG_PARSE_ERROR_EXIT_CODE)
     except RedeliveryError as exc:
         logger.exception("Webhook redelivery failed: %s", exc)

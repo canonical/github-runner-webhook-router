@@ -28,11 +28,6 @@ GITHUB_APP_CLIENT_ID_ENV_NAME = "GITHUB_APP_CLIENT_ID"
 GITHUB_APP_INSTALLATION_ID_ENV_NAME = "GITHUB_APP_INSTALLATION_ID"
 GITHUB_APP_PRIVATE_KEY_ENV_NAME = "GITHUB_APP_PRIVATE_KEY"
 
-# the following is no hardcoded password
-PROVIDED_GITHUB_TOKEN_AND_APP_PARAMS_ERR_MSG = (  # nosec
-    "Provided github app auth parameters and github token, only one of them should be provided, "
-)
-
 
 class _ActionParamsInvalidError(Exception):
     """Raised when the action parameters are invalid."""
@@ -87,7 +82,7 @@ class FlaskCharm(paas_charm.flask.Charm):
         except ExecError as exc:
             logger.warning("Webhook redelivery failed, script reported: %s", exc.stderr)
             if exc.exit_code == SCRIPT_ARG_PARSE_ERROR_EXIT_CODE:
-                event.fail("Argument parsing failed. Look at the juju logs for more information.")
+                event.fail(f"Argument parsing failed. {exc.stderr}")
             else:
                 event.fail(
                     "Webhooks redelivery failed. Look at the juju logs for more information."
@@ -111,17 +106,6 @@ class FlaskCharm(paas_charm.flask.Charm):
         github_app_private_key_secret_id = event.params.get(
             GITHUB_APP_PRIVATE_KEY_SECRET_ID_PARAM_NAME
         )
-
-        if github_token_secret_id and (
-            github_app_client_id or github_app_installation_id or github_app_private_key_secret_id
-        ):
-            raise _ActionParamsInvalidError(
-                f"{PROVIDED_GITHUB_TOKEN_AND_APP_PARAMS_ERR_MSG}"
-                f"got: app-client-id: {github_app_client_id!r}, "
-                f"app-installation-id: {github_app_installation_id!r}, "
-                f"private-key-secret-id: {github_app_private_key_secret_id!r}, "
-                f"token-secret-id: {github_token_secret_id!r}"
-            )
 
         github_token = (
             self._get_secret_value(github_token_secret_id, "token")

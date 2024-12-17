@@ -140,9 +140,8 @@ async def test_webhook_redelivery(
             446,
             "private",
             "token",
-            "Invalid action parameters passed: "
-            "Provided github app auth parameters and github token, "
-            "only one of them should be provided",
+            "Github auth details are specified in two ways. "
+            "Please specify only one of github token or github app auth details.",
             id="github app config and github token secret",
         ),
         pytest.param(
@@ -150,7 +149,8 @@ async def test_webhook_redelivery(
             None,
             None,
             None,
-            "Argument parsing failed. Look at the juju logs for more information.",
+            "Github auth details are not specified completely."
+            " Am missing github token or complete set of app auth parameters.",
             id="no github app config or github token",
         ),
         pytest.param(
@@ -158,7 +158,8 @@ async def test_webhook_redelivery(
             123,
             None,
             None,
-            "Argument parsing failed. Look at the juju logs for more information.",
+            "Github auth details are not specified completely."
+            " Am missing github token or complete set of app auth parameters.",
             id="not all github app config provided",
         ),
     ],
@@ -200,7 +201,8 @@ async def test_action_github_auth_param_error(
     await action.wait()
 
     assert action.status == "failed"
-    assert expected_message in action.data["message"]
+    assert "Argument parsing failed" in (action_msg := action.data["message"])
+    assert expected_message in action_msg
 
 
 @pytest.mark.parametrize(
