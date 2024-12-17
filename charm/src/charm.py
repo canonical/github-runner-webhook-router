@@ -8,7 +8,9 @@ import logging
 import typing
 
 import ops
-import paas_charm.flask
+
+# we don't have the types for paas_charm.flask
+import paas_charm.flask  # type: ignore
 from ops import ActionEvent
 from ops.pebble import ExecError
 
@@ -88,7 +90,7 @@ class FlaskCharm(paas_charm.flask.Charm):
                     "Webhooks redelivery failed. Look at the juju logs for more information."
                 )
 
-    def _get_github_auth_env(self, event: ActionEvent) -> dict[str, str | None]:
+    def _get_github_auth_env(self, event: ActionEvent) -> dict[str, str]:
         """Get the GitHub auth environment variables from the action parameters.
 
         Args:
@@ -96,33 +98,30 @@ class FlaskCharm(paas_charm.flask.Charm):
 
         Returns:
             The GitHub auth environment variables used by the script in the workload.
-
-        Raises:
-            _ActionParamsInvalidError: If the action parameters are invalid.
         """
-        github_token_secret_id = event.params.get(GITHUB_TOKEN_SECRET_ID_PARAM_NAME)
-        github_app_client_id = event.params.get(GITHUB_APP_CLIENT_ID_PARAM_NAME)
-        github_app_installation_id = event.params.get(GITHUB_APP_INSTALLATION_ID_PARAM_NAME)
+        github_token_secret_id = event.params.get(GITHUB_TOKEN_SECRET_ID_PARAM_NAME, "")
+        github_app_client_id = event.params.get(GITHUB_APP_CLIENT_ID_PARAM_NAME, "")
+        github_app_installation_id = event.params.get(GITHUB_APP_INSTALLATION_ID_PARAM_NAME, "")
         github_app_private_key_secret_id = event.params.get(
-            GITHUB_APP_PRIVATE_KEY_SECRET_ID_PARAM_NAME
+            GITHUB_APP_PRIVATE_KEY_SECRET_ID_PARAM_NAME, ""
         )
 
         github_token = (
             self._get_secret_value(github_token_secret_id, "token")
             if github_token_secret_id
-            else None
+            else ""
         )
         github_app_private_key = (
             self._get_secret_value(github_app_private_key_secret_id, "private-key")
             if github_app_private_key_secret_id
-            else None
+            else ""
         )
 
         return {
             GITHUB_TOKEN_ENV_NAME: github_token,
             GITHUB_APP_CLIENT_ID_ENV_NAME: github_app_client_id,
             GITHUB_APP_INSTALLATION_ID_ENV_NAME: (
-                str(github_app_installation_id) if github_app_installation_id else None
+                str(github_app_installation_id) if github_app_installation_id else ""
             ),
             GITHUB_APP_PRIVATE_KEY_ENV_NAME: github_app_private_key,
         }
