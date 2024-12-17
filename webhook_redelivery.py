@@ -183,7 +183,7 @@ def _arg_parsing() -> _ParsedArgs:  # pragma: no cover this is checked by integr
                 private_key=github_app_private_key,
             )
         except ValueError as exc:
-            raise ArgParseError("Failed to parse github auth details") from exc
+            raise ArgParseError(f"Failed to parse github auth details: {exc}") from exc
     else:
         raise ArgParseError(
             "Github auth details are not specified completely. "
