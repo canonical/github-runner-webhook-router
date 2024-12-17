@@ -31,6 +31,9 @@ tox run -e integration   # integration tests
 tox                      # runs 'format', 'lint', and 'unit' environments
 ```
 
+The integration tests require additional parameters which can be looked up in the `tests/conftest.py` file.
+Some of them have environment variable counterparts (see `tests/integration/conftest.py`),
+which can be set instead of passing them as arguments, which is more secure for sensitive data.
 
 ## Development server
 
