@@ -123,53 +123,6 @@ def test_redeliver(
 
 
 @pytest.mark.parametrize(
-    "github_exception,expected_msg",
-    [
-        pytest.param(
-            github.BadCredentialsException(403),
-            "The github client returned a Bad Credential error",
-            id="BadCredentialsException",
-        ),
-        pytest.param(
-            github.RateLimitExceededException(403),
-            "The github client is returning a Rate Limit Exceeded error",
-            id="RateLimitExceededException",
-        ),
-        pytest.param(
-            github.GithubException(500),
-            "The github client encountered an error",
-            id="GithubException",
-        ),
-    ],
-)
-def test_redelivery_github_errors(
-    monkeypatch: pytest.MonkeyPatch,
-    github_exception: github.GithubException,
-    expected_msg: str,
-    webhook_address: WebhookAddress,
-):
-    """
-    arrange: A mocked github client and a github exception.
-    act: Call the script.
-    assert: The expected error is raised.
-    """
-    github_client = MagicMock(spec=github.Github)
-    monkeypatch.setattr("webhook_redelivery.Github", MagicMock(return_value=github_client))
-
-    github_token = secrets.token_hex(16)
-    since_seconds = 5
-
-    get_hook_deliveries_mock = _get_get_deliveries_mock(github_client, webhook_address)
-    get_hook_deliveries_mock.side_effect = github_exception
-
-    with pytest.raises(RedeliveryError) as exc_info:
-        _redeliver_failed_webhook_delivery_attempts(
-            github_auth=github_token, webhook_address=webhook_address, since_seconds=since_seconds
-        )
-    assert expected_msg in str(exc_info.value)
-
-
-@pytest.mark.parametrize(
     "action,event",
     [
         pytest.param("completed", "workflow_job", id="completed workflow_job"),
@@ -218,6 +171,87 @@ def test_redelivery_ignores_non_queued_or_non_workflow_job(
 
     redeliver_mock = github_client.requester.requestJsonAndCheck
     assert redeliver_mock.call_count == 0
+
+
+@pytest.mark.parametrize(
+    "github_exception,expected_msg",
+    [
+        pytest.param(
+            github.BadCredentialsException(403),
+            "The github client returned a Bad Credential error",
+            id="BadCredentialsException",
+        ),
+        pytest.param(
+            github.RateLimitExceededException(403),
+            "The github client is returning a Rate Limit Exceeded error",
+            id="RateLimitExceededException",
+        ),
+        pytest.param(
+            github.GithubException(500),
+            "The github client encountered an error",
+            id="GithubException",
+        ),
+    ],
+)
+def test_redelivery_github_errors(
+    monkeypatch: pytest.MonkeyPatch,
+    github_exception: github.GithubException,
+    expected_msg: str,
+    webhook_address: WebhookAddress,
+):
+    """
+    arrange: A mocked github client and a github exception.
+    act: Call the script.
+    assert: The expected error is raised.
+    """
+    github_client = MagicMock(spec=github.Github)
+    monkeypatch.setattr("webhook_redelivery.Github", MagicMock(return_value=github_client))
+
+    github_token = secrets.token_hex(16)
+    since_seconds = 5
+
+    get_hook_deliveries_mock = _get_get_deliveries_mock(github_client, webhook_address)
+    get_hook_deliveries_mock.side_effect = github_exception
+
+    with pytest.raises(RedeliveryError) as exc_info:
+        _redeliver_failed_webhook_delivery_attempts(
+            github_auth=github_token, webhook_address=webhook_address, since_seconds=since_seconds
+        )
+    assert expected_msg in str(exc_info.value)
+
+
+def test_redelivery_api_insufficient_data(
+    monkeypatch: pytest.MonkeyPatch,
+    webhook_address: WebhookAddress,
+):
+    """
+    arrange: A mocked github client which returns not all required fields in an API response.
+    act: Call the script.
+    assert: An AssertionError is raised.
+    """
+    github_client = MagicMock(spec=github.Github)
+    monkeypatch.setattr("webhook_redelivery.Github", MagicMock(return_value=github_client))
+
+    github_token = secrets.token_hex(16)
+    since_seconds = 5
+
+    get_hook_deliveries_mock = _get_get_deliveries_mock(github_client, webhook_address)
+    get_hook_deliveries_mock.return_value = [
+        MagicMock(
+            spec=HookDeliverySummary,
+            id=1,
+            status="failed",
+            delivered_at=datetime.now(tz=timezone.utc),
+            action=None,  # missing action
+            event=None,  # missing event
+        )
+    ]
+
+    with pytest.raises(AssertionError) as exc_info:
+        _redeliver_failed_webhook_delivery_attempts(
+            github_auth=github_token, webhook_address=webhook_address, since_seconds=since_seconds
+        )
+    assert "The webhook delivery is missing required fields:" in str(exc_info.value)
 
 
 def _get_get_deliveries_mock(

@@ -101,7 +101,7 @@ class ArgParseError(Exception):
     """Raised when an error occurs during argument parsing."""
 
 
-def main() -> None:
+def main() -> None:  # pragma: no cover this is checked by integration tests
     """Run the module as script."""
     args = _arg_parsing()
 
@@ -114,7 +114,7 @@ def main() -> None:
     print(_create_json_output(redelivery_count))
 
 
-def _arg_parsing() -> _ParsedArgs:
+def _arg_parsing() -> _ParsedArgs:  # pragma: no cover this is checked by integration tests
     """Parse the command line arguments.
 
     Raises:
@@ -187,7 +187,8 @@ def _arg_parsing() -> _ParsedArgs:
     )
 
 
-def _create_json_output(redelivery_count: int) -> str:
+# this is checked by integration tests
+def _create_json_output(redelivery_count: int) -> str:  # pragma: no cover
     """Create a JSON output as strong  with the redelivery count.
 
     Args:
@@ -300,8 +301,12 @@ def _iter_delivery_attempts(
     )
     deliveries = webhook_origin.get_hook_deliveries(webhook_address.id)
     for delivery in deliveries:
+        # we check that the API is really returning the expected fields with non-null vals
+        # as pygithub is not doing this validation for us
         required_fields = {"id", "status", "delivered_at", "action", "event"}
-        none_fields = {field for field in required_fields if not hasattr(delivery, field)}
+        none_fields = {
+            field for field in required_fields if getattr(delivery, field, None) is None
+        }
         if none_fields:
             raise AssertionError(f"The webhook delivery is missing required fields: {none_fields}")
         yield _WebhookDeliveryAttempts(
@@ -379,7 +384,7 @@ def _redeliver_attempt(
     github_client.requester.requestJsonAndCheck("POST", url)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover this is checked by integration tests
     try:
         main()
     except ArgParseError as exc:
