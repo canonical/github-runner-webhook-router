@@ -38,6 +38,7 @@ actions:
       webhook deliveries that will be redelivered can be quite large and the requests are counted
       against the rate limit of the Github API. The action returns the amount of webhooks
       that were redelivered.
+      Note that this action requires juju user secrets, which have been available since juju 3.3.
     params:
       since:
         description: "The amount of seconds to look back for failed deliveries."
