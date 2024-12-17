@@ -242,7 +242,7 @@ def test_redelivery_api_insufficient_data(
             id=1,
             status="failed",
             delivered_at=datetime.now(tz=timezone.utc),
-            action=None,  # missing action
+            action="ping",
             event=None,  # missing event
         )
     ]
@@ -251,7 +251,7 @@ def test_redelivery_api_insufficient_data(
         _redeliver_failed_webhook_delivery_attempts(
             github_auth=github_token, webhook_address=webhook_address, since_seconds=since_seconds
         )
-    assert "The webhook delivery is missing required fields:" in str(exc_info.value)
+    assert "is missing required fields: {'event'}" in str(exc_info.value)
 
 
 def _get_get_deliveries_mock(

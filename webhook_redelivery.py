@@ -85,14 +85,14 @@ class _WebhookDeliveryAttempts:
         delivered_at: The time the delivery was made.
         action: The action type of the delivery.
          See https://docs.github.com/en/webhooks/webhook-events-and-payloads#workflow_job for
-         possible values for the workflow_job event
+         possible values for the workflow_job event. May be null for other events (e.g. ping).
         event: The event type of the delivery.
     """
 
     id: int
     status: str
     delivered_at: datetime
-    action: str
+    action: str | None
     event: str
 
 
@@ -317,12 +317,15 @@ def _iter_delivery_attempts(
     for delivery in deliveries:
         # we check that the API is really returning the expected fields with non-null vals
         # as pygithub is not doing this validation for us
-        required_fields = {"id", "status", "delivered_at", "action", "event"}
+        required_fields = {"id", "status", "delivered_at", "event"}
         none_fields = {
             field for field in required_fields if getattr(delivery, field, None) is None
         }
         if none_fields:
-            raise AssertionError(f"The webhook delivery is missing required fields: {none_fields}")
+            raise AssertionError(
+                f"The webhook delivery {delivery.raw_data} is missing required fields:"
+                f" {none_fields}"
+            )
         yield _WebhookDeliveryAttempts(
             id=delivery.id,  # type: ignore
             status=delivery.status,  # type: ignore
