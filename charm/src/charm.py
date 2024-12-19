@@ -77,9 +77,10 @@ class FlaskCharm(paas_charm.flask.Charm):
                 environment=auth_env,
             ).wait_output()
             logger.info("Got %s", stdout)
+            # only consider the last line as result
             result = json.loads(
                 stdout.rstrip().split("\n")[-1]
-            )  # only consider the last line as result
+            )
             event.set_results(result)
         except ExecError as exc:
             logger.warning("Webhook redelivery failed, script reported: %s", exc.stderr)
