@@ -30,6 +30,61 @@ requires:
     limit: 1
 
 
+actions:
+  redeliver-failed-webhooks:
+    description: >-
+      Redeliver failed webhook deliveries since a certain time period. This action fetches the
+      Github api for failed deliveries and triggers redelivery. Note that the amount of
+      webhook deliveries that will be redelivered can be quite large and the requests are counted
+      against the rate limit of the Github API. The action returns the amount of webhooks
+      that were redelivered.
+      Note that this action requires juju user secrets, which have been available since juju 3.3.
+    params:
+      since:
+        description: "The amount of seconds to look back for failed deliveries."
+        type: integer
+      github-path:
+        description: >-
+          The path of the organisation or repository where the webhooks are registered. Should
+          be in the format of <organisation> or <organisation>/<repository>.
+        type: string
+      webhook-id:
+        description: "The id of the webhook to redeliver."
+        type: integer
+      github-app-client-id:
+        description: >-
+          The client ID of the GitHub App to use for communication with GitHub,
+          If provided, the other github-app-* params must also be provided.
+          The Github App needs to have write permission for Webhooks.
+          Either this or the github-token must be provided.
+        type: string
+      github-app-installation-id:
+        description: >-
+          The app installation id of the GitHub App to use for communication with GitHub.
+          If provided, the other github-app-* params must also be provided.
+          The Github App needs to have write permission for Webhooks.
+          Either this or the github-token must be provided.
+        type: integer
+      github-app-private-key-secret-id:
+        description: >-
+          The juju user secret id of the private key to use for communication with GitHub. The 
+          key has to be provided in a field named 'private-key' in the secret.
+          If provided, the other github-app-* params must also be provided.
+          The Github App needs to have write permission for Webhooks.
+          Either this or the github-token must be provided.
+        type: string
+      github-token-secret-id:
+        description: >-
+          The juju user secret id of the token to use for communication with GitHub.The 
+          token has to be provided in a field named 'token' in the secret.
+          This can be a PAT with write admin:repo_hook or a fine-grained token with write permission for Webhooks. 
+          Either this or the GitHub App configuration must be provided.
+        type: string
+    required:
+      - since
+      - github-path
+      - webhook-id
+
 config:
   options:
     default-flavour:
@@ -52,6 +107,7 @@ config:
             If a job matches multiple flavours, the first flavour matching defined in this configuration will be used.
             Note that labels are treated case-insensitive.
          required: true
+
     log-level:
       type: string
       description: "The log level to use for the application logs. Use any of: CRITICAL, ERROR, WARNING, INFO, DEBUG, NOTSET"

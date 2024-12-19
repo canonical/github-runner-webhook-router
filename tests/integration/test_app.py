@@ -9,9 +9,10 @@ import json
 import random
 import re
 import secrets
-from typing import Optional
+from typing import Any, Optional
 
 import pytest
+import pytest_asyncio
 import requests
 from juju.application import Application
 from juju.model import Model
@@ -26,6 +27,19 @@ from webhook_router.app import (
 from webhook_router.parse import Job, JobStatus
 
 PORT = 8000
+
+
+@pytest_asyncio.fixture(name="app", scope="module")
+async def app_fixture(
+    router: Application,
+    mongodb: Application,
+    deploy_config: dict[str, Any],
+) -> Application:
+    """Relate the router with mongodb and return the router application."""
+    if not deploy_config["use-existing-app"]:
+        await router.model.relate(f"{router.name}:mongodb", f"{mongodb.name}:database")
+    await router.model.wait_for_idle(apps=[router.name, mongodb.name], status="active")
+    return router
 
 
 @pytest.mark.parametrize(
@@ -397,7 +411,7 @@ async def _get_mongodb_uri_from_secrets(ops_test, model: Model) -> str | None:
     mongodb_uri = None
 
     juju_secrets = await model.list_secrets()
-    for secret in juju_secrets["results"]:
+    for secret in juju_secrets:
         if re.match(r"database\.(\d+)\.user\.secret", secret.label):
             _, show_secret, _ = await ops_test.juju(
                 "show-secret", secret.uri, "--reveal", "--format", "json"
