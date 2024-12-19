@@ -114,7 +114,7 @@ def main() -> None:  # pragma: no cover this is checked by integration tests
         since_seconds=args.since,
     )
 
-    print(_create_json_output(redelivery_count))
+    print(json.dumps({"redelivered": redelivery_count}))
 
 
 def _arg_parsing() -> _ParsedArgs:  # pragma: no cover this is checked by integration tests
@@ -203,12 +203,6 @@ def _arg_parsing() -> _ParsedArgs:  # pragma: no cover this is checked by integr
     return _ParsedArgs(
         since=args.since, github_auth_details=github_auth_details, webhook_address=webhook_address
     )
-
-
-# this is checked by integration tests
-def _create_json_output(redelivery_count: int) -> str:  # pragma: no cover
-    """Create a JSON output as string with the redelivery count."""
-    return json.dumps({"redelivered": redelivery_count})
 
 
 def _github_api_exc_decorator(func: Callable[P, R]) -> Callable[P, R]:
