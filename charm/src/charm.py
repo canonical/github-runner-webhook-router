@@ -99,25 +99,25 @@ class FlaskCharm(paas_charm.flask.Charm):
         Returns:
             The GitHub auth environment variables used by the script in the workload.
         """
-        github_token_secret_id = event.params.get(GITHUB_TOKEN_SECRET_ID_PARAM_NAME, "")
-        github_app_client_id = event.params.get(GITHUB_APP_CLIENT_ID_PARAM_NAME, "")
-        github_app_installation_id = event.params.get(GITHUB_APP_INSTALLATION_ID_PARAM_NAME, "")
+        github_token_secret_id = event.params.get(GITHUB_TOKEN_SECRET_ID_PARAM_NAME)
+        github_app_client_id = event.params.get(GITHUB_APP_CLIENT_ID_PARAM_NAME)
+        github_app_installation_id = event.params.get(GITHUB_APP_INSTALLATION_ID_PARAM_NAME)
         github_app_private_key_secret_id = event.params.get(
-            GITHUB_APP_PRIVATE_KEY_SECRET_ID_PARAM_NAME, ""
+            GITHUB_APP_PRIVATE_KEY_SECRET_ID_PARAM_NAME
         )
 
         github_token = (
             self._get_secret_value(github_token_secret_id, "token")
             if github_token_secret_id
-            else ""
+            else None
         )
         github_app_private_key = (
             self._get_secret_value(github_app_private_key_secret_id, "private-key")
             if github_app_private_key_secret_id
-            else ""
+            else None
         )
 
-        return {
+        env_vars = {
             GITHUB_TOKEN_ENV_NAME: github_token,
             GITHUB_APP_CLIENT_ID_ENV_NAME: github_app_client_id,
             GITHUB_APP_INSTALLATION_ID_ENV_NAME: (
@@ -125,6 +125,7 @@ class FlaskCharm(paas_charm.flask.Charm):
             ),
             GITHUB_APP_PRIVATE_KEY_ENV_NAME: github_app_private_key,
         }
+        return {k: v for k,v in env_vars.items() if v}
 
     def _get_secret_value(self, secret_id: str, key: str) -> str:
         """Get the value of a secret.
