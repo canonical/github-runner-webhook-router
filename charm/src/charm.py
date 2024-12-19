@@ -78,18 +78,14 @@ class FlaskCharm(paas_charm.flask.Charm):
             ).wait_output()
             logger.info("Got %s", stdout)
             # only consider the last line as result
-            result = json.loads(
-                stdout.rstrip().split("\n")[-1]
-            )
+            result = json.loads(stdout.rstrip().split("\n")[-1])
             event.set_results(result)
         except ExecError as exc:
             logger.warning("Webhook redelivery failed, script reported: %s", exc.stderr)
             if exc.exit_code == SCRIPT_ARG_PARSE_ERROR_EXIT_CODE:
                 event.fail(f"Argument parsing failed. {exc.stderr}")
                 return
-            event.fail(
-                "Webhooks redelivery failed. Look at the juju logs for more information."
-            )
+            event.fail("Webhooks redelivery failed. Look at the juju logs for more information.")
 
     def _get_github_auth_env(self, event: ActionEvent) -> dict[str, str]:
         """Get the GitHub auth environment variables from the action parameters.
