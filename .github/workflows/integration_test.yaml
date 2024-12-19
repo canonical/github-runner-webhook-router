@@ -16,7 +16,7 @@ jobs:
       trivy-image-config: "trivy.yaml"
       self-hosted-runner: true
       self-hosted-runner-label: 'edge'
-      rockcraft-channel: latest/stable
+      rockcraft-channel: latest/edge
       charmcraft-channel: latest/edge
       modules: '["test_app", "test_webhook_redelivery"]'
       extra-arguments: --webhook-test-repository cbartz-org/gh-runner-test
