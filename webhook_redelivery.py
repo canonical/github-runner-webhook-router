@@ -128,10 +128,11 @@ def _arg_parsing() -> _ParsedArgs:  # pragma: no cover this is checked by integr
     """
     parser = argparse.ArgumentParser(
         description=f"{__doc__}. The script returns the amount of redelivered webhooks in JSON"
-        "format.The script assumes github app auth details to be given via env variables"
-        " via stdin. The format has to be a json object with either the only key"
-        " 'token' or the keys 'app_id', 'installation_id' and 'private_key'.,"
-        " depending on the authentication method (github token vs github app auth) used."
+        " format. The script assumes github authentication details to be given via environment"
+        " variables. Depending on the authentication method, the script expects the environment"
+        f" variable {GITHUB_TOKEN_ENV_NAME} to be passed for token based authentication, or"
+        f" {GITHUB_APP_CLIENT_ID_ENV_NAME}, {GITHUB_APP_INSTALLATION_ID_ENV_NAME},"
+        f" {GITHUB_APP_PRIVATE_KEY_ENV_NAME} for GitHub App authentication."
     )
     parser.add_argument(
         "--since",
@@ -149,7 +150,10 @@ def _arg_parsing() -> _ParsedArgs:  # pragma: no cover this is checked by integr
         required=True,
     )
     parser.add_argument(
-        "--webhook-id", type=int, help="The identifier of the webhook.", required=True
+        "--webhook-id",
+        type=int,
+        help="The identifier of the webhook for which delivery attempts are being checked.",
+        required=True,
     )
     args = parser.parse_args()
 
@@ -160,10 +164,10 @@ def _arg_parsing() -> _ParsedArgs:  # pragma: no cover this is checked by integr
 
     github_auth_details: GithubAuthDetails
     got_str = (
-        f" Got github_app_client_id = {github_app_client_id},"
-        f" github_app_installation_id = {github_app_installation_id},"
-        f" github_app_private_key = {'***' if github_app_private_key else None},"
-        f" github_token = {'***' if github_app_private_key else None}",
+        f" Got {GITHUB_APP_CLIENT_ID_ENV_NAME} = {github_app_client_id},"
+        f" {GITHUB_APP_INSTALLATION_ID_ENV_NAME} = {github_app_installation_id},"
+        f" {GITHUB_APP_PRIVATE_KEY_ENV_NAME} = {'***' if github_app_private_key else None},"
+        f" {GITHUB_TOKEN_ENV_NAME} = {'***' if github_app_private_key else None}",
     )
     if github_token and (
         github_app_client_id or github_app_installation_id or github_app_private_key
@@ -203,11 +207,7 @@ def _arg_parsing() -> _ParsedArgs:  # pragma: no cover this is checked by integr
 
 # this is checked by integration tests
 def _create_json_output(redelivery_count: int) -> str:  # pragma: no cover
-    """Create a JSON output as strong  with the redelivery count.
-
-    Args:
-        redelivery_count: The number of redelivered webhooks.
-    """
+    """Create a JSON output as string with the redelivery count."""
     return json.dumps({"redelivered": redelivery_count})
 
 
@@ -254,7 +254,7 @@ def _github_api_exc_decorator(func: Callable[P, R]) -> Callable[P, R]:
 def _redeliver_failed_webhook_delivery_attempts(
     github_auth: GithubAuthDetails, webhook_address: WebhookAddress, since_seconds: int
 ) -> int:
-    """Redeliver failed webhook deliveries since a given time.
+    """Redeliver failed webhook deliveries since a certain number of seconds ago.
 
     Args:
         github_auth: The GitHub authentication details used to interact with the Github API.
@@ -269,7 +269,7 @@ def _redeliver_failed_webhook_delivery_attempts(
 
     deliveries = _iter_delivery_attempts(github_client=github, webhook_address=webhook_address)
     since_datetime = datetime.now(tz=timezone.utc) - timedelta(seconds=since_seconds)
-    failed_deliveries = _filter_for_failed_attempts(
+    failed_deliveries = _filter_for_failed_attempts_since(
         deliveries=deliveries, since_datetime=since_datetime
     )
     redelivered_count = _redeliver_attempts(
@@ -335,7 +335,7 @@ def _iter_delivery_attempts(
         )
 
 
-def _filter_for_failed_attempts(
+def _filter_for_failed_attempts_since(
     deliveries: Iterator[_WebhookDeliveryAttempt], since_datetime: datetime
 ) -> Iterator[_WebhookDeliveryAttempt]:
     """Filter webhook delivery attempts for failed deliveries since a given time.

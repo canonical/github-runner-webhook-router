@@ -121,11 +121,11 @@ class FlaskCharm(paas_charm.flask.Charm):
             GITHUB_TOKEN_ENV_NAME: github_token,
             GITHUB_APP_CLIENT_ID_ENV_NAME: github_app_client_id,
             GITHUB_APP_INSTALLATION_ID_ENV_NAME: (
-                str(github_app_installation_id) if github_app_installation_id else ""
+                str(github_app_installation_id) if github_app_installation_id else None
             ),
             GITHUB_APP_PRIVATE_KEY_ENV_NAME: github_app_private_key,
         }
-        return {k: v for k,v in env_vars.items() if v}
+        return {k: v for k, v in env_vars.items() if v}
 
     def _get_secret_value(self, secret_id: str, key: str) -> str:
         """Get the value of a secret.
