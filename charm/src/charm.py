@@ -86,10 +86,10 @@ class FlaskCharm(paas_charm.flask.Charm):
             logger.warning("Webhook redelivery failed, script reported: %s", exc.stderr)
             if exc.exit_code == SCRIPT_ARG_PARSE_ERROR_EXIT_CODE:
                 event.fail(f"Argument parsing failed. {exc.stderr}")
-            else:
-                event.fail(
-                    "Webhooks redelivery failed. Look at the juju logs for more information."
-                )
+                return
+            event.fail(
+                "Webhooks redelivery failed. Look at the juju logs for more information."
+            )
 
     def _get_github_auth_env(self, event: ActionEvent) -> dict[str, str]:
         """Get the GitHub auth environment variables from the action parameters.
