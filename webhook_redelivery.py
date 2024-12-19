@@ -76,7 +76,7 @@ class WebhookAddress:
 
 
 @dataclass
-class _WebhookDeliveryAttempts:
+class _WebhookDeliveryAttempt:
     """The details of a webhook delivery attempt.
 
     Attributes:
@@ -301,7 +301,7 @@ def _get_github_client(github_auth: GithubAuthDetails) -> Github:  # pragma: no 
 
 def _iter_delivery_attempts(
     github_client: Github, webhook_address: WebhookAddress
-) -> Iterator[_WebhookDeliveryAttempts]:
+) -> Iterator[_WebhookDeliveryAttempt]:
     """Iterate over webhook delivery attempts.
 
     Args:
@@ -326,7 +326,7 @@ def _iter_delivery_attempts(
                 f"The webhook delivery {delivery.raw_data} is missing required fields:"
                 f" {none_fields}"
             )
-        yield _WebhookDeliveryAttempts(
+        yield _WebhookDeliveryAttempt(
             id=delivery.id,  # type: ignore
             status=delivery.status,  # type: ignore
             delivered_at=delivery.delivered_at,  # type: ignore
@@ -336,8 +336,8 @@ def _iter_delivery_attempts(
 
 
 def _filter_for_failed_attempts(
-    deliveries: Iterator[_WebhookDeliveryAttempts], since_datetime: datetime
-) -> Iterator[_WebhookDeliveryAttempts]:
+    deliveries: Iterator[_WebhookDeliveryAttempt], since_datetime: datetime
+) -> Iterator[_WebhookDeliveryAttempt]:
     """Filter webhook delivery attempts for failed deliveries since a given time.
 
     Args:
@@ -357,7 +357,7 @@ def _filter_for_failed_attempts(
 
 
 def _redeliver_attempts(
-    deliveries: Iterator[_WebhookDeliveryAttempts],
+    deliveries: Iterator[_WebhookDeliveryAttempt],
     github_client: Github,
     webhook_address: WebhookAddress,
 ) -> int:
