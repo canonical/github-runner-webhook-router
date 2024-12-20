@@ -9,6 +9,14 @@ tox devenv -e integration
 source venv/bin/activate
 ```
 
+## Repository structure
+
+The repository contains the charm code in the `charm` directory and the code for the workload
+in the root directory. The charm directory has been built using the
+[`paas-charm`](https://juju.is/docs/sdk/12-factor-app-charm) approach and then modified to support
+the specific actions of this charm.
+
+
 ## Generating src docs for every commit
 
 Run the following command:
