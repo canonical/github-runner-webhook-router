@@ -279,7 +279,10 @@ async def _get_unit_ips(app: Application) -> tuple[str, ...]:
         a tuple containing unit ip addresses.
     """
     status = await app.model.get_status()
-    return tuple(unit.address for unit in status.applications[app.name].units.values())
+    app_status = status.applications[app.name]
+    assert app_status is not None, f"Application {app.name} not found in status"
+    # mypy does not recognize that app_status is of type ApplicationStatus
+    return tuple(unit.address for unit in app_status.units.values())  # type: ignore
 
 
 def _request(payload: dict, webhook_secret: Optional[str], base_url: str) -> requests.Response:
