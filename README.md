@@ -52,6 +52,16 @@ Change the webhook secret used for webhook validation:
 juju config github-runner-webhook-router webhook-secret=<your-secret>
 ```
 
+In an error scenario, you may want to redeliver failed webhook deliveries. You can use
+the `redeliver-failed-webhooks` action to redeliver failed webhook deliveries. The following 
+example redelivers failed deliveries since last minute for a webhook with ID `516986490`
+
+```shell
+juju add-secret github-token token=<your-token> # the token needs webhook write permissions
+# output is: secret:ctik2gfmp25c7648t7j0
+juju run-action github-runner-webhook-router/0 redeliver-failed-webhook github-path=canonical/github-runner-webhook-router webhook-id=516986490 since=60 github-token-secret-id=ctik2gfmp25c7648t7j0
+```
+
 ### Integrations
 
 The charm requires an integration with MongoDB (either the [machine](https://charmhub.io/mongodb)
