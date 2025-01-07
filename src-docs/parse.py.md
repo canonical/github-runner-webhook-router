@@ -5,13 +5,10 @@
 # <kbd>module</kbd> `parse.py`
 Module for parsing the webhook payload. 
 
-**Global Variables**
----------------
-- **WORKFLOW_JOB**
 
 ---
 
-<a href="../webhook_router/parse.py#L52"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../webhook_router/parse.py#L49"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `webhook_to_job`
 

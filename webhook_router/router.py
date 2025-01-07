@@ -1,4 +1,4 @@
-#  Copyright 2024 Canonical Ltd.
+#  Copyright 2025 Canonical Ltd.
 #  See LICENSE file for licensing details.
 """Module for routing webhooks to the appropriate message queue."""
 import itertools
@@ -11,7 +11,7 @@ from webhook_router.parse import Job, JobStatus
 
 logger = logging.getLogger(__name__)
 
-WORKFLOW_JOB = "workflow_job"
+ROUTABLE_JOB_STATUS = JobStatus.QUEUED
 Flavor = str
 Label = str
 LabelCombinationIdentifier = tuple[Label, ...]
@@ -98,7 +98,7 @@ def forward(job: Job, routing_table: RoutingTable) -> None:
     Raises:
         RouterError: If the job cannot be forwarded.
     """
-    if job.status != JobStatus.QUEUED:
+    if job.status != ROUTABLE_JOB_STATUS:
         logger.debug("Received job with status %s. Ignoring.", job.status)
         return
 

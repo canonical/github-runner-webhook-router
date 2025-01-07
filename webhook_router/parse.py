@@ -1,4 +1,4 @@
-#  Copyright 2024 Canonical Ltd.
+#  Copyright 2025 Canonical Ltd.
 #  See LICENSE file for licensing details.
 
 """Module for parsing the webhook payload."""
@@ -7,9 +7,6 @@ from enum import Enum
 from typing import Collection
 
 from pydantic import BaseModel, HttpUrl
-
-WORKFLOW_JOB = "workflow_job"
-
 
 ValidationResult = namedtuple("ValidationResult", ["is_valid", "msg"])
 Labels = set[str]

@@ -5,9 +5,6 @@
 # <kbd>module</kbd> `router.py`
 Module for routing webhooks to the appropriate message queue. 
 
-**Global Variables**
----------------
-- **WORKFLOW_JOB**
 
 ---
 
