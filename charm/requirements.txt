@@ -1,1 +1,1 @@
-paas-charm~=1.2.0
+https://github.com/canonical/paas-charm/archive/feat/block-on-missing.tar.gz
