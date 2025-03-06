@@ -1,1 +1,1 @@
-https://github.com/canonical/paas-charm/archive/smtp-integration.tar.gz
+paas-charm~=1.4.0
