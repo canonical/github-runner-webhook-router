@@ -1,1 +1,1 @@
-paas-charm~=1.4.0
+https://github.com/canonical/paas-charm/archive/feat/non-root.tar.gz
