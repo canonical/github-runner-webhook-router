@@ -1,1 +1,1 @@
-https://github.com/canonical/paas-charm/archive/feat/non-root.tar.gz
+https://github.com/canonical/paas-charm/archive/ISD-2870-Fix-pebble-command-bug.tar.gz
