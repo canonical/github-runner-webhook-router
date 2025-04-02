@@ -4,7 +4,6 @@
 name: github-runner-webhook-router
 
 type: charm
-charm-user: non-root
 
 bases:
   - build-on:
