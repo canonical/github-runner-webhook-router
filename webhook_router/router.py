@@ -115,8 +115,8 @@ def forward(job: Job, routing_table: RoutingTable) -> None:
         json.dumps(
             {
                 "log_type": "job_forwarded",
-                "labels": [label for label in job.labels],
-                "url": job.url,
+                "labels": list(job.labels),
+                "url": str(job.url),
                 "flavor": flavor,
             }
         )
