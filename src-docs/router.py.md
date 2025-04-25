@@ -8,7 +8,7 @@ Module for routing webhooks to the appropriate message queue.
 
 ---
 
-<a href="../webhook_router/router.py#L39"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../webhook_router/router.py#L40"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `to_routing_table`
 
@@ -36,7 +36,7 @@ Convert the flavor label mapping to a route table.
 
 ---
 
-<a href="../webhook_router/router.py#L91"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../webhook_router/router.py#L92"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `forward`
 
@@ -62,7 +62,7 @@ Forward the job to the appropriate message queue.
 
 ---
 
-<a href="../webhook_router/router.py#L117"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../webhook_router/router.py#L127"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `can_forward`
 
