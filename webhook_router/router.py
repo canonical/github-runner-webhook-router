@@ -2,6 +2,7 @@
 #  See LICENSE file for licensing details.
 """Module for routing webhooks to the appropriate message queue."""
 import itertools
+import json
 import logging
 
 from pydantic import BaseModel
@@ -110,7 +111,16 @@ def forward(job: Job, routing_table: RoutingTable) -> None:
     except _InvalidLabelCombinationError as e:
         raise RouterError(f"Not able to forward job: {e}") from e
 
-    logger.info("Received job %s for flavor %s", job.json(), flavor)
+    logger.info(
+        json.dumps(
+            {
+                "log_type": "job_forwarded",
+                "labels": list(job.labels),
+                "url": str(job.url),
+                "flavor": flavor,
+            }
+        )
+    )
     mq.add_job_to_queue(job, flavor)
 
 
