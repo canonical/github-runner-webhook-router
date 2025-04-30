@@ -56,7 +56,7 @@ class FlaskCharm(paas_charm.flask.Charm):
         Returns:
             Return the directory with COS related files.
         """
-        return str(pathlib.Path(__file__).parent).absolute()
+        return str(pathlib.Path(__file__).parent.absolute())
 
 
     def _on_redeliver_failed_webhooks_action(self, event: ops.charm.ActionEvent) -> None:
