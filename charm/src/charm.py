@@ -5,6 +5,7 @@
 """Flask Charm entrypoint."""
 import json
 import logging
+import pathlib
 import typing
 
 import ops
@@ -48,6 +49,15 @@ class FlaskCharm(paas_charm.flask.Charm):
         self.framework.observe(
             self.on.redeliver_failed_webhooks_action, self._on_redeliver_failed_webhooks_action
         )
+
+    def get_cos_dir(self) -> str:
+        """Return the directory with COS related files.
+
+        Returns:
+            Return the directory with COS related files.
+        """
+        return str(pathlib.Path(__file__).parent).absolute()
+
 
     def _on_redeliver_failed_webhooks_action(self, event: ops.charm.ActionEvent) -> None:
         """Redeliver failed webhooks since a given time."""
