@@ -13,9 +13,8 @@ For DevOps or SRE teams this charm will make operating the Flask application sim
 and straightforward through Juju's clean interface. It will allow easy
 deployment into multiple environments for testing of changes.
 
-> **Warning**
-Work in progress: This charm is still in development and not yet ready for use in production.
-
+The charm integrates with the [Canonical Observability Stack](https://charmhub.io/topics/canonical-observability-stack)
+to provide application and Flask related metrics via Grafana dashboards.
 
 ## Contributing to this documentation
 
