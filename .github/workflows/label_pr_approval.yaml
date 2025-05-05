@@ -7,6 +7,4 @@ jobs:
   label_approval:
     uses: canonical/operator-workflows/.github/workflows/label_approval.yaml@approval-on-label
     secrets: inherit
-    with:
-      label: trivial
 
