@@ -1,4 +1,4 @@
-name: Provide approval for bot PRs
+name: Provide approval on label
 
 on:
   pull_request:
