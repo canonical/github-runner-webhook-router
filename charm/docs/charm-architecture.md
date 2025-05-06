@@ -1,6 +1,6 @@
 # Charm architecture
 
-The GitHub Runner Webhook Router is a Flask application tha provides a webhook router for self-hosted GitHub Actions runners. The [GitHub Runner Webhook Router charm](https://github.com/canonical/github-runner-webhook-router/) was developed using the [12-factor Flask framework](https://canonical-charmcraft.readthedocs-hosted.com/en/stable/reference/extensions/go-framework-extension/). This framework allows us to easily deploy and operate Github Runner Webhook Router and its associated infrastructure, such as MongoDB and ingress.
+The GitHub Runner Webhook Router is a Flask application that provides a webhook router for self-hosted GitHub Actions runners. The [GitHub Runner Webhook Router charm](https://github.com/canonical/github-runner-webhook-router/) was developed using the [12-factor Flask framework](https://canonical-charmcraft.readthedocs-hosted.com/en/stable/reference/extensions/flask-framework-extension/). This framework allows us to easily deploy and operate the Github Runner Webhook Router and its associated infrastructure, such as MongoDB and ingress.
 
 It leverages the [12-factor](https://canonical-12-factor-app-support.readthedocs-hosted.com/en/latest/) support to pack a [Flask](https://flask.palletsprojects.com/) application providing the functionality for the webhook router.
 
@@ -16,7 +16,7 @@ C4Container
 System_Boundary(webhookroutercharm, "Github Runner Webhook Router Charm") {
 
     Container_Boundary(webhookrouter_container, "Github Runner Webhook Router Workload Container") {
-        Component(webhookrouter_core, "Webhook Router", "Flask Application", "Serves web requests, publish messages.")
+        Component(webhookrouter_core, "Webhook Router", "Flask Application", "Serves web requests, publishes messages")
     }
 
     Container_Boundary(charm_container, "Charm Container") {
@@ -60,7 +60,7 @@ The rock and the charm are published to [Charmhub](https://charmhub.io/), the of
 
 ## Metrics
 
-Metrics are provider by the workload container at the `/metrics` endpoint at port 9102. See [flask framework](https://documentation.ubuntu.com/rockcraft/en/latest/reference/extensions/flask-framework/) for
+Metrics are provider by the workload container at the `/metrics` endpoint at port 9102. See the [Flask framework reference](https://documentation.ubuntu.com/rockcraft/en/latest/reference/extensions/flask-framework/) for
 more information about metrics in Flask applications based on [12-factor app support in Charmcraft and Rockcraft](https://canonical-12-factor-app-support.readthedocs-hosted.com).
 
 ## Juju events
