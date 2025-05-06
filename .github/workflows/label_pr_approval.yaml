@@ -5,7 +5,7 @@ on:
 
 jobs:
   label_approval:
-    uses: canonical/operator-workflows/.github/workflows/label_approval.yaml@approval-on-label
+    uses: canonical/operator-workflows/.github/workflows/label_pr_approval.yaml@approval-on-label
     secrets: inherit
     with:
       labels: '["bug", "enhancement"]'
