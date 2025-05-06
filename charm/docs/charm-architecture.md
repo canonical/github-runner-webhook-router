@@ -1,10 +1,34 @@
 # Charm architecture
 
-The GitHub Runner Webhook Router is a Flask application tha provides a webhook router for self-hosted GitHub Actions runners.The [GitHub Runner Webhook Router charm](https://github.com/canonical/github-runner-webhook-router/) was developed using the [12-factor Go framework](https://canonical-charmcraft.readthedocs-hosted.com/en/stable/reference/extensions/go-framework-extension/). This framework allows us to easily deploy and operate Github Runner Webhook Router and its associated infrastructure, such as MongoDB and ingress.
+The GitHub Runner Webhook Router is a Flask application tha provides a webhook router for self-hosted GitHub Actions runners. The [GitHub Runner Webhook Router charm](https://github.com/canonical/github-runner-webhook-router/) was developed using the [12-factor Flask framework](https://canonical-charmcraft.readthedocs-hosted.com/en/stable/reference/extensions/go-framework-extension/). This framework allows us to easily deploy and operate Github Runner Webhook Router and its associated infrastructure, such as MongoDB and ingress.
 
 It leverages the [12-factor](https://canonical-12-factor-app-support.readthedocs-hosted.com/en/latest/) support to pack a [Flask](https://flask.palletsprojects.com/) application providing the functionality for the webhook router.
 
 For a complete view on the architecture of a 12-factor charm, refer to the [12-factor architecture documentation](https://canonical-12-factor-app-support.readthedocs-hosted.com/en/latest/explanation/charm-architecture/).
+
+## Charm architecture diagram
+
+Below is a diagram of the application architecture of the GitHub Runner Webhook Router charm.
+
+```mermaid
+C4Container
+
+System_Boundary(webhookroutercharm, "Github Runner Webhook Router Charm") {
+
+    Container_Boundary(webhookrouter_container, "Github Runner Webhook Router Workload Container") {
+        Component(webhookrouter_core, "Webhook Router", "Flask Application", "Serves web requests, publish messages.")
+    }
+
+    Container_Boundary(charm_container, "Charm Container") {
+        Component(charm_logic, "Charm Logic", "Juju Operator Framework", "Controls application deployment & config")
+    }
+}
+
+Rel(charm_logic, webhookrouter_core, "Supervises<br>process")
+
+UpdateRelStyle(charm_logic, webhookrouter_core, $offsetX="-30")
+
+```
 
 
 The charm design leverages the [sidecar](https://kubernetes.io/blog/2015/06/the-distributed-system-toolkit-patterns/#example-1-sidecar-containers) pattern to allow multiple containers in each pod with [Pebble](https://ops.readthedocs.io/en/latest/reference/pebble.html) running as the workload container’s entrypoint.
