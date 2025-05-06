@@ -18,6 +18,13 @@ deployment into multiple environments for testing of changes.
 The charm integrates with the [Canonical Observability Stack](https://charmhub.io/topics/canonical-observability-stack)
 to provide application and Flask related metrics via Grafana dashboards.
 
+## In this documentation
+
+| | |
+|--|--|
+|--| [Explanation](https://charmhub.io/github-runner-webhook-router/docs/explanation-charm-architecture) </br> Concepts - discussion and clarification of key topics  |
+
+
 ## Contributing to this documentation
 
 Documentation is an important part of this project, and we take the
