@@ -23,6 +23,12 @@ description: |
 extensions:
   - flask-framework
 
+links:
+  documentation: https://discourse.charmhub.io/t/github-runner-webhook-router-documentation-overview/17726
+  issues: https://github.com/canonical/github-runner-webhook-router/issues
+  source: https://github.com/canonical/github-runner-webhook-router
+  contact: https://launchpad.net/~canonical-is-devops
+
 requires:
   mongodb:
     optional: false
