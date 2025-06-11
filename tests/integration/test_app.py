@@ -362,11 +362,11 @@ print(json.dumps(jobs_by_flavour))
         "echo",
         f"'{kombu_script}'",
         ">",
-        "/kombu_script.py",
+        "/flask/kombu_script.py",
     )
     assert code == 0, f"Failed to write kombu script: {stderr}"
     code, stdout, stderr = await ops_test.juju(
-        "ssh", "--container", "flask-app", unit.name, "python3", "/kombu_script.py"
+        "ssh", "--container", "flask-app", unit.name, "python3", "/flask/kombu_script.py"
     )
     assert code == 0, f"Failed to execute kombu script: {stderr}"
     jobs_raw_by_flavor = json.loads(stdout)
