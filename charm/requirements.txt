@@ -1,1 +1,1 @@
-paas-charm~=1.6.0
+paas-charm~=1.7.1
