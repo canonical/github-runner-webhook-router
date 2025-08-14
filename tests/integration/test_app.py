@@ -132,22 +132,22 @@ async def test_forward_webhook(  # pylint: disable=too-many-locals
         pytest.param(
             JobStatus.COMPLETED,
             ["linux", "self-hosted", "default"],
-            id="non forwarded status - completed",
+            id="non forwardable status - completed",
         ),
         pytest.param(
             JobStatus.IN_PROGRESS,
             ["linux", "self-hosted", "default"],
-            id="non forwarded status - in-progress",
+            id="non forwardable status - in-progress",
         ),
         pytest.param(
             JobStatus.WAITING,
             ["linux", "self-hosted", "default"],
-            id="non forwarded status - waiting",
+            id="non forwardable status - waiting",
         ),
         pytest.param(
             JobStatus.QUEUED,
             ["linux", "self-hosted", "invalid"],
-            id="forwarded status but non forwarded labels",
+            id="forwardable status but non forwardable labels",
         ),
     ],
 )
