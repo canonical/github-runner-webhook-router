@@ -57,7 +57,7 @@ Forward the job to the appropriate message queue.
 
 **Raises:**
  
- - <b>`RouterError`</b>:  If the job cannot be forwarded. 
+ - <b>`NonForwardableJobError`</b>:  If the job cannot be forwarded. 
 
 
 ---
@@ -80,8 +80,8 @@ Check if the router can forward jobs.
 
 ---
 
-## <kbd>class</kbd> `RouterError`
-Raised when a router error occurs. 
+## <kbd>class</kbd> `NonForwardableJobError`
+Raised when a job cannot be forwarded due to non-matching labels in the routing table. 
 
 
 

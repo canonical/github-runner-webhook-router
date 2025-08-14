@@ -11,7 +11,7 @@ from pydantic import BaseModel
 
 from webhook_router import router
 from webhook_router.parse import Job, ParseError, webhook_to_job
-from webhook_router.router import RouterError, to_routing_table
+from webhook_router.router import NonForwardableJobError, to_routing_table
 from webhook_router.validation import verify_signature
 
 SUPPORTED_GITHUB_EVENT = "workflow_job"
@@ -172,12 +172,13 @@ def handle_github_webhook() -> tuple[str, int]:
 
     app.logger.debug("Parsed job: %s", job)
 
+    return_msg = ""
     try:
         router.forward(job, routing_table=app.config["ROUTING_TABLE"])
-    except RouterError as exc:
+    except NonForwardableJobError as exc:
         app.logger.error(str(exc))
-        return str(exc), 400
-    return "", 200
+        return_msg = "Not able to forward job due to non-matching labels."
+    return return_msg, 200
 
 
 def _validate_signature_header(signature_header: str, secret: str) -> ValidationResult:

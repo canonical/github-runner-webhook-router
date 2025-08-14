@@ -17,7 +17,7 @@ import webhook_router.app as app_module
 import webhook_router.router
 from tests.unit.helpers import create_correct_signature, create_incorrect_signature
 from webhook_router.parse import Job, JobStatus, ParseError
-from webhook_router.router import RouterError, RoutingTable
+from webhook_router.router import NonForwardableJobError, RoutingTable
 
 TEST_PATH = "/webhook"
 TEST_LABELS = ["self-hosted", "linux", "arm64"]
@@ -188,15 +188,15 @@ def test_router_error(client: FlaskClient, router_mock: MagicMock):
     act: Post a request to the webhook endpoint with a valid payload for the supported event.
     assert: 200 status code is returned and the logs contain the expected job and flavors.
     """
-    router_mock.forward.side_effect = RouterError("Invalid label combination")
+    router_mock.forward.side_effect = NonForwardableJobError("Invalid label combination")
     data = _create_valid_data(JobStatus.QUEUED)
     response = client.post(
         TEST_PATH,
         json=data,
         headers={app_module.GITHUB_EVENT_HEADER: app_module.SUPPORTED_GITHUB_EVENT},
     )
-    assert response.status_code == 400
-    assert "Invalid label combination" in response.data.decode("utf-8")
+    assert response.status_code == 200
+    assert "Not able to forward job" in response.data.decode("utf-8")
 
 
 @pytest.mark.usefixtures("router_mock")
