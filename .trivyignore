@@ -9,3 +9,5 @@ CVE-2024-45338
 CVE-2025-22874
 # Vulnerability in golang.org/x/oauth2/jws introduced by statsd-exporter.
 CVE-2025-22868
+# Vulnerability in go stdlib introduced by statsd-exporter.
+CVE-2025-47907

@@ -70,6 +70,7 @@ class FlaskCharm(paas_charm.flask.Charm):
         try:
             auth_env = self._get_github_auth_env(event)
         except _ActionParamsInvalidError as exc:
+            logger.exception("Invalid action parameters passed, %s", exc)
             event.fail(f"Invalid action parameters passed: {exc}")
             return
         try:
