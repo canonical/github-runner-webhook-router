@@ -126,29 +126,51 @@ async def test_forward_webhook(  # pylint: disable=too-many-locals
             ), f"Expected: {expected_jobs_for_flavour}, Actual: {actual_jobs}"
 
 
-async def test_receive_webhook_not_forwarded(ops_test: OpsTest, model: Model, app: Application):
+@pytest.mark.parametrize(
+    "status, labels",
+    [
+        pytest.param(
+            JobStatus.COMPLETED,
+            ["linux", "self-hosted", "default"],
+            id="non forwarded status - completed",
+        ),
+        pytest.param(
+            JobStatus.IN_PROGRESS,
+            ["linux", "self-hosted", "default"],
+            id="non forwarded status - in-progress",
+        ),
+        pytest.param(
+            JobStatus.WAITING,
+            ["linux", "self-hosted", "default"],
+            id="non forwarded status - waiting",
+        ),
+        pytest.param(
+            JobStatus.QUEUED,
+            ["linux", "self-hosted", "invalid"],
+            id="forwarded status but non forwarded labels",
+        ),
+    ],
+)
+async def test_receive_webhook_not_forwarded(
+    status: str, labels: list[str], ops_test: OpsTest, model: Model, app: Application
+):
     """
     arrange: given a running charm with a particular flavour mapping
-    act: call the webhook endpoint with payloads with statuses that should not be forwarded
+    act: call the webhook endpoint with statuses or labels that should not be forwarded
     assert: the mq does not contain any jobs
     """
     flavours_yaml = "- default: [default]"
-    non_logged_statuses = [JobStatus.COMPLETED, JobStatus.IN_PROGRESS, JobStatus.WAITING]
     await app.set_config({"webhook-secret": "", "flavours": flavours_yaml})
     await model.wait_for_idle(apps=[app.name], status="active")
 
-    payloads = [
-        _create_valid_data(status, labels=["linux", "self-hosted", "default"])
-        for status in non_logged_statuses
-    ]
+    payload = _create_valid_data(status, labels=labels)
 
     address = (await _get_unit_ips(app))[0]
-    for payload in payloads:
-        # bandit thinks webhook_secret is a hardcoded password, ignore for the test
-        resp = _request(
-            payload=payload, webhook_secret="", base_url=f"http://{address}:{PORT}"
-        )  # nosec
-        assert resp.status_code == 200
+    # bandit thinks webhook_secret is a hardcoded password, ignore for the test
+    resp = _request(
+        payload=payload, webhook_secret="", base_url=f"http://{address}:{PORT}"
+    )  # nosec
+    assert resp.status_code == 200
 
     jobs_by_flavour = await _get_jobs_from_mq(
         ops_test=ops_test, unit=app.units[0], flavors=["default"]
@@ -164,9 +186,8 @@ async def test_receive_webhook_client_error(model: Model, app: Application):
         1. missing webhook signature header
         2. wrong signature
         3. missing X-Github-Event header
-        4. invalid label combination
-        5. invalid payload
-    assert: the response status code is 403 for 1. + 2. and 400 for 3. + 4. + 5.
+        4. invalid payload
+    assert: the response status code is 403 for 1. + 2. and 400 for 3. + 4..
     """
     flavours_yaml = "- default: [default]"
     webhook_secret = secrets.token_hex(16)
@@ -203,21 +224,7 @@ async def test_receive_webhook_client_error(model: Model, app: Application):
     resp = requests.post(webhook_url, data=payload_bytes, headers=actual_headers, timeout=1)
     assert resp.status_code == 400
 
-    # 4. invalid label combination
-    actual_payload = _create_valid_data(
-        "queued", labels=["linux", "self-hosted", "default", "invalid"]
-    )
-    actual_payload_bytes = json.dumps(actual_payload).encode("utf-8")
-    actual_signature = _create_signature(actual_payload_bytes, webhook_secret)
-    actual_headers = {
-        "Content-Type": "application/json",
-        GITHUB_EVENT_HEADER: SUPPORTED_GITHUB_EVENT,
-        WEBHOOK_SIGNATURE_HEADER: actual_signature,
-    }
-    resp = requests.post(webhook_url, data=actual_payload_bytes, headers=actual_headers, timeout=1)
-    assert resp.status_code == 400
-
-    # 5. invalid payload
+    # 4. invalid payload
     actual_payload = {"payload": {"action": "queued"}}
     actual_payload_bytes = json.dumps(actual_payload).encode("utf-8")
     actual_signature = _create_signature(actual_payload_bytes, webhook_secret)
