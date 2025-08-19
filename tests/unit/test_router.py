@@ -10,7 +10,7 @@ import pytest
 from webhook_router.mq import add_job_to_queue
 from webhook_router.parse import Job, JobStatus
 from webhook_router.router import (
-    RouterError,
+    NonForwardableJobError,
     RoutingTable,
     _InvalidLabelCombinationError,
     _labels_to_flavor,
@@ -66,7 +66,7 @@ def test_invalid_label_combination():
     """
     arrange: A job with an invalid label combination.
     act: Forward the job to the message queue.
-    assert: A RouterError is raised.
+    assert: A NonForwardableJobError is raised.
     """
     # mypy does not understand that we can pass strings instead of HttpUrl objects
     # because of the underlying pydantic magic
@@ -75,7 +75,7 @@ def test_invalid_label_combination():
         status=JobStatus.QUEUED,
         url="https://api.github.com/repos/f/actions/jobs/8200803099",  # type: ignore
     )
-    with pytest.raises(RouterError) as e:
+    with pytest.raises(NonForwardableJobError) as e:
         forward(
             job,
             routing_table=RoutingTable(value={}, default_flavor="default"),

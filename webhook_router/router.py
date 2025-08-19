@@ -18,8 +18,8 @@ Label = str
 LabelCombinationIdentifier = tuple[Label, ...]
 
 
-class RouterError(Exception):
-    """Raised when a router error occurs."""
+class NonForwardableJobError(Exception):
+    """Raised when a job cannot be forwarded due to non-matching labels in the routing table."""
 
 
 class RoutingTable(BaseModel):
@@ -97,7 +97,7 @@ def forward(job: Job, routing_table: RoutingTable) -> None:
         routing_table: The mapping of labels to flavors.
 
     Raises:
-        RouterError: If the job cannot be forwarded.
+        NonForwardableJobError: If the job cannot be forwarded.
     """
     if job.status != ROUTABLE_JOB_STATUS:
         logger.debug("Received job with status %s. Ignoring.", job.status)
@@ -109,7 +109,7 @@ def forward(job: Job, routing_table: RoutingTable) -> None:
             routing_table=routing_table,
         )
     except _InvalidLabelCombinationError as e:
-        raise RouterError(f"Not able to forward job: {e}") from e
+        raise NonForwardableJobError(f"Not able to forward job: {e}") from e
 
     logger.info(
         json.dumps(
