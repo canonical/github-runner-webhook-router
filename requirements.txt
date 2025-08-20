@@ -1,6 +1,6 @@
-Flask==3.1.1
+Flask==3.1.2
 pydantic==2.11.7
 kombu==5.5.4
-pymongo==4.14.0
+pymongo==4.14.1
 PyYAML==6.0.*
 pygithub==2.7.0
