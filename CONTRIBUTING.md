@@ -1,6 +1,6 @@
 # Contributing
 
-To make contributions to this charm, you'll need a working [development setup](https://juju.is/docs/sdk/dev-setup).
+To make contributions to this charm, you'll need a working [development setup](https://documentation.ubuntu.com/juju/3.6/howto/manage-your-juju-deployment/set-up-your-juju-deployment-local-testing-and-development/).
 
 You can create an environment for development with `tox`:
 
@@ -13,7 +13,7 @@ source venv/bin/activate
 
 The repository contains the charm code in the `charm` directory and the code for the workload
 in the root directory. The charm directory has been built using the
-[`paas-charm`](https://juju.is/docs/sdk/12-factor-app-charm) approach and then modified to support
+[`paas-charm`](https://canonical-12-factor-app-support.readthedocs-hosted.com/latest/) approach and then modified to support
 the specific actions of this charm.
 
 

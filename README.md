@@ -1,4 +1,7 @@
-# GitHub Runner Webhook Router
+<!-- vale Canonical.007-Headings-sentence-case = NO -->
+# GitHub runner webhook router
+<!-- vale Canonical.007-Headings-sentence-case = YES -->
+
 [![CharmHub Badge](https://charmhub.io/github-runner-webhook-router/badge.svg)](https://charmhub.io/github-runner-webhook-router)
 [![Promote charm](https://github.com/canonical/github-runner-webhook-router/actions/workflows/promote_charm.yaml/badge.svg)](https://github.com/canonical/github-runner-webhook-router/actions/workflows/promote_charm.yaml)
 [![Discourse Status](https://img.shields.io/discourse/status?server=https%3A%2F%2Fdiscourse.charmhub.io&style=flat&label=CharmHub%20Discourse)](https://discourse.charmhub.io)
@@ -74,8 +77,8 @@ see the [Charmhub documentation](https://charmhub.io/github-runner-webhook-route
 * [Read more](https://charmhub.io/github-runner-webhook-router)
 * [Developer documentation](https://github.com/canonical/github-runner-webhook-router/blob/main/CONTRIBUTING.md)
 * [PaaS Charm repository](https://github.com/canonical/paas-charm)
-* [Write your first Kubernetes charm for a Flask app](https://juju.is/docs/sdk/write-your-first-kubernetes-charm-for-a-flask-app)
-* [How to build a 12-Factor app charm](https://juju.is/docs/sdk/build-a-12-factor-app-charm)
+* [Write your first Kubernetes charm for a Flask app](https://documentation.ubuntu.com/charmcraft/stable/tutorial/kubernetes-charm-flask/)
+* [How to build a 12-Factor app charm](https://documentation.ubuntu.com/charmcraft/stable/howto/manage-web-app-charms/)
 * [Troubleshooting](https://matrix.to/#/#12-factor-charms:ubuntu.com)
 
 ## Project and community
