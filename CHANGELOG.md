@@ -9,6 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Place here any unreleased changes that are subject to release in coming versions :).
 
-## 2025-09-02
+## 2025-09-03
 
 - Added changelog for tracking user-relevant changes.
