@@ -10,5 +10,5 @@ jobs:
     uses: canonical/operator-workflows/.github/workflows/docs.yaml@main
     secrets: inherit
     with:
-      vale-files: '["charm/docs/**/*.md", "README.md", "CONTRIBUTING.md"]' 
+      vale-files: '["charm/docs/", "README.md", "CONTRIBUTING.md"]' 
 
