@@ -1,4 +1,6 @@
-# Github Runner Webhook Router Operator
+<!-- vale Canonical.007-Headings-sentence-case = NO -->
+# GitHub runner webhook router operator
+<!-- vale Canonical.007-Headings-sentence-case = YES -->
 
 A Juju charm deploying and managing a simple Flask application that listens for incoming webhooks
 from GitHub and places a translation of those in a message queue for a runner to pick up and process.
@@ -22,7 +24,7 @@ to provide application and Flask related metrics via Grafana dashboards.
 
 | | |
 |--|--|
-|--| [Explanation](https://charmhub.io/github-runner-webhook-router/docs/explanation-charm-architecture) </br> Concepts - discussion and clarification of key topics  |
+|--| [Explanation](charm-architecture.md) </br> Concepts - discussion and clarification of key topics  |
 
 
 ## Contributing to this documentation
