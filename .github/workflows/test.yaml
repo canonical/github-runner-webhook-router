@@ -10,7 +10,3 @@ jobs:
     with:
       self-hosted-runner: true
       self-hosted-runner-label: 'edge'
-  allure-report:
-    if: always() && !cancelled()
-    needs:
-    uses: canonical/operator-workflows/.github/workflows/allure_report.yaml@main
