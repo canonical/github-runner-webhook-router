@@ -1,0 +1,96 @@
+[32mINFO    [0m pytest_operator.plugin:plugin.py:951 Model status:
+
+Model    Controller                Cloud/Region        Version  SLA          Timestamp
+testing  github-pr-cfab5-microk8s  microk8s/localhost  3.6.11   unsupported  01:54:47Z
+
+App                           Version  Status   Scale  Charm                         Channel  Rev  Address         Exposed  Message
+github-runner-webhook-router           blocked      1  github-runner-webhook-router             0  10.152.183.133  no       missing integrations: mongodb
+
+Unit                             Workload  Agent  Address    Ports  Message
+github-runner-webhook-router/0*  blocked   idle   10.1.53.9         missing integrations: mongodb
+
+[32mINFO    [0m pytest_operator.plugin:plugin.py:957 Juju error logs:
+
+unit-github-runner-webhook-router-0: 01:54:16 ERROR juju.worker.proxyupdater error writing apt proxy config file: open /etc/apt/apt.conf.d/95-juju-proxy-settings: permission denied
+unit-github-runner-webhook-router-0: 01:54:43 ERROR unit.github-runner-webhook-router/0.juju-log Invalid action parameters passed, Could not access/find secret 2d67403fbd2e7e5288ef319e3101960d
+Traceback (most recent call last):
+  File "/var/lib/juju/agents/unit-github-runner-webhook-router-0/charm/venv/ops/model.py", line 3666, in _run
+    result = subprocess.run(args, **kwargs)  # type: ignore
+  File "/usr/lib/python3.10/subprocess.py", line 526, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '('/var/lib/juju/tools/unit-github-runner-webhook-router-0/secret-get', 'secret://fb06b2fa-7f34-4e3f-8eab-0226cefa582a/2d67403fbd2e7e5288ef319e3101960d', '--format=json')' returned non-zero exit status 2.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/var/lib/juju/agents/unit-github-runner-webhook-router-0/charm/./src/charm.py", line 159, in _get_secret_value
+    secret = self.model.get_secret(id=secret_id)
+  File "/var/lib/juju/agents/unit-github-runner-webhook-router-0/charm/venv/ops/model.py", line 326, in get_secret
+    content = self._backend.secret_get(id=id, label=label)
+  File "/var/lib/juju/agents/unit-github-runner-webhook-router-0/charm/venv/ops/model.py", line 4075, in secret_get
+    result = self._run('secret-get', *args, return_output=True, use_json=True)
+  File "/var/lib/juju/agents/unit-github-runner-webhook-router-0/charm/venv/ops/model.py", line 3669, in _run
+    raise ModelError(e.stderr) from e
+ops.model.ModelError: ERROR secret URI "secret://fb06b2fa-7f34-4e3f-8eab-0226cefa582a/2d67403fbd2e7e5288ef319e3101960d" not valid
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/var/lib/juju/agents/unit-github-runner-webhook-router-0/charm/./src/charm.py", line 77, in _on_redeliver_failed_webhooks_action
+    auth_env = self._get_github_auth_env(event)
+  File "/var/lib/juju/agents/unit-github-runner-webhook-router-0/charm/./src/charm.py", line 129, in _get_github_auth_env
+    self._get_secret_value(github_app_private_key_secret_id, "private-key")
+  File "/var/lib/juju/agents/unit-github-runner-webhook-router-0/charm/./src/charm.py", line 161, in _get_secret_value
+    raise _ActionParamsInvalidError(f"Could not access/find secret {secret_id}") from exc
+_ActionParamsInvalidError: Could not access/find secret 2d67403fbd2e7e5288ef319e3101960d
+unit-github-runner-webhook-router-0: 01:54:44 ERROR unit.github-runner-webhook-router/0.juju-log Invalid action parameters passed, Could not access/find secret 16a5c61da75bcdc051ed2bafa1ecda0e
+Traceback (most recent call last):
+  File "/var/lib/juju/agents/unit-github-runner-webhook-router-0/charm/venv/ops/model.py", line 3666, in _run
+    result = subprocess.run(args, **kwargs)  # type: ignore
+  File "/usr/lib/python3.10/subprocess.py", line 526, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '('/var/lib/juju/tools/unit-github-runner-webhook-router-0/secret-get', 'secret://fb06b2fa-7f34-4e3f-8eab-0226cefa582a/16a5c61da75bcdc051ed2bafa1ecda0e', '--format=json')' returned non-zero exit status 2.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/var/lib/juju/agents/unit-github-runner-webhook-router-0/charm/./src/charm.py", line 159, in _get_secret_value
+    secret = self.model.get_secret(id=secret_id)
+  File "/var/lib/juju/agents/unit-github-runner-webhook-router-0/charm/venv/ops/model.py", line 326, in get_secret
+    content = self._backend.secret_get(id=id, label=label)
+  File "/var/lib/juju/agents/unit-github-runner-webhook-router-0/charm/venv/ops/model.py", line 4075, in secret_get
+    result = self._run('secret-get', *args, return_output=True, use_json=True)
+  File "/var/lib/juju/agents/unit-github-runner-webhook-router-0/charm/venv/ops/model.py", line 3669, in _run
+    raise ModelError(e.stderr) from e
+ops.model.ModelError: ERROR secret URI "secret://fb06b2fa-7f34-4e3f-8eab-0226cefa582a/16a5c61da75bcdc051ed2bafa1ecda0e" not valid
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/var/lib/juju/agents/unit-github-runner-webhook-router-0/charm/./src/charm.py", line 77, in _on_redeliver_failed_webhooks_action
+    auth_env = self._get_github_auth_env(event)
+  File "/var/lib/juju/agents/unit-github-runner-webhook-router-0/charm/./src/charm.py", line 124, in _get_github_auth_env
+    self._get_secret_value(github_token_secret_id, "token")
+  File "/var/lib/juju/agents/unit-github-runner-webhook-router-0/charm/./src/charm.py", line 161, in _get_secret_value
+    raise _ActionParamsInvalidError(f"Could not access/find secret {secret_id}") from exc
+_ActionParamsInvalidError: Could not access/find secret 16a5c61da75bcdc051ed2bafa1ecda0e
+unit-github-runner-webhook-router-0: 01:54:45 ERROR unit.github-runner-webhook-router/0.juju-log Invalid action parameters passed, Secret d4b8npfmp25c7bdvk1ag does not contain a field called 'private-key'.
+Traceback (most recent call last):
+  File "/var/lib/juju/agents/unit-github-runner-webhook-router-0/charm/./src/charm.py", line 164, in _get_secret_value
+    return secret_data[key]
+KeyError: 'private-key'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/var/lib/juju/agents/unit-github-runner-webhook-router-0/charm/./src/charm.py", line 77, in _on_redeliver_failed_webhooks_action
+    auth_env = self._get_github_auth_env(event)
+  File "/var/lib/juju/agents/unit-github-runner-webhook-router-0/charm/./src/charm.py", line 129, in _get_github_auth_env
+    self._get_secret_value(github_app_private_key_secret_id, "private-key")
+  File "/var/lib/juju/agents/unit-github-runner-webhook-router-0/charm/./src/charm.py", line 166, in _get_secret_value
+    raise _ActionParamsInvalidError(
+_ActionParamsInvalidError: Secret d4b8npfmp25c7bdvk1ag does not contain a field called 'private-key'.
+
+[32mINFO    [0m pytest_operator.plugin:plugin.py:1039 Forgetting model main...
