@@ -25,7 +25,7 @@ jobs:
       extra-arguments: --webhook-test-repository cbartz-org/gh-runner-test
 
   allure-report:
-    if: ${{ (success() || failure()) && github.event_name == 'schedule' }}
+    if: ${{ !cancelled() && github.event_name == 'schedule' }}
     needs:
     - integration-tests
     uses: canonical/operator-workflows/.github/workflows/allure_report.yaml@main
