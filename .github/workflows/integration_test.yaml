@@ -2,12 +2,15 @@ name: Integration tests
 
 on:
   pull_request:
+  schedule:
+  - cron: "0 15 * * SAT"
 
 
 jobs:
   integration-tests:
 
-    uses: canonical/operator-workflows/.github/workflows/integration_test.yaml@main
+    uses: 
+      canonical/operator-workflows/.github/workflows/integration_test.yaml@main
     secrets: inherit
 
     with:
@@ -20,9 +23,9 @@ jobs:
       charmcraft-channel: latest/edge
       modules: '["test_app", "test_webhook_redelivery"]'
       extra-arguments: --webhook-test-repository cbartz-org/gh-runner-test
-  
+
   allure-report:
-    if: always() && !cancelled()
+    if: ${{ !cancelled() && github.event_name == 'schedule' }}
     needs:
-      - integration-tests
+    - integration-tests
     uses: canonical/operator-workflows/.github/workflows/allure_report.yaml@main
