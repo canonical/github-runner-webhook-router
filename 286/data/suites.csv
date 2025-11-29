@@ -1,0 +1,90 @@
+"DESCRIPTION","DURATION IN MS","NAME","PARENT SUITE","START TIME","STATUS","STOP TIME","SUB SUITE","SUITE","TEST CLASS","TEST METHOD"
+"
+    arrange: given a running charm and a particular flavour mapping
+    act: call the webhook endpoint with several label combinations
+    assert: the mq contains the expected jobs for the particular flavour mapping
+    ","24825","test_forward_webhook[with secret]","tests.integration","2025-11-29","passed","2025-11-29","","test_app","",""
+"
+    arrange: Given auth parameters with a secret which is missing a key.
+    act: Call the action.
+    assert: The action fails with the expected message.
+    ","1060","test_secret_key_missing[wrong field in github token secret]","tests.integration","2025-11-29","passed","2025-11-29","","test_webhook_redelivery","",""
+"
+    arrange: Given auth parameters with a secret which is missing.
+    act: Call the action.
+    assert: The action fails with the expected message.
+    ","1018","test_secret_missing[wrong field in github token secret]","tests.integration","2025-11-29","passed","2025-11-29","","test_webhook_redelivery","",""
+"
+    arrange: given a running charm and a particular flavour mapping
+    act: call the webhook endpoint with several label combinations
+    assert: the mq contains the expected jobs for the particular flavour mapping
+    ","","test_forward_webhook[with secret]","tests.integration","","unknown","","","test_app","",""
+"
+    arrange: given a running charm with a particular flavour mapping
+    act: call the webhook endpoint with statuses or labels that should not be forwarded
+    assert: the mq does not contain any jobs
+    ","29984","test_receive_webhook_not_forwarded[non forwardable status - completed]","tests.integration","2025-11-29","passed","2025-11-29","","test_app","",""
+"
+    arrange: given a running charm with a particular flavour mapping
+    act: call the webhook endpoint with an invalid payload or missing headers
+        1. missing webhook signature header
+        2. wrong signature
+        3. missing X-Github-Event header
+        4. invalid payload
+    assert: the response status code is 403 for 1. + 2. and 400 for 3. + 4..
+    ","27434","test_receive_webhook_client_error","tests.integration","2025-11-29","passed","2025-11-29","","test_app","",""
+"
+    arrange: given a running charm with a particular flavour mapping
+    act: call the webhook endpoint with statuses or labels that should not be forwarded
+    assert: the mq does not contain any jobs
+    ","17049","test_receive_webhook_not_forwarded[non forwardable status - in-progress]","tests.integration","2025-11-29","passed","2025-11-29","","test_app","",""
+"
+    arrange: Given a mocked environment with invalid github auth configuration.
+    act: Call the action.
+    assert: The action fails with the expected message.
+    ","1016","test_action_github_auth_param_error[no github app config or github token]","tests.integration","2025-11-29","passed","2025-11-29","","test_webhook_redelivery","",""
+"
+    arrange: Given auth parameters with a secret which is missing a key.
+    act: Call the action.
+    assert: The action fails with the expected message.
+    ","1060","test_secret_key_missing[wrong field in github app secret]","tests.integration","2025-11-29","passed","2025-11-29","","test_webhook_redelivery","",""
+"
+    arrange: given a running charm and a particular flavour mapping
+    act: call the webhook endpoint with several label combinations
+    assert: the mq contains the expected jobs for the particular flavour mapping
+    ","32345","test_forward_webhook[without secret]","tests.integration","2025-11-29","passed","2025-11-29","","test_app","",""
+"
+    arrange: a hook with a failed delivery
+    act: call the action to redeliver the webhook
+    assert: the failed delivery has been redelivered
+    ","7564","test_webhook_redelivery[use github app auth]","tests.integration","2025-11-29","passed","2025-11-29","","test_webhook_redelivery","",""
+"
+    arrange: given a running charm with a particular flavour mapping
+    act: call the webhook endpoint with statuses or labels that should not be forwarded
+    assert: the mq does not contain any jobs
+    ","17116","test_receive_webhook_not_forwarded[non forwardable status - waiting]","tests.integration","2025-11-29","passed","2025-11-29","","test_app","",""
+"
+    arrange: a hook with a failed delivery
+    act: call the action to redeliver the webhook
+    assert: the failed delivery has been redelivered
+    ","8990","test_webhook_redelivery[use github token]","tests.integration","2025-11-29","passed","2025-11-29","","test_webhook_redelivery","",""
+"
+    arrange: Given auth parameters with a secret which is missing.
+    act: Call the action.
+    assert: The action fails with the expected message.
+    ","1018","test_secret_missing[wrong field in github app secret]","tests.integration","2025-11-29","passed","2025-11-29","","test_webhook_redelivery","",""
+"
+    arrange: given a running charm with a particular flavour mapping
+    act: call the webhook endpoint with statuses or labels that should not be forwarded
+    assert: the mq does not contain any jobs
+    ","17050","test_receive_webhook_not_forwarded[forwardable status but non forwardable labels]","tests.integration","2025-11-29","passed","2025-11-29","","test_app","",""
+"
+    arrange: Given a mocked environment with invalid github auth configuration.
+    act: Call the action.
+    assert: The action fails with the expected message.
+    ","1017","test_action_github_auth_param_error[not all github app config provided]","tests.integration","2025-11-29","passed","2025-11-29","","test_webhook_redelivery","",""
+"
+    arrange: Given a mocked environment with invalid github auth configuration.
+    act: Call the action.
+    assert: The action fails with the expected message.
+    ","1060","test_action_github_auth_param_error[github app config and github token secret]","tests.integration","2025-11-29","passed","2025-11-29","","test_webhook_redelivery","",""
