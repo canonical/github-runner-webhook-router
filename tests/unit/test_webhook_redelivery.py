@@ -2,6 +2,7 @@
 #  See LICENSE file for licensing details.
 
 """Unit tests for webhook redelivery script."""
+
 import secrets
 from collections import namedtuple
 from datetime import datetime, timedelta, timezone

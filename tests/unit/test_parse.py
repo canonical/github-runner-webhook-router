@@ -2,6 +2,7 @@
 #  See LICENSE file for licensing details.
 
 """Unit tests for the parse module."""
+
 from itertools import permutations
 
 import pytest

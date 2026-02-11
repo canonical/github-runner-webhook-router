@@ -2,6 +2,7 @@
 #  See LICENSE file for licensing details.
 
 """Module for interacting with the message queue."""
+
 import logging
 import os
 

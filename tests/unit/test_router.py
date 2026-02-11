@@ -2,6 +2,7 @@
 #  See LICENSE file for licensing details.
 
 """Unit tests for the router module."""
+
 import itertools
 from unittest.mock import MagicMock
 

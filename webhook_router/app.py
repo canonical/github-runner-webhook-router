@@ -2,6 +2,7 @@
 #  See LICENSE file for licensing details.
 
 """Flask application which receives GitHub webhooks and logs those."""
+
 import logging
 from collections import namedtuple
 
