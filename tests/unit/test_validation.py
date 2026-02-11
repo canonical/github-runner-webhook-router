@@ -2,6 +2,7 @@
 #  See LICENSE file for licensing details.
 
 """The unit tests for the validation module."""
+
 import secrets
 from typing import Callable
 

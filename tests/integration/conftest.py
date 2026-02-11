@@ -2,6 +2,7 @@
 #  See LICENSE file for licensing details.
 
 """Fixtures for the github-runner-webhook-router charm."""
+
 import os
 import random
 from collections import namedtuple

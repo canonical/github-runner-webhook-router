@@ -2,6 +2,7 @@
 #  See LICENSE file for licensing details.
 
 """Integration tests for the charmed flask application."""
+
 import hashlib
 import hmac
 import itertools

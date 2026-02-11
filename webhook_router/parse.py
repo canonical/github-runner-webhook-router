@@ -2,6 +2,7 @@
 #  See LICENSE file for licensing details.
 
 """Module for parsing the webhook payload."""
+
 from collections import namedtuple
 from enum import Enum
 from typing import Collection

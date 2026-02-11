@@ -2,6 +2,7 @@
 #  See LICENSE file for licensing details.
 
 """The unit tests for the mq module."""
+
 import secrets
 from unittest.mock import MagicMock
 
