@@ -16,16 +16,6 @@ in the root directory. The charm directory has been built using the
 [`paas-charm`](https://canonical-12-factor-app-support.readthedocs-hosted.com/latest/) approach and then modified to support
 the specific actions of this charm.
 
-
-## Generating src docs for every commit
-
-Run the following command:
-
-```bash
-echo -e "tox -e src-docs\ngit add src-docs\n" >> .git/hooks/pre-commit
-chmod +x .git/hooks/pre-commit
-```
-
 ## Testing
 
 This project uses `tox` for managing test environments. There are some pre-configured environments
