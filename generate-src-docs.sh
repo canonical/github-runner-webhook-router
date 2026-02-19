@@ -1,6 +1,0 @@
-#!/usr/bin/env bash
-
-#  Copyright 2026 Canonical Ltd.
-#  See LICENSE file for licensing details.
-
-lazydocs --no-watermark --output-path src-docs webhook_router/*

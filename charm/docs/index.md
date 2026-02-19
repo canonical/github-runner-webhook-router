@@ -24,7 +24,8 @@ to provide application and Flask related metrics via Grafana dashboards.
 
 | | |
 |--|--|
-|--| [Explanation](charm-architecture.md) </br> Concepts - discussion and clarification of key topics  |
+|--| [How-to guides](how-to/upgrade.md) </br> Step-by-step guides covering key operations and common tasks |
+| [Reference](reference/charm-architecture.md) </br> Technical information - specifications, APIs, architecture |--|
 
 
 ## Contributing to this documentation
@@ -55,3 +56,10 @@ projects, contributions, suggestions, fixes, and constructive feedback.
 
 Thinking about using the Github Runner Webhook Router Operator for your next project?
 [Get in touch](https://matrix.to/#/#charmhub-charmdev:ubuntu.com)!
+
+# Contents
+
+1. [How To](how-to/)
+    1. [Upgrade](how-to/upgrade.md)
+2. [Reference](reference/)
+    1. [Charm architecture](reference/charm-architecture.md)
